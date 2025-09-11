@@ -1,11 +1,11 @@
 import { Link, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
-import Healthy from "../../assets/breakfast.svg"
 import { useFonts, EpundaSlab_400Regular } from "@expo-google-fonts/epunda-slab";
 import { Button, TextInput } from 'react-native-paper';
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { Login } from '../../types/type';
+
 export default function Register() {
 
   const router = useRouter()
