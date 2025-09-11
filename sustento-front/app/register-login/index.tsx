@@ -26,7 +26,7 @@ export default function RegisterHome() {
       </View>
       <View style={{ height: '25%', justifyContent: 'space-around', alignItems: 'flex-end', flexDirection: 'row', gap: 10 }}>
         <View style={{ padding: 20 }}>
-          <Button mode='contained' labelStyle={{ fontSize: 15 }} onPress={() => router.push('/home/home')}>
+          <Button mode='contained' labelStyle={{ fontSize: 15 }} onPress={() => router.push('/register-login/login')}>
             Login
           </Button>
         </View>
