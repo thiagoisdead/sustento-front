@@ -5,7 +5,7 @@ import Healthy from "../../assets/breakfast.svg"
 import { useFonts, EpundaSlab_400Regular } from "@expo-google-fonts/epunda-slab";
 import { Button, TextInput } from 'react-native-paper';
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { Dados } from '../../types/type';
+import { Registro } from '../../types/type';
 export default function Register() {
 
   const router = useRouter()
@@ -15,7 +15,7 @@ export default function Register() {
   }
 
 
-  const [dados, setDados] = useState<Dados>({
+  const [dados, setDados] = useState<Registro>({
     name: "",
     password: "",
     email: "",
