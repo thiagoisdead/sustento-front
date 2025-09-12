@@ -1,13 +1,15 @@
 import { Link, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import { useWindowDimensions, StyleSheet, Text, View } from 'react-native';
 import { useFonts, EpundaSlab_400Regular } from "@expo-google-fonts/epunda-slab";
 import { Button, TextInput } from 'react-native-paper';
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { Login } from '../../types/type';
+import axios from 'axios';
 
 export default function Register() {
-
+  const { width, height } = useWindowDimensions();
+  const vw = (value: number) => (width * value) / 100;
   const router = useRouter()
   const handleChange = () => {
     if (!dados) return
@@ -37,7 +39,6 @@ export default function Register() {
     },
   };
 
-
   const [fontsLoaded] = useFonts({
     EpundaSlab_400Regular,
   });
@@ -45,6 +46,12 @@ export default function Register() {
   if (!fontsLoaded) {
     return null;
   }
+
+  const handleSubmit = async () => {
+    if (!dados) return;
+    const req = await axios.post("http://localhost:3000/api/auth/login", dados);
+    console.log(req.data.token);
+  };
 
   return (
     <KeyboardAwareScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}
@@ -60,11 +67,11 @@ export default function Register() {
             Voltar
           </Button>
         </View>
-        <View style={{ flex: 1, width: '100%',  marginTop: 40, alignContent: 'center', alignItems: 'center' }}>
+        <View style={{ flex: 1, width: '100%', marginTop: 40, alignContent: 'center', alignItems: 'center' }}>
           <Text style={{ fontFamily: "EpundaSlab_400Regular", fontSize: 40 }}>Sustento</Text>
         </View>
         <View style={{ width: '100%', flex: 1, flexDirection: 'column', justifyContent: 'flex-start' }}>
-          <View style={{ width: '100%', gap: 10, padding: 20 }}>
+          <View style={{ width: vw(75), gap: 10, padding: 20, marginLeft: "auto", marginRight: "auto" }}>
             <TextInput
               label="Email"
               mode="outlined"
@@ -90,12 +97,12 @@ export default function Register() {
           </View>
         </View>
         <View style={{ width: '100%', height: '15%', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center' }}>
-          <Button mode='contained' style={{ width: 200 }}>
+          <Button mode='contained' style={{ width: 200 }} onPress={handleSubmit}>
             Login
           </Button>
         </View>
       </View>
-    </KeyboardAwareScrollView>
+    </KeyboardAwareScrollView >
   );
 }
 
