@@ -1,13 +1,13 @@
-import { Link, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Dimensions, StyleSheet, Text, View } from 'react-native';
-import Healthy from "../../assets/breakfast.svg"
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useFonts, EpundaSlab_400Regular } from "@expo-google-fonts/epunda-slab";
 import { Button, TextInput } from 'react-native-paper';
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { Registro } from '../../types/type';
 export default function Register() {
-
+  const { width, height } = useWindowDimensions();
+  const vw = (value: number) => (width * value) / 100;
   const router = useRouter()
   const handleChange = () => {
     if (!dados) return
@@ -24,8 +24,6 @@ export default function Register() {
   const [passwordSee, setPasswordSee] = useState<Boolean>();
   const [passwordConfirmationSee, setPasswordConfirmationSee] = useState<Boolean>();
 
-
-
   const textInputStyle = {
     backgroundColor: "#f8fafc",
     borderRadius: 10,
@@ -40,7 +38,6 @@ export default function Register() {
       onSurfaceVariant: "#0d0c22",
     },
   };
-
 
   const [fontsLoaded] = useFonts({
     EpundaSlab_400Regular,
@@ -68,7 +65,7 @@ export default function Register() {
           <Text style={{ fontFamily: "EpundaSlab_400Regular", fontSize: 40 }}>Sustento</Text>
         </View>
         <View style={{ width: '100%', flex: 1, flexDirection: 'column', justifyContent: 'center' }}>
-          <View style={{ width: '100%', gap: 10, padding: 20 }}>
+          <View style={{ width: vw(75), gap: 10, padding: 20, marginLeft: "auto", marginRight: "auto" }}>
             <TextInput
               label="Nome"
               mode="outlined"
