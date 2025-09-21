@@ -6,23 +6,20 @@ import { Button, TextInput } from 'react-native-paper';
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { Login } from '../../types/type';
 import axios from 'axios';
+import Constants from "expo-constants";
 
-export default function Register() {
+
+export default function LoginScreen() {
   const { width, height } = useWindowDimensions();
+  const back_url_thiago = Constants.expoConfig?.extra?.backUrlThiago;
   const vw = (value: number) => (width * value) / 100;
   const router = useRouter()
-  const handleChange = () => {
-    if (!dados) return
-  }
 
-
+  const [passwordSee, setPasswordSee] = useState<Boolean>();
   const [dados, setDados] = useState<Login>({
     password: "",
     email: "",
   });
-  const [passwordSee, setPasswordSee] = useState<Boolean>();
-
-
 
   const textInputStyle = {
     backgroundColor: "#f8fafc",
@@ -47,11 +44,23 @@ export default function Register() {
     return null;
   }
 
-  const handleSubmit = async () => {
-    if (!dados) return;
-    const req = await axios.post("http://localhost:3000/api/auth/login", dados);
-    console.log(req.data.token);
-  };
+  const handleLogin = async () => {
+    if (!dados) return
+    try {
+      const responseLogin = await axios.post(`${back_url_thiago}/auth/login`, dados);
+
+      console.log(responseLogin)
+      if (responseLogin.status === 200) {
+        console.log(responseLogin)
+        router.push('/home/home')
+      }
+      else {
+        console.log('nao deu login nao')
+      }
+    } catch (loginErr: any) {
+      console.log("Erro ao cadastrar:", loginErr);
+    }
+  }
 
   return (
     <KeyboardAwareScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}
@@ -62,7 +71,7 @@ export default function Register() {
           <Button
             icon="arrow-left"
             mode="contained"
-            onPress={() => router.push('/register-login/')}
+            onPress={() => router.push('/auth/')}
           >
             Voltar
           </Button>
@@ -71,7 +80,7 @@ export default function Register() {
           <Text style={{ fontFamily: "EpundaSlab_400Regular", fontSize: 40 }}>Sustento</Text>
         </View>
         <View style={{ width: '100%', flex: 1, flexDirection: 'column', justifyContent: 'flex-start' }}>
-          <View style={{ width: vw(75), gap: 10, padding: 20, marginLeft: "auto", marginRight: "auto" }}>
+          <View style={{ width: vw(90), gap: 10, padding: 20, marginLeft: "auto", marginRight: "auto" }}>
             <TextInput
               label="Email"
               mode="outlined"
@@ -97,7 +106,7 @@ export default function Register() {
           </View>
         </View>
         <View style={{ width: '100%', height: '15%', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center' }}>
-          <Button mode='contained' style={{ width: 200 }} onPress={handleSubmit}>
+          <Button mode='contained' style={{ width: 200 }} onPress={handleLogin}>
             Login
           </Button>
         </View>
