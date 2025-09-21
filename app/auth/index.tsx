@@ -1,7 +1,7 @@
 import { Link, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
-import Healthy from "../../assets/breakfast.svg"
+import Healthy from "../../assets/svgs/breakfast.svg"
 import { useFonts, EpundaSlab_400Regular } from "@expo-google-fonts/epunda-slab";
 import { Button } from 'react-native-paper';
 
@@ -26,12 +26,12 @@ export default function RegisterHome() {
       </View>
       <View style={{ height: '25%', justifyContent: 'space-around', alignItems: 'flex-end', flexDirection: 'row', gap: 10 }}>
         <View style={{ padding: 20 }}>
-          <Button mode='contained' labelStyle={{ fontSize: 15 }} onPress={() => router.push('/register-login/login')}>
+          <Button mode='contained' labelStyle={{ fontSize: 15 }} onPress={() => router.push('/auth/login')}>
             Login
           </Button>
         </View>
         <View style={{ padding: 20 }} >
-          <Button mode='contained' labelStyle={{ fontSize: 15 }} onPress={() => router.push('/register-login/register')}>
+          <Button mode='contained' labelStyle={{ fontSize: 15 }} onPress={() => router.push('/auth/register')}>
             Registre-se
           </Button>
         </View>

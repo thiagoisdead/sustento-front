@@ -5,14 +5,18 @@ import { useFonts, EpundaSlab_400Regular } from "@expo-google-fonts/epunda-slab"
 import { Button, TextInput } from 'react-native-paper';
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { Registro } from '../../types/type';
+import axios from 'axios';
+import Constants from "expo-constants";
+
+
 export default function Register() {
+
   const { width, height } = useWindowDimensions();
+  const back_url = Constants.expoConfig?.extra?.backUrl;
+  const back_url_thiago = Constants.expoConfig?.extra?.backUrlThiago;
+
   const vw = (value: number) => (width * value) / 100;
   const router = useRouter()
-  const handleChange = () => {
-    if (!dados) return
-    if (dados.password !== dados?.confirmPassword) return
-  }
 
 
   const [dados, setDados] = useState<Registro>({
@@ -21,8 +25,8 @@ export default function Register() {
     email: "",
     confirmPassword: "",
   });
-  const [passwordSee, setPasswordSee] = useState<Boolean>();
-  const [passwordConfirmationSee, setPasswordConfirmationSee] = useState<Boolean>();
+  const [passwordSee, setPasswordSee] = useState<boolean>();
+  const [passwordConfirmationSee, setPasswordConfirmationSee] = useState<boolean>();
 
   const textInputStyle = {
     backgroundColor: "#f8fafc",
@@ -47,6 +51,33 @@ export default function Register() {
     return null;
   }
 
+  const handleRegister = async () => {
+    if (!dados) return
+    if (dados.password !== dados?.confirmPassword) return
+    const { confirmPassword, ...dataRegister } = dados;
+    try {
+      const responseRegister = await axios.post(`${back_url_thiago}/auth/register`, dataRegister);
+      console.log(responseRegister.data);
+      console.log(responseRegister.status)
+      if (responseRegister.status === 201) {
+        const { name, ...dataLogin } = dataRegister;
+        console.log(dataLogin)
+        try {
+          console.log('tentando logar')
+          const responseLogin = await axios.post(`${back_url_thiago}/auth/login`, dataLogin)
+          console.log('logou')
+          console.log(responseLogin)
+          router.push('/home')
+        }
+        catch (loginErr: any) {
+          console.log("Erro no login:", loginErr)
+        }
+      }
+    } catch (registerErr: any) {
+      console.log("Erro ao cadastrar:", registerErr);
+    }
+  }
+
   return (
     <KeyboardAwareScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}
       enableOnAndroid={true}
@@ -56,7 +87,7 @@ export default function Register() {
           <Button
             icon="arrow-left"
             mode="contained"
-            onPress={() => router.push('/register-login/')}
+            onPress={() => router.push('/auth/')}
           >
             Voltar
           </Button>
@@ -65,7 +96,7 @@ export default function Register() {
           <Text style={{ fontFamily: "EpundaSlab_400Regular", fontSize: 40 }}>Sustento</Text>
         </View>
         <View style={{ width: '100%', flex: 1, flexDirection: 'column', justifyContent: 'center' }}>
-          <View style={{ width: vw(75), gap: 10, padding: 20, marginLeft: "auto", marginRight: "auto" }}>
+          <View style={{ width: vw(90), gap: 10, padding: 20, marginLeft: "auto", marginRight: "auto" }}>
             <TextInput
               label="Nome"
               mode="outlined"
@@ -113,7 +144,7 @@ export default function Register() {
           </View>
         </View>
         <View style={{ width: '100%', height: '15%', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center' }}>
-          <Button mode='contained' style={{ width: 200 }}>
+          <Button mode='contained' style={{ width: 200 }} onPress={() => handleRegister()}>
             Cadastrar
           </Button>
         </View>
