@@ -26,8 +26,11 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-     "backUrl": "http://localhost:3000/api",
-     "backUrlThiago": "http://192.168.15.6:3000/api" 
-    }
+      "backUrl": "http://localhost:3000/api",
+      "backUrlThiago": "http://192.168.15.6:3000/api"
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }

@@ -7,6 +7,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 import { Login } from '../../types/type';
 import axios from 'axios';
 import Constants from "expo-constants";
+import * as SecureStore from 'expo-secure-store';
 
 
 export default function LoginScreen() {
@@ -49,16 +50,19 @@ export default function LoginScreen() {
     try {
       const responseLogin = await axios.post(`${back_url_thiago}/auth/login`, dados);
 
-      console.log(responseLogin)
+      console.log("oi", responseLogin.data)
       if (responseLogin.status === 200) {
-        console.log(responseLogin)
+        console.log(responseLogin.data)
+        const token = await SecureStore.setItemAsync('token', responseLogin.data.token);
+        const userId = await SecureStore.setItemAsync('id', responseLogin.data.id.toString());
+        console.log('setei token e userid')
         router.push('/home/home')
       }
       else {
         console.log('nao deu login nao')
       }
     } catch (loginErr: any) {
-      console.log("Erro ao cadastrar:", loginErr);
+      console.log("Erro ao efetuar Login:", loginErr);
     }
   }
 
