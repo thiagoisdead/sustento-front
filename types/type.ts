@@ -19,4 +19,5 @@ export interface User {
   updated_at: string;
   user_id: string;
   weight: string | null;
+  restrictions: string | null
 }
