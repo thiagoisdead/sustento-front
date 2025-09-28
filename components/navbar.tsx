@@ -20,7 +20,7 @@ export default function NavBar() {
       <View style={styles.child}><MaterialCommunityIcons name="food-apple-outline" size={35} color="black" />
         {/* <Text>Dieta</Text> */}
       </View>
-      <View style={styles.child}><MaterialCommunityIcons name="food-turkey" size={35} color="black"  />
+      <View style={styles.child}><MaterialCommunityIcons name="food-turkey" size={35} color="black" />
         {/* <Text>Alimentos</Text> */}
       </View>
       <View style={styles.child}><Ionicons name="person" size={35} color="black" onPress={() => { router.push('/profile/seeProfile') }} />
@@ -36,7 +36,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#1a2323',
     alignItems: 'center',
     padding: 2,
-
     flexDirection: 'row',
     justifyContent: 'space-around',
   },

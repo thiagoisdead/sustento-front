@@ -52,10 +52,8 @@ export default function LoginScreen() {
 
       console.log("oi", responseLogin.data)
       if (responseLogin.status === 200) {
-        console.log(responseLogin.data)
-        const token = await SecureStore.setItemAsync('token', responseLogin.data.token);
-        const userId = await SecureStore.setItemAsync('id', responseLogin.data.id.toString());
-        console.log('setei token e userid')
+        await SecureStore.setItemAsync('token', responseLogin.data.token);
+        await SecureStore.setItemAsync('id', responseLogin.data.id.toString());
         router.push('/home/home')
       }
       else {
