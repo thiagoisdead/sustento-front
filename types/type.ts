@@ -21,3 +21,8 @@ export interface User {
   weight: string | null;
   restrictions: string | null
 }
+export interface NavigationButton {
+  Icon: any;
+  name: string;
+  path: string;
+}
