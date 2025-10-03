@@ -4,28 +4,38 @@ import Feather from '@expo/vector-icons/Feather';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
-import { Button } from 'react-native-paper';
+import { NavigationButton } from '../types/type';
 
 
 export default function NavBar() {
   const router = useRouter()
+
+  const handlePath = (path: string): void => {
+    router.push(path)
+  }
+
+  const navButtons: NavigationButton[] = [
+    { Icon: Entypo, name: 'calendar', path: '' },
+    { Icon: Feather, name: 'clipboard', path: '' },
+    { Icon: MaterialCommunityIcons, name: 'food-apple-outline', path: '' },
+    { Icon: MaterialCommunityIcons, name: 'food-turkey', path: '/meals/mealsHome' },
+    { Icon: Ionicons, name: 'person', path: '/profile/seeProfile' },
+  ]
   return (
     <View style={styles.container}>
-      <View style={styles.child}><Entypo name="calendar" size={35} color="black" />
-        {/* <Text>Calendário</Text> */}
-      </View>
-      <View style={styles.child}><Feather name="clipboard" size={35} color="black" />
-        {/* <Text>Relatórios</Text> */}
-      </View>
-      <View style={styles.child}><MaterialCommunityIcons name="food-apple-outline" size={35} color="black" />
-        {/* <Text>Dieta</Text> */}
-      </View>
-      <View style={styles.child}><MaterialCommunityIcons name="food-turkey" size={35} color="black" />
-        {/* <Text>Alimentos</Text> */}
-      </View>
-      <View style={styles.child}><Ionicons name="person" size={35} color="black" onPress={() => { router.push('/profile/seeProfile') }} />
-        {/* <Text>Perfil</Text> */}
-      </View>
+      {navButtons.map((btn, index) => {
+        const { Icon, name, path } = btn;
+        return (
+          <View key={index} style={styles.child}>
+            <Icon
+              name={name as any}
+              size={35}
+              color={'black'}
+              onPress={() => handlePath(path)}
+            />
+          </View>
+        );
+      })}
     </View>
   );
 }
