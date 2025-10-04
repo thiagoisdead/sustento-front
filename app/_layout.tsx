@@ -1,18 +1,39 @@
-import { Stack, usePathname } from "expo-router";
+import { Stack, usePathname, useRouter } from "expo-router";
 import { PaperProvider, DefaultTheme } from "react-native-paper";
 import * as Animatable from 'react-native-animatable';
 import NavBar from "../components/navbar";
 import { View } from "react-native";
+import { useEffect } from "react";
+import { basePost, baseValidate } from "../services/baseCall";
+import { getItem } from "../services/secureStore";
 
 export default function RootLayout() {
   const pathname = usePathname()
+  const router = useRouter()
 
-  console.log(pathname)
+  useEffect(() => {
+    console.log('mudei de rota', pathname)
+
+    const fetchData = async () => {
+      let token;
+      token = await getItem('token')
+      if (!token) return;
+
+      try {
+        const verifyToken = await baseValidate(token)
+        if (!verifyToken.valid) router.push('/auth/index')
+      }
+      catch (err) {
+        console.log('qual erro:', err)
+      }
+    }
+    fetchData()
+
+
+  }, [pathname])
 
   const hideNavBar = ["/auth/login", "/auth/register", "/auth"]
   const showNavbar = !hideNavBar.includes(pathname);
-
-  console.log(showNavbar)
 
   const theme = {
     ...DefaultTheme,
