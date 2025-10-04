@@ -4,7 +4,7 @@ import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useFonts, EpundaSlab_400Regular } from "@expo-google-fonts/epunda-slab";
 import { Button, TextInput } from 'react-native-paper';
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { Registro, registerSchema } from '../../types/type';
+import { Registro, registerSchema } from '../../types/auth';
 import axios from 'axios';
 import Constants from "expo-constants";
 import { removeItem, setItem } from '../../services/secureStore';

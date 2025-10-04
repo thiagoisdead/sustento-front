@@ -1,17 +1,5 @@
 import { z } from 'zod';
 
-export const loginSchema = z.object({
-  password: z.string().min(2),
-  email: z.string().email()
-})
-
-export const registerSchema = loginSchema.extend({
-  name: z.string().min(2),
-  confirmPassword: z.string().min(2),
-}).refine(data => data.password === data.confirmPassword, {
-  message: "Senhas não coincidem",
-})
-
 export const userSchema = z.object({
   active_plan_id: z.string().nullable(),
   activity_lvl: z.string().nullable(),
@@ -29,11 +17,7 @@ export const userSchema = z.object({
   restrictions: z.string().nullable(),
 });
 
-export const navButtonsSchema = z.object({
-  Icon: z.any(),
-  name: z.string(),
-  path: z.string(),
-})
+export type User = z.infer<typeof userSchema>;
 
 export const foodsSchema = z.object({
   title: z.string(),
@@ -44,12 +28,7 @@ export const foodsSchema = z.object({
 })
 
 export const foodsSchemaArray = z.array(foodsSchema)
-export const navButtonsSchemaArray = z.array(navButtonsSchema);
-
 export type FoodsArray = z.infer<typeof foodsSchemaArray>
 export type Foods = z.infer<typeof foodsSchema>
-export type NavButtonsArray = z.infer<typeof navButtonsSchemaArray>;
-export type NavigationButton = z.infer<typeof navButtonsSchema>;
-export type Login = z.infer<typeof loginSchema>;
-export type Registro = z.infer<typeof registerSchema>;
-export type User = z.infer<typeof userSchema>;
+
+

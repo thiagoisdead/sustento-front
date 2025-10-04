@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import axios from 'axios';
 import Constants from 'expo-constants'
 import { getItem } from '../../services/secureStore';
-import { User, userSchema } from '../../types/type';
+import { User, userSchema } from '../../types/data';
 import { Avatar, Surface } from 'react-native-paper';
 import HealthyPNG from '../../assets/rodrigo.jpg';
 
