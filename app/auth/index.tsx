@@ -4,10 +4,12 @@ import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import Healthy from "../../assets/svgs/breakfast.svg"
 import { useFonts, EpundaSlab_400Regular } from "@expo-google-fonts/epunda-slab";
 import { Button } from 'react-native-paper';
+import { usePath } from '../../hooks/useHandle';
 
 export default function RegisterHome() {
 
-  const router = useRouter()
+  const handlePath = usePath();
+
   const [fontsLoaded] = useFonts({
     EpundaSlab_400Regular,
   });
@@ -26,12 +28,12 @@ export default function RegisterHome() {
       </View>
       <View style={{ height: '25%', justifyContent: 'space-around', alignItems: 'flex-end', flexDirection: 'row', gap: 10 }}>
         <View style={{ padding: 20 }}>
-          <Button mode='contained' labelStyle={{ fontSize: 15 }} onPress={() => router.push('/auth/login')}>
+          <Button mode='contained' labelStyle={{ fontSize: 15 }} onPress={() => handlePath('/auth/login')}>
             Login
           </Button>
         </View>
         <View style={{ padding: 20 }} >
-          <Button mode='contained' labelStyle={{ fontSize: 15 }} onPress={() => router.push('/auth/register')}>
+          <Button mode='contained' labelStyle={{ fontSize: 15 }} onPress={() => handlePath('/auth/register')}>
             Registre-se
           </Button>
         </View>

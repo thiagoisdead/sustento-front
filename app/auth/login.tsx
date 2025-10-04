@@ -9,13 +9,14 @@ import axios from 'axios';
 import Constants from "expo-constants";
 import * as SecureStore from 'expo-secure-store';
 import { basePost } from '../../services/baseCall';
+import { usePath } from '../../hooks/useHandle';
 
 
 export default function LoginScreen() {
   const { width, height } = useWindowDimensions();
-  const back_url_thiago = Constants.expoConfig?.extra?.backUrlThiago;
   const vw = (value: number) => (width * value) / 100;
-  const router = useRouter()
+
+  const handlePath = usePath();
 
   const [passwordSee, setPasswordSee] = useState<Boolean>();
   const [dados, setDados] = useState<Login>({
@@ -55,7 +56,7 @@ export default function LoginScreen() {
       if (responseLogin.status === 200 || responseLogin.status === 201) {
         await SecureStore.setItemAsync('token', responseLogin.data.token);
         await SecureStore.setItemAsync('id', responseLogin.data.id.toString());
-        router.push('/home/home')
+        handlePath('/home/home')
       }
       else {
         console.log('nao deu login nao')
@@ -74,7 +75,7 @@ export default function LoginScreen() {
           <Button
             icon="arrow-left"
             mode="contained"
-            onPress={() => router.push('/auth/')}
+            onPress={() => handlePath('/auth/')}
           >
             Voltar
           </Button>
