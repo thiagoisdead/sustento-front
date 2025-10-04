@@ -3,14 +3,18 @@ import Entypo from '@expo/vector-icons/Entypo';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { NavigationButton } from '../types/type';
 
 
 export default function NavBar() {
+
   const router = useRouter()
+  const pathname = usePathname()
 
   const handlePath = (path: string): void => {
+    if (pathname === path) return
+
     router.push(path)
   }
 
@@ -21,6 +25,8 @@ export default function NavBar() {
     { Icon: MaterialCommunityIcons, name: 'food-turkey', path: '/meals/mealsHome' },
     { Icon: Ionicons, name: 'person', path: '/profile/seeProfile' },
   ]
+
+
   return (
     <View style={styles.container}>
       {navButtons.map((btn, index) => {

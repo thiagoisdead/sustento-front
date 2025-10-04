@@ -7,12 +7,12 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 import { Registro } from '../../types/type';
 import axios from 'axios';
 import Constants from "expo-constants";
+import { removeItem, setItem } from '../../services/secureStore';
 
 
 export default function Register() {
 
   const { width, height } = useWindowDimensions();
-  const back_url = Constants.expoConfig?.extra?.backUrl;
   const back_url_thiago = Constants.expoConfig?.extra?.backUrlThiago;
 
   const vw = (value: number) => (width * value) / 100;
@@ -52,21 +52,21 @@ export default function Register() {
   }
 
   const handleRegister = async () => {
+
+    await removeItem('token')
     if (!dados) return
     if (dados.password !== dados?.confirmPassword) return
     const { confirmPassword, ...dataRegister } = dados;
     try {
       const responseRegister = await axios.post(`${back_url_thiago}/auth/register`, dataRegister);
-      console.log(responseRegister.data);
-      console.log(responseRegister.status)
       if (responseRegister.status === 201) {
         const { name, ...dataLogin } = dataRegister;
-        console.log(dataLogin)
         try {
-          console.log('tentando logar')
           const responseLogin = await axios.post(`${back_url_thiago}/auth/login`, dataLogin)
-          console.log('logou')
-          console.log(responseLogin)
+
+          console.log(responseLogin?.data?.token)
+          await setItem("token", responseLogin?.data?.token)
+          await setItem("id", responseLogin?.data?.user_id)
           router.push('/home')
         }
         catch (loginErr: any) {
@@ -74,7 +74,7 @@ export default function Register() {
         }
       }
     } catch (registerErr: any) {
-      console.log("Erro ao cadastrar:", registerErr);
+      console.log("Erro ao cadastrar:", registerErr.message);
     }
   }
 
