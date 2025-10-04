@@ -8,9 +8,13 @@ import { Registro } from '../../types/type';
 import axios from 'axios';
 import Constants from "expo-constants";
 import { removeItem, setItem } from '../../services/secureStore';
+import { usePath } from '../../hooks/useHandle';
+import { basePost } from '../../services/baseCall';
 
 
 export default function Register() {
+
+  const handlePath = usePath();
 
   const { width, height } = useWindowDimensions();
   const back_url_thiago = Constants.expoConfig?.extra?.backUrlThiago;
@@ -57,17 +61,20 @@ export default function Register() {
     if (!dados) return
     if (dados.password !== dados?.confirmPassword) return
     const { confirmPassword, ...dataRegister } = dados;
+
     try {
-      const responseRegister = await axios.post(`${back_url_thiago}/auth/register`, dataRegister);
+      const responseRegister = await basePost('/auth/register', dataRegister);
+      if (responseRegister == undefined) return
+
       if (responseRegister.status === 201) {
         const { name, ...dataLogin } = dataRegister;
         try {
-          const responseLogin = await axios.post(`${back_url_thiago}/auth/login`, dataLogin)
+          const responseLogin = await basePost('/auth/login', dataLogin)
 
           console.log(responseLogin?.data?.token)
           await setItem("token", responseLogin?.data?.token)
           await setItem("id", responseLogin?.data?.user_id)
-          router.push('/home')
+          handlePath('/home')
         }
         catch (loginErr: any) {
           console.log("Erro no login:", loginErr)
@@ -87,7 +94,7 @@ export default function Register() {
           <Button
             icon="arrow-left"
             mode="contained"
-            onPress={() => router.push('/auth/')}
+            onPress={() => handlePath('/auth/')}
           >
             Voltar
           </Button>

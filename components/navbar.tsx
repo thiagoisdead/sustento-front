@@ -1,22 +1,15 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Entypo from '@expo/vector-icons/Entypo';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { NavigationButton } from '../types/type';
+import { usePath } from '../hooks/useHandle';
 
 
 export default function NavBar() {
-
-  const router = useRouter()
-  const pathname = usePathname()
-
-  const handlePath = (path: string): void => {
-    if (pathname === path) return
-
-    router.push(path)
-  }
+  
+  const handlePath = usePath();
 
   const navButtons: NavigationButton[] = [
     { Icon: Entypo, name: 'calendar', path: '' },
@@ -25,7 +18,6 @@ export default function NavBar() {
     { Icon: MaterialCommunityIcons, name: 'food-turkey', path: '/meals/mealsHome' },
     { Icon: Ionicons, name: 'person', path: '/profile/seeProfile' },
   ]
-
 
   return (
     <View style={styles.container}>
