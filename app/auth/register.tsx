@@ -8,7 +8,7 @@ import { Registro } from '../../types/type';
 import axios from 'axios';
 import Constants from "expo-constants";
 import { removeItem, setItem } from '../../services/secureStore';
-import { usePath } from '../../hooks/useHandle';
+import { usePath } from '../../hooks/usePath';
 import { basePost } from '../../services/baseCall';
 
 

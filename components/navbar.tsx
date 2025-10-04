@@ -4,7 +4,7 @@ import Feather from '@expo/vector-icons/Feather';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { NavigationButton } from '../types/type';
-import { usePath } from '../hooks/useHandle';
+import { usePath } from '../hooks/usePath';
 
 
 export default function NavBar() {
