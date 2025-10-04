@@ -4,7 +4,7 @@ import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useFonts, EpundaSlab_400Regular } from "@expo-google-fonts/epunda-slab";
 import { Button, TextInput } from 'react-native-paper';
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { Registro } from '../../types/type';
+import { Registro, registerSchema } from '../../types/type';
 import axios from 'axios';
 import Constants from "expo-constants";
 import { removeItem, setItem } from '../../services/secureStore';
@@ -58,15 +58,14 @@ export default function Register() {
   const handleRegister = async () => {
 
     await removeItem('token')
-    if (!dados) return
     if (dados.password !== dados?.confirmPassword) return
     const { confirmPassword, ...dataRegister } = dados;
 
     try {
-      const responseRegister = await basePost('/auth/register', dataRegister);
-      if (responseRegister == undefined) return
+      const registerValidate = registerSchema.parse(dados)
 
-      if (responseRegister.status === 201) {
+      const responseRegister = await basePost('/auth/register', registerValidate);
+      if (responseRegister && responseRegister.status === 201) {
         const { name, ...dataLogin } = dataRegister;
         try {
           const responseLogin = await basePost('/auth/login', dataLogin)

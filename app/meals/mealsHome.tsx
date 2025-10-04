@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     color: '#578f1a'
   },
   searchResults: {
-    maxHeight: 340,
+    maxHeight: 360,
     minHeight: 200,
     width: '80%',
     minWidth: '80%',
