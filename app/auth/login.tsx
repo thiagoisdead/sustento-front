@@ -9,7 +9,7 @@ import axios from 'axios';
 import Constants from "expo-constants";
 import * as SecureStore from 'expo-secure-store';
 import { basePost } from '../../services/baseCall';
-import { usePath } from '../../hooks/useHandle';
+import { usePath } from '../../hooks/usePath';
 
 
 export default function LoginScreen() {

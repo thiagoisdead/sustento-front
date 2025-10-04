@@ -45,7 +45,7 @@ export async function baseValidate(token: string) {
     );
     return result.data;
   } catch (err: any) {
-    console.error("Erro ao validar token:", err.response?.data || err.message);
+    console.log("Erro ao validar token:", err.response?.data || err.message);
     throw err;
   }
 }

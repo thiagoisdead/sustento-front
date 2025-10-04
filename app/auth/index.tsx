@@ -4,7 +4,7 @@ import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import Healthy from "../../assets/svgs/breakfast.svg"
 import { useFonts, EpundaSlab_400Regular } from "@expo-google-fonts/epunda-slab";
 import { Button } from 'react-native-paper';
-import { usePath } from '../../hooks/useHandle';
+import { usePath } from '../../hooks/usePath';
 
 export default function RegisterHome() {
 

@@ -5,7 +5,7 @@ import { View } from "react-native";
 import { useEffect } from "react";
 import { baseValidate } from "../services/baseCall";
 import { getItem } from "../services/secureStore";
-import { usePath } from "../hooks/useHandle";
+import { usePath } from "../hooks/usePath";
 
 export default function RootLayout() {
 
