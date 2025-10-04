@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { FlatList, StyleSheet, Text, View } from "react-native"
 import { Card, Searchbar } from "react-native-paper"
-import { Foods } from "../../types/type";
+import { Foods } from "../../types/data";
 
 export default function MealsHome() {
 

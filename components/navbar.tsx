@@ -3,7 +3,7 @@ import Entypo from '@expo/vector-icons/Entypo';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { NavButtonsArray, navButtonsSchemaArray } from '../types/type';
+import { NavButtonsArray, navButtonsSchemaArray } from '../types/ui';
 import { usePath } from '../hooks/usePath';
 
 export default function NavBar() {
