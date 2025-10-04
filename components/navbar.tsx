@@ -3,21 +3,20 @@ import Entypo from '@expo/vector-icons/Entypo';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { NavigationButton } from '../types/type';
+import { NavButtonsArray, navButtonsSchemaArray } from '../types/type';
 import { usePath } from '../hooks/usePath';
 
-
 export default function NavBar() {
-  
+
   const handlePath = usePath();
 
-  const navButtons: NavigationButton[] = [
+  const navButtons: NavButtonsArray = navButtonsSchemaArray.parse([
     { Icon: Entypo, name: 'calendar', path: '' },
     { Icon: Feather, name: 'clipboard', path: '' },
     { Icon: MaterialCommunityIcons, name: 'food-apple-outline', path: '' },
     { Icon: MaterialCommunityIcons, name: 'food-turkey', path: '/meals/mealsHome' },
     { Icon: Ionicons, name: 'person', path: '/profile/seeProfile' },
-  ]
+  ]);
 
   return (
     <View style={styles.container}>
