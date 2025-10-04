@@ -4,7 +4,7 @@ import { useWindowDimensions, StyleSheet, Text, View } from 'react-native';
 import { useFonts, EpundaSlab_400Regular } from "@expo-google-fonts/epunda-slab";
 import { Button, TextInput } from 'react-native-paper';
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { Login } from '../../types/type';
+import { Login, loginSchema } from '../../types/type';
 import axios from 'axios';
 import Constants from "expo-constants";
 import * as SecureStore from 'expo-secure-store';
@@ -48,23 +48,23 @@ export default function LoginScreen() {
   }
 
   const handleLogin = async () => {
-    if (!dados) return
     try {
-      const responseLogin = await basePost('/auth/login', dados);
+      const loginValidate = loginSchema.parse(dados);
 
-      if (!responseLogin) return
-      if (responseLogin.status === 200 || responseLogin.status === 201) {
+      const responseLogin = await basePost('/auth/login', loginValidate);
+
+      if (responseLogin && (responseLogin.status === 200 || responseLogin.status === 201)) {
         await SecureStore.setItemAsync('token', responseLogin.data.token);
         await SecureStore.setItemAsync('id', responseLogin.data.id.toString());
-        handlePath('/home/home')
+        handlePath('/home/home');
+      } else {
+        console.log('Não deu login');
       }
-      else {
-        console.log('nao deu login nao')
-      }
-    } catch (loginErr: any) {
-      console.log("Erro ao efetuar Login:", loginErr);
+    } catch (err: any) {
+      console.log("Erro ao efetuar Login ou validar dados:", err.errors || err);
     }
   }
+
 
   return (
     <KeyboardAwareScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}
