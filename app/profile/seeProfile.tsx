@@ -1,16 +1,32 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import axios from 'axios';
-import Constants from 'expo-constants'
+import Constants from 'expo-constants';
 import { getItem } from '../../services/secureStore';
 import { User, userSchema } from '../../types/data';
 import { Avatar, Surface } from 'react-native-paper';
-import HealthyPNG from '../../assets/rodrigo.jpg';
-
+import HealthyPNG from "../../assets/rodrigo.jpg"
+import { usePath } from '../../hooks/usePath';
 
 export default function Home() {
-  const back_url_thiago = Constants.expoConfig?.extra?.backUrlThiago;
-  const [userData, setUserData] = useState<User | null>(null)
+  const back_url = Constants.expoConfig?.extra?.backUrl;
+  const [userData, setUserData] = useState<User>({
+    active_plan_id: null,
+    activity_lvl: null,
+    age: null,
+    created_at: "",
+    email: "",
+    gender: null,
+    height: null,
+    bmi: null,
+    name: "",
+    objective: null,
+    updated_at: "",
+    user_id: "",
+    weight: null,
+    restrictions: null,
+  });
+  const handlePath = usePath();
 
   const fieldsSurface = [
     { label: 'Peso', value: userData?.weight, large: false },
@@ -21,101 +37,165 @@ export default function Home() {
     { label: 'Objetivo', value: userData?.objective, large: true },
     { label: 'Restrições', value: userData?.restrictions, large: true },
     { label: 'Email', value: userData?.email, large: true },
-  ]
+  ];
 
   useEffect(() => {
     const fetchData = async () => {
       const id = await getItem('id');
       const token = await getItem('token');
+      console.log(`${back_url}/users/${id}`);
       try {
-        const fetchUser = await axios.get(`${back_url_thiago}/users/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+        const fetchUser = await axios.get(`${back_url}/users/1`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
+        console.log(fetchUser.data);
         const validatedUser = userSchema.parse(fetchUser.data);
-        setUserData(validatedUser)
-        console.log(validatedUser)
+        setUserData(validatedUser);
+      } catch (err) {
+        console.error(err);
       }
-      catch (err) {
-        console.log(err)
-      }
-    }
-    fetchData()
-  }, [])
+    };
+    fetchData();
+  }, []);
+
+  const goToEditProfilePage = () => {
+    handlePath('/profile/editProfile');
+  };
 
   return (
-    <View style={styles.container}>
-      <View>
-        <Text style={{ fontSize: 20 }}>Dados de Perfil</Text>
-      </View>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: '#ece1c3' }}
+      contentContainerStyle={styles.container}
+    >
+      <Text style={styles.title}>Dados de Perfil</Text>
+
       <View style={styles.firstRow}>
         <View style={styles.icon}>
-          <Avatar.Image size={100} source={HealthyPNG}></Avatar.Image>
+          <Avatar.Image size={100} source={HealthyPNG} />
         </View>
         <View style={styles.textsFirstRow}>
-          <Text>{userData?.name}</Text>
-          <Text>{userData?.age} Anos</Text>
+          <Text style={styles.name}>{userData?.name ? userData.name : "Não informado"}</Text>
+          <Text style={styles.age}>{userData?.age ? userData.name : "Não informado"} Anos</Text>
         </View>
       </View>
-
       <View style={styles.surfaceTexts}>
-        {fieldsSurface.map((field, index) => (
-          <Surface key={index} elevation={4} style={field.large ? styles.surfaceItemLarge : styles.surfaceItem}>
-            <Text>{field.label}: {field.value}</Text>
-          </Surface>
-        ))}
+        {fieldsSurface.map((field, index) => {
+          if (field.value == "Gênero") {
+            console.log("Genre.");
+          }
+
+          return (
+            <Surface
+              key={index}
+              style={field.large ? styles.surfaceItemLarge : styles.surfaceItem}
+            >
+              <Text style={styles.surfaceLabel}>{field.label}</Text>
+              <Text style={styles.surfaceValue}>{field.value}</Text>
+            </Surface>
+          )
+        })}
       </View>
-    </View>
+
+      <Pressable
+        style={({ pressed }) => [
+          styles.btnBase,
+          pressed && styles.btnPressed,
+        ]}
+        onPress={goToEditProfilePage}
+      >
+        <Text style={styles.btnText}>Editar perfil</Text>
+      </Pressable>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#ece1c3',
     paddingTop: 50,
     alignItems: 'center',
     justifyContent: 'flex-start',
+    backgroundColor: "F5F5DC",
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#212121',
+    marginBottom: 10,
   },
   firstRow: {
-    height: '20%',
     width: '100%',
-    padding: 5,
+    padding: 10,
     flexDirection: 'row',
-    marginVertical: 45,
+    marginVertical: 30,
+    alignItems: 'center',
   },
   icon: {
     width: '35%',
-    height: '100%',
-    marginHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   textsFirstRow: {
     width: '65%',
-    height: '100%',
-    display: 'flex',
-    justifyContent: 'flex-start',
-    paddingTop: 20,
+    justifyContent: 'center',
+    paddingLeft: 10,
+  },
+  name: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#212121',
+  },
+  age: {
+    fontSize: 16,
+    color: '#616161',
   },
   surfaceTexts: {
     width: '90%',
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 10,
+    gap: 12,
   },
   surfaceItem: {
     width: '48%',
-    padding: 10,
-    borderRadius: 10,
-    borderStartColor: '#578f1a',
-    borderStartWidth: 10,
+    padding: 18,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderStartColor: '#2E7D32',
+    borderStartWidth: 6,
   },
   surfaceItemLarge: {
     width: '100%',
-    padding: 10,
+    padding: 18,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderStartColor: '#2E7D32',
+    borderStartWidth: 6,
+  },
+  surfaceLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2E7D32',
+  },
+  surfaceValue: {
+    fontSize: 16,
+    color: '#212121',
+  },
+  btnBase: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 40,
+    paddingVertical: 15,
     borderRadius: 10,
-    borderStartColor: '#578f1a',
-    borderStartWidth: 10,
+    marginVertical: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+  },
+  btnPressed: {
+    backgroundColor: '#1B5E20',
+  },
+  btnText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });

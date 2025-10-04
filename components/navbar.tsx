@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Pressable } from 'react-native';
 import Entypo from '@expo/vector-icons/Entypo';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -7,7 +7,6 @@ import { NavButtonsArray, navButtonsSchemaArray } from '../types/ui';
 import { usePath } from '../hooks/usePath';
 
 export default function NavBar() {
-
   const handlePath = usePath();
 
   const navButtons: NavButtonsArray = navButtonsSchemaArray.parse([
@@ -23,14 +22,16 @@ export default function NavBar() {
       {navButtons.map((btn, index) => {
         const { Icon, name, path } = btn;
         return (
-          <View key={index} style={styles.child}>
-            <Icon
-              name={name as any}
-              size={35}
-              color={'black'}
-              onPress={() => handlePath(path)}
-            />
-          </View>
+          <Pressable
+            key={index}
+            style={({ pressed }) => [
+              styles.child,
+              pressed && styles.childPressed,
+            ]}
+            onPress={() => handlePath(path)}
+          >
+            <Icon name={name as any} size={28} color={'#FFFFFF'} />
+          </Pressable>
         );
       })}
     </View>
@@ -41,18 +42,24 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     backgroundColor: '#1a2323',
-    alignItems: 'center',
-    padding: 2,
     flexDirection: 'row',
     justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 10,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: -2 },
+    shadowRadius: 4,
   },
   child: {
-    backgroundColor: 'white',
-    borderRadius: 20,
+    backgroundColor: '#2E7D32',
+    borderRadius: 50,
+    padding: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 8,
-    borderColor: '#578f1a',
-    borderWidth: 2
+  },
+  childPressed: {
+    backgroundColor: '#66BB6A',
   },
 });
