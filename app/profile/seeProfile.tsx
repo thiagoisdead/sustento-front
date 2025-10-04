@@ -3,22 +3,24 @@ import { StyleSheet, Text, View } from 'react-native';
 import axios from 'axios';
 import Constants from 'expo-constants'
 import { getItem } from '../../services/secureStore';
-import { User } from '../../types/type';
+import { User, userSchema } from '../../types/type';
 import { Avatar, Surface } from 'react-native-paper';
 import HealthyPNG from '../../assets/rodrigo.jpg';
 
 
 export default function Home() {
   const back_url_thiago = Constants.expoConfig?.extra?.backUrlThiago;
-  const [userData, setUserData] = useState<User>()
+  const [userData, setUserData] = useState<User | null>(null)
 
   const fieldsSurface = [
-    { label: 'Peso', value: userData?.weight },
-    { label: 'Gênero', value: userData?.gender },
-    { label: 'Altura', value: userData?.height },
-    { label: 'Atividade Física', value: userData?.activity_lvl },
-    { label: 'Objetivo', value: userData?.objective },
-    { label: 'Restrições', value: userData?.restrictions },
+    { label: 'Peso', value: userData?.weight, large: false },
+    { label: 'Altura', value: userData?.height, large: false },
+    { label: 'Gênero', value: userData?.gender, large: false },
+    { label: 'Imc', value: userData?.bmi, large: false },
+    { label: 'Atividade Física', value: userData?.activity_lvl, large: true },
+    { label: 'Objetivo', value: userData?.objective, large: true },
+    { label: 'Restrições', value: userData?.restrictions, large: true },
+    { label: 'Email', value: userData?.email, large: true },
   ]
 
   useEffect(() => {
@@ -31,7 +33,9 @@ export default function Home() {
             Authorization: `Bearer ${token}`
           }
         });
-        setUserData(fetchUser.data)
+        const validatedUser = userSchema.parse(fetchUser.data);
+        setUserData(validatedUser)
+        console.log(validatedUser)
       }
       catch (err) {
         console.log(err)
@@ -42,7 +46,9 @@ export default function Home() {
 
   return (
     <View style={styles.container}>
-      <Text style={{ fontSize: 20 }}>Dados de Perfil</Text>
+      <View>
+        <Text style={{ fontSize: 20 }}>Dados de Perfil</Text>
+      </View>
       <View style={styles.firstRow}>
         <View style={styles.icon}>
           <Avatar.Image size={100} source={HealthyPNG}></Avatar.Image>
@@ -55,7 +61,7 @@ export default function Home() {
 
       <View style={styles.surfaceTexts}>
         {fieldsSurface.map((field, index) => (
-          <Surface key={index} elevation={4} style={styles.surfaceItem}>
+          <Surface key={index} elevation={4} style={field.large ? styles.surfaceItemLarge : styles.surfaceItem}>
             <Text>{field.label}: {field.value}</Text>
           </Surface>
         ))}
@@ -77,7 +83,7 @@ const styles = StyleSheet.create({
     width: '100%',
     padding: 5,
     flexDirection: 'row',
-    marginVertical: 50,
+    marginVertical: 45,
   },
   icon: {
     width: '35%',
@@ -100,6 +106,13 @@ const styles = StyleSheet.create({
   },
   surfaceItem: {
     width: '48%',
+    padding: 10,
+    borderRadius: 10,
+    borderStartColor: '#578f1a',
+    borderStartWidth: 10,
+  },
+  surfaceItemLarge: {
+    width: '100%',
     padding: 10,
     borderRadius: 10,
     borderStartColor: '#578f1a',
