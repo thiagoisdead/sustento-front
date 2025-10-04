@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import axios from 'axios';
 import Constants from 'expo-constants'
-import { getItem } from '../../services/getSecureStore';
+import { getItem } from '../../services/secureStore';
 import { User } from '../../types/type';
 import { Avatar, Surface } from 'react-native-paper';
 import HealthyPNG from '../../assets/rodrigo.jpg';

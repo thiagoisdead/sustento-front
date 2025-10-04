@@ -26,3 +26,10 @@ export interface NavigationButton {
   name: string;
   path: string;
 }
+export interface Foods {
+  title: string;
+  kcal: number;
+  carbs: number;
+  protein: number;
+  fats: number;
+}
