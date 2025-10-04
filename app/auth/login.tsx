@@ -8,6 +8,7 @@ import { Login } from '../../types/type';
 import axios from 'axios';
 import Constants from "expo-constants";
 import * as SecureStore from 'expo-secure-store';
+import { basePost } from '../../services/baseCall';
 
 
 export default function LoginScreen() {
@@ -48,10 +49,10 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     if (!dados) return
     try {
-      const responseLogin = await axios.post(`${back_url_thiago}/auth/login`, dados);
+      const responseLogin = await basePost('/auth/login', dados);
 
-      console.log("oi", responseLogin.data)
-      if (responseLogin.status === 200) {
+      if (!responseLogin) return
+      if (responseLogin.status === 200 || responseLogin.status === 201) {
         await SecureStore.setItemAsync('token', responseLogin.data.token);
         await SecureStore.setItemAsync('id', responseLogin.data.id.toString());
         router.push('/home/home')
