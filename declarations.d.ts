@@ -1,3 +1,7 @@
+declare module "*.jpg";
+declare module "*.jpeg";
+declare module "*.png";
+declare module "*.gif";
 declare module "*.svg" {
   import * as React from "react";
   import { SvgProps } from "react-native-svg";
