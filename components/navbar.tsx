@@ -1,19 +1,20 @@
-import { StyleSheet, View, Pressable } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Entypo from '@expo/vector-icons/Entypo';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { NavButtonsArray, navButtonsSchemaArray } from '../types/ui';
 import { usePath } from '../hooks/usePath';
+import { AnimatedButton } from './animatedButton';
 
 export default function NavBar() {
   const handlePath = usePath();
 
   const navButtons: NavButtonsArray = navButtonsSchemaArray.parse([
     { Icon: Entypo, name: 'calendar', path: '' },
-    { Icon: Feather, name: 'clipboard', path: '' },
+    { Icon: Feather, name: 'clipboard', path: '/meals/seeMeals' },
     { Icon: MaterialCommunityIcons, name: 'food-apple-outline', path: '' },
-    { Icon: MaterialCommunityIcons, name: 'food-turkey', path: '/meals/mealsHome' },
+    { Icon: MaterialCommunityIcons, name: 'food-turkey', path: '/foods/editFoods' },
     { Icon: Ionicons, name: 'person', path: '/profile/seeProfile' },
   ]);
 
@@ -22,16 +23,14 @@ export default function NavBar() {
       {navButtons.map((btn, index) => {
         const { Icon, name, path } = btn;
         return (
-          <Pressable
+          <AnimatedButton
             key={index}
-            style={({ pressed }) => [
-              styles.child,
-              pressed && styles.childPressed,
-            ]}
             onPress={() => handlePath(path)}
+            style={styles.child} // seu estilo base
+            scaleTo={0.8}
           >
-            <Icon name={name as any} size={28} color={'#FFFFFF'} />
-          </Pressable>
+            <Icon name={name as any} size={28} color="#FFFFFF" />
+          </AnimatedButton>
         );
       })}
     </View>
