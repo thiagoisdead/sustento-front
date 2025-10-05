@@ -12,9 +12,9 @@ export const userSchema = z.object({
   name: z.string(),
   objective: z.string().nullable(),
   updated_at: z.string(),
-  user_id: z.string(),
+  user_id: z.number(),
   weight: z.string().nullable(),
-  restrictions: z.string().nullable(),
+  restrictions: z.string().nullable().optional(),
 });
 
 export type User = z.infer<typeof userSchema>;
@@ -24,7 +24,8 @@ export const foodsSchema = z.object({
   kcal: z.number(),
   carbs: z.number(),
   protein: z.number(),
-  fats: z.number()
+  fats: z.number(),
+  serving: z.enum(["portion", "g", "ml"]),
 })
 
 export const foodsSchemaArray = z.array(foodsSchema)
