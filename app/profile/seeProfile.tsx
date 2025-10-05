@@ -1,15 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import axios from 'axios';
-import Constants from 'expo-constants';
-import { getItem } from '../../services/secureStore';
 import { User, userSchema } from '../../types/data';
 import { Avatar, Surface } from 'react-native-paper';
 import HealthyPNG from "../../assets/rodrigo.jpg"
 import { usePath } from '../../hooks/usePath';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import Octicons from '@expo/vector-icons/Octicons';
+import { useLogout } from '../../hooks/useLogout';
+import { baseUniqueGet } from '../../services/baseCall';
+import { AnimatedButton } from '../../components/animatedButton';
 
-export default function Home() {
-  const back_url = Constants.expoConfig?.extra?.backUrl;
+export default function seeProfile() {
+
+  const handlePath = usePath();
+  const handleLogout = useLogout();
+
   const [userData, setUserData] = useState<User>({
     active_plan_id: null,
     activity_lvl: null,
@@ -22,11 +27,24 @@ export default function Home() {
     name: "",
     objective: null,
     updated_at: "",
-    user_id: "",
+    user_id: 0,
     weight: null,
     restrictions: null,
   });
-  const handlePath = usePath();
+
+  const fetchData = async () => {
+    try {
+      await baseUniqueGet('users').then((response) => {
+        if (response) {
+          const validatedUser = userSchema.parse(response.data);
+          setUserData(validatedUser);
+          console.log(validatedUser);
+        }
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   const fieldsSurface = [
     { label: 'Peso', value: userData?.weight, large: false },
@@ -40,71 +58,47 @@ export default function Home() {
   ];
 
   useEffect(() => {
-    const fetchData = async () => {
-      const id = await getItem('id');
-      const token = await getItem('token');
-      console.log(`${back_url}/users/${id}`);
-      try {
-        const fetchUser = await axios.get(`${back_url}/users/1`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        console.log(fetchUser.data);
-        const validatedUser = userSchema.parse(fetchUser.data);
-        setUserData(validatedUser);
-      } catch (err) {
-        console.error(err);
-      }
-    };
     fetchData();
   }, []);
 
-  const goToEditProfilePage = () => {
-    handlePath('/profile/editProfile');
-  };
-
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: '#ece1c3' }}
+      style={{ flex: 1, backgroundColor: '#F5F5DC' }}
       contentContainerStyle={styles.container}
     >
-      <Text style={styles.title}>Dados de Perfil</Text>
+      <View style={styles.header}>
+        <Octicons name="gear" size={24} color="black" />
+        <Text style={styles.title}>Dados de Perfil</Text>
+        <MaterialIcons name="logout" size={24} color="black" onPress={handleLogout} />
+      </View>
 
       <View style={styles.firstRow}>
         <View style={styles.icon}>
           <Avatar.Image size={100} source={HealthyPNG} />
         </View>
         <View style={styles.textsFirstRow}>
-          <Text style={styles.name}>{userData?.name ? userData.name : "Não informado"}</Text>
-          <Text style={styles.age}>{userData?.age ? userData.name : "Não informado"} Anos</Text>
+          <Text style={styles.name}>{userData?.name ? `${userData.name}` : "Não informado"}</Text>
+          <Text style={styles.age}>{userData?.age ? `${userData?.age} Anos` : "Não informado"}</Text>
         </View>
       </View>
       <View style={styles.surfaceTexts}>
         {fieldsSurface.map((field, index) => {
-          if (field.value == "Gênero") {
-            console.log("Genre.");
-          }
-
           return (
             <Surface
               key={index}
               style={field.large ? styles.surfaceItemLarge : styles.surfaceItem}
             >
               <Text style={styles.surfaceLabel}>{field.label}</Text>
-              <Text style={styles.surfaceValue}>{field.value}</Text>
             </Surface>
           )
         })}
       </View>
-
-      <Pressable
-        style={({ pressed }) => [
-          styles.btnBase,
-          pressed && styles.btnPressed,
-        ]}
-        onPress={goToEditProfilePage}
+      <AnimatedButton
+        onPress={() => handlePath('/profile/editProfile')}
+        style={styles.btnBase} scaleTo={0.9}
       >
         <Text style={styles.btnText}>Editar perfil</Text>
-      </Pressable>
+      </AnimatedButton>
     </ScrollView>
   );
 }
@@ -114,13 +108,13 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     alignItems: 'center',
     justifyContent: 'flex-start',
-    backgroundColor: "F5F5DC",
+    backgroundColor: "#F5F5DC",
   },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
     color: '#212121',
-    marginBottom: 10,
+    marginBottom: 1,
   },
   firstRow: {
     width: '100%',
@@ -157,7 +151,7 @@ const styles = StyleSheet.create({
   },
   surfaceItem: {
     width: '48%',
-    padding: 18,
+    padding: 15,
     borderRadius: 12,
     backgroundColor: '#FFFFFF',
     borderStartColor: '#2E7D32',
@@ -165,7 +159,7 @@ const styles = StyleSheet.create({
   },
   surfaceItemLarge: {
     width: '100%',
-    padding: 18,
+    padding: 15,
     borderRadius: 12,
     backgroundColor: '#FFFFFF',
     borderStartColor: '#2E7D32',
@@ -183,9 +177,9 @@ const styles = StyleSheet.create({
   btnBase: {
     backgroundColor: '#4CAF50',
     paddingHorizontal: 40,
-    paddingVertical: 15,
+    paddingVertical: 10,
     borderRadius: 10,
-    marginVertical: 32,
+    marginVertical: 25,
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 4,
@@ -198,4 +192,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+  header: {
+    width: '85%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  }
 });

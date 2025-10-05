@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Button, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import axios from 'axios';
 import Constants from 'expo-constants'
 import { getItem } from '../../services/secureStore';
-import { User, userSchema } from '../../types/type';
-import { Avatar, IconButton, Surface, TextInput } from 'react-native-paper';
+import { User, userSchema } from '../../types/data';
+import { Avatar, IconButton, TextInput } from 'react-native-paper';
 import HealthyPNG from "../../assets/rodrigo.jpg"
 import { usePath } from '../../hooks/usePath';
 
 
-const editProfile = () => {
+export default function editProfile() {
     const back_url = Constants.expoConfig?.extra?.backUrl;
     const [userData, setUserData] = useState<User | null>(null)
     const handlePath = usePath();
@@ -52,7 +52,7 @@ const editProfile = () => {
 
     return (
         <ScrollView
-            style={{ flex: 1, backgroundColor: '#ece1c3' }}
+            style={{ flex: 1, backgroundColor: '#F5F5DC' }}
             contentContainerStyle={styles.container}
         >
             <IconButton
@@ -62,7 +62,7 @@ const editProfile = () => {
                 onPress={() => handlePath('/profile/seeProfile')}
             />
             <View>
-                <Text style={styles.title}>Dados de Perfil</Text>
+                <Text style={styles.title}>Editar dados de perfil</Text>
             </View>
             <View style={styles.firstRow}>
                 <View style={styles.icon}>
@@ -95,15 +95,16 @@ const editProfile = () => {
             </View>
             <View>
                 <Pressable
-                    style={({ hovered, pressed }) => [
+                    style={(state: any) => [
                         styles.btnBase,
-                        hovered && styles.btnHover,
-                        pressed && styles.btnPressed,
+                        state.hovered && styles.btnHover,
+                        state.pressed && styles.btnPressed,
                     ]}
                     onPress={saveProfile}
                 >
                     <Text style={styles.btnText}>Salvar perfil</Text>
                 </Pressable>
+
             </View>
 
         </ScrollView >
@@ -115,7 +116,7 @@ const styles = StyleSheet.create({
         paddingTop: 50,
         alignItems: 'center',
         justifyContent: 'flex-start',
-        backgroundColor: "F5F5DC",
+        backgroundColor: "#F5F5DC",
     },
     title: {
         fontSize: 22,
@@ -199,4 +200,3 @@ const styles = StyleSheet.create({
 });
 
 
-export default editProfile;
