@@ -1,15 +1,12 @@
-import { Link, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useWindowDimensions, StyleSheet, Text, View } from 'react-native';
 import { useFonts, EpundaSlab_400Regular } from "@expo-google-fonts/epunda-slab";
 import { Button, TextInput } from 'react-native-paper';
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { Login, loginSchema } from '../../types/auth';
-import axios from 'axios';
-import Constants from "expo-constants";
-import * as SecureStore from 'expo-secure-store';
 import { basePost } from '../../services/baseCall';
 import { usePath } from '../../hooks/usePath';
+import { setItem } from '../../services/secureStore';
 
 
 export default function LoginScreen() {
@@ -54,8 +51,8 @@ export default function LoginScreen() {
       const responseLogin = await basePost('/auth/login', loginValidate);
 
       if (responseLogin && (responseLogin.status === 200 || responseLogin.status === 201)) {
-        await SecureStore.setItemAsync('token', responseLogin.data.token);
-        await SecureStore.setItemAsync('id', responseLogin.data.id.toString());
+        await setItem("token", responseLogin?.data?.token)
+        await setItem("id", responseLogin?.data?.id.toString())
         handlePath('/home/home');
       } else {
         console.log('Não deu login');

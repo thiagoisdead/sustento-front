@@ -5,7 +5,6 @@ import { useFonts, EpundaSlab_400Regular } from "@expo-google-fonts/epunda-slab"
 import { Button, TextInput } from 'react-native-paper';
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { Registro, registerSchema } from '../../types/auth';
-import axios from 'axios';
 import Constants from "expo-constants";
 import { removeItem, setItem } from '../../services/secureStore';
 import { usePath } from '../../hooks/usePath';
@@ -17,11 +16,8 @@ export default function Register() {
   const handlePath = usePath();
 
   const { width, height } = useWindowDimensions();
-  const back_url_thiago = Constants.expoConfig?.extra?.backUrlThiago;
 
   const vw = (value: number) => (width * value) / 100;
-  const router = useRouter()
-
 
   const [dados, setDados] = useState<Registro>({
     name: "",
