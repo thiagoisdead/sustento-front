@@ -14,7 +14,7 @@ export const userSchema = z.object({
   updated_at: z.string(),
   user_id: z.number(),
   weight: z.string().nullable(),
-  restrictions: z.string().nullable().optional(),
+  restrictions: z.array(z.string()).nullable().optional(),
 });
 
 export type User = z.infer<typeof userSchema>;
@@ -31,5 +31,3 @@ export const foodsSchema = z.object({
 export const foodsSchemaArray = z.array(foodsSchema)
 export type FoodsArray = z.infer<typeof foodsSchemaArray>
 export type Foods = z.infer<typeof foodsSchema>
-
-
