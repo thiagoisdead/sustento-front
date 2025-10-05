@@ -1,6 +1,4 @@
-import { Link, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Healthy from "../../assets/svgs/breakfast.svg"
 import { useFonts, EpundaSlab_400Regular } from "@expo-google-fonts/epunda-slab";
 import { Button } from 'react-native-paper';
@@ -49,7 +47,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
-    // backgroundColor: 'blue',
     paddingVertical: 100
 
   },
