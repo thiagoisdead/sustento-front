@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { User, userSchema } from '../../types/data';
 import { Avatar, Surface } from 'react-native-paper';
 import HealthyPNG from "../../assets/rodrigo.jpg"
@@ -9,9 +9,9 @@ import Octicons from '@expo/vector-icons/Octicons';
 import { useLogout } from '../../hooks/useLogout';
 import { baseUniqueGet } from '../../services/baseCall';
 import { AnimatedButton } from '../../components/animatedButton';
+import { ActivityLvl, ActivityLvlLabels, Gender, GenderLabels, Objective, ObjectiveLabels } from '../enum/profileEnum';
 
 export default function seeProfile() {
-
   const handlePath = usePath();
   const handleLogout = useLogout();
 
@@ -34,17 +34,29 @@ export default function seeProfile() {
 
   const fetchData = async () => {
     try {
-      await baseUniqueGet('users').then((response) => {
-        if (response) {
-          const validatedUser = userSchema.parse(response.data);
-          setUserData(validatedUser);
-          console.log(validatedUser);
-        }
-      });
+      const response = await baseUniqueGet('users');
+      if (response) {
+        // Create a copy of the data
+        const rawData = { ...response.data };
+
+        // Convert age to string for frontend usage
+        rawData.age = rawData.age !== null && rawData.age !== undefined ? String(rawData.age) : "";
+
+        // Set to state (frontend-friendly)
+        setUserData(rawData);
+
+        // Optionally, validate the original data with schema for safety
+        const validatedUser = userSchema.parse(rawData);
+        console.log("Validated user (backend-friendly):", validatedUser);
+
+        console.log("Frontend-ready user:", rawData);
+      }
     } catch (err) {
       console.log(err);
     }
   };
+
+
 
   const fieldsSurface = [
     { label: 'Peso', value: userData?.weight, large: false },
@@ -83,12 +95,60 @@ export default function seeProfile() {
       </View>
       <View style={styles.surfaceTexts}>
         {fieldsSurface.map((field, index) => {
+          if (field.label == "Objetivo") {
+            return (
+              <Surface
+                key={index}
+                style={field.large ? styles.surfaceItemLarge : styles.surfaceItem}
+              >
+                <Text style={styles.surfaceLabel}>{field.label}</Text>
+                <Text>
+                  {field.value && ObjectiveLabels[field.value as Objective]
+                    ? ObjectiveLabels[field.value as Objective]
+                    : "Não informado"}
+                </Text>
+              </Surface>
+            )
+          }
+          if (field.label == "Atividade Física") {
+            return (
+              <Surface
+                key={index}
+                style={field.large ? styles.surfaceItemLarge : styles.surfaceItem}
+              >
+                <Text style={styles.surfaceLabel}>{field.label}</Text>
+                <Text>
+                  {field.value && ActivityLvlLabels[field.value as ActivityLvl]
+                    ? ActivityLvlLabels[field.value as ActivityLvl]
+                    : "Não informado"}
+                </Text>
+
+              </Surface>
+            )
+          }
+          if (field.label == "Gênero") {
+            return (
+              <Surface
+                key={index}
+                style={field.large ? styles.surfaceItemLarge : styles.surfaceItem}
+              >
+                <Text style={styles.surfaceLabel}>{field.label}</Text>
+                <Text>
+                  {field.value && GenderLabels[field.value as Gender]
+                    ? GenderLabels[field.value as Gender]
+                    : "Não informado"}
+                </Text>
+
+              </Surface>
+            )
+          }
           return (
             <Surface
               key={index}
               style={field.large ? styles.surfaceItemLarge : styles.surfaceItem}
             >
               <Text style={styles.surfaceLabel}>{field.label}</Text>
+              <Text >{field.value}</Text>
             </Surface>
           )
         })}
