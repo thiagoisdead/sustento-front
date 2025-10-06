@@ -213,10 +213,10 @@ export default function editProfile() {
 
             <View>
                 <Pressable
-                    style={({ hovered, pressed }) => [
+                    style={(state: any) => [
                         styles.btnBase,
-                        hovered && styles.btnHover,
-                        pressed && styles.btnPressed,
+                        state.hovered && styles.btnHover,
+                        state.pressed && styles.btnPressed,
                     ]}
                     onPress={saveProfile}
                 >
