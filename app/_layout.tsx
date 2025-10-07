@@ -12,6 +12,8 @@ export default function RootLayout() {
   const pathname = usePathname()
   const handlePath = usePath();
 
+  const hideNavBar = ["/auth/login", "/auth/register", "/auth"]
+  const showNavbar = !hideNavBar.includes(pathname);
 
   useEffect(() => {
     console.log('mudei de rota', pathname)
@@ -22,7 +24,7 @@ export default function RootLayout() {
 
       try {
         const verifyToken = await baseValidate(token)
-        if (!verifyToken.valid) handlePath('/auth/index')
+        if (!verifyToken.valid && !hideNavBar.includes(pathname)) handlePath('/auth')
       }
       catch (err) {
         console.log('qual erro:', err)
@@ -31,8 +33,6 @@ export default function RootLayout() {
     fetchData()
   }, [pathname])
 
-  const hideNavBar = ["/auth/login", "/auth/register", "/auth"]
-  const showNavbar = !hideNavBar.includes(pathname);
 
   const theme = {
     ...DefaultTheme,

@@ -47,9 +47,8 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     try {
       const loginValidate = loginSchema.parse(dados);
-
-      const responseLogin = await basePost('/auth/login', loginValidate);
-
+      const responseLogin = await basePost('auth/login', loginValidate);
+      console.log('RESPONSE LOGIN', responseLogin);
       if (responseLogin && (responseLogin.status === 200 || responseLogin.status === 201)) {
         await setItem("token", responseLogin?.data?.token)
         await setItem("id", responseLogin?.data?.id.toString())
@@ -58,7 +57,7 @@ export default function LoginScreen() {
         console.log('Não deu login');
       }
     } catch (err: any) {
-      console.log("Erro ao efetuar Login ou validar dados:", err.errors || err);
+      console.error("Erro ao efetuar Login ou validar dados:", err.errors || err);
     }
   }
 
