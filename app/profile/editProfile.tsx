@@ -1,74 +1,160 @@
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import axios from 'axios';
-import Constants from 'expo-constants'
-import { getItem } from '../../services/secureStore';
+import {
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+} from 'react-native';
 import { Avatar, IconButton, TextInput } from 'react-native-paper';
-import HealthyPNG from "../../assets/rodrigo.jpg"
-import { usePath } from '../../hooks/usePath';
 import { Picker } from '@react-native-picker/picker';
-import { User, userSchema } from '../../types/data';
-import { ActivityLvl, ActivityLvlLabels, Gender, GenderLabels, Objective, ObjectiveLabels } from '../enum/profileEnum';
-import { baseUniqueGet } from '../../services/baseCall';
 
-export default function editProfile() {
-    const back_url = Constants.expoConfig?.extra?.backUrl;
+import HealthyPNG from '../../assets/rodrigo.jpg';
+import { usePath } from '../../hooks/usePath';
+import { basePutUnique, baseUniqueGet } from '../../services/baseCall';
+import { User, userSchema } from '../../types/data';
+import {
+    ActivityLvl,
+    ActivityLvlLabels,
+    Gender,
+    GenderLabels,
+    Objective,
+    ObjectiveLabels,
+} from '../enum/profileEnum';
+
+// ---------------------------------------------
+// Tipos auxiliares
+// ---------------------------------------------
+type Option = { label: string; value: string };
+
+type Field = {
+    key: keyof User;
+    label: string;
+    type: 'text' | 'number' | 'dropdown' | 'multi-select';
+    options?: Option[];
+    large: boolean;
+};
+
+// ---------------------------------------------
+// Componente principal
+// ---------------------------------------------
+export default function EditProfile() {
+    const handlePath = usePath();
+
     const [userData, setUserData] = useState<User>({
         active_plan_id: null,
         activity_lvl: null,
-        age: "",
-        created_at: "",
-        email: "",
+        age: '',
+        created_at: '',
+        email: '',
         gender: null,
         height: null,
         bmi: null,
-        name: "",
+        name: '',
         objective: null,
-        updated_at: "",
+        updated_at: '',
         user_id: 0,
-        weight: "",
+        weight: '',
         restrictions: null,
     });
-    const handlePath = usePath();
 
-    const enumToArray = (enumObject: any, labelsObject: any) => {
-        // Itera sobre os VALORES do Enum (ex: 'MALE', 'FEMALE')
-        return Object.values(enumObject).map((value) => ({
-            // Usa o valor do Enum para buscar o label em português no objeto de Labels
-            label: labelsObject[value as keyof typeof labelsObject] || value,
-            value: value,
+    // ---------------------------------------------
+    // Função genérica para converter Enums em opções
+    // ---------------------------------------------
+    const enumToArray = <
+        T extends Record<string, string>,
+        L extends Record<T[keyof T], string>
+    >(
+        enumObject: T,
+        labelsObject: L
+    ): Option[] => {
+        return (Object.values(enumObject) as Array<T[keyof T]>).map((value) => ({
+            label: labelsObject[value],
+            value,
         }));
     };
 
-    const restrictionOptions = [
-        { label: "Vegano", value: "VEGAN" },
-        { label: "Vegetariano", value: "VEGETARIAN" },
-        { label: "Sem Glúten", value: "GLUTEN_FREE" },
-        { label: "Sem Lactose", value: "LACTOSE_FREE" },
+    // ---------------------------------------------
+    // Opções fixas para restrições alimentares
+    // ---------------------------------------------
+    const restrictionOptions: Option[] = [
+        { label: 'Vegano', value: 'VEGAN' },
+        { label: 'Vegetariano', value: 'VEGETARIAN' },
+        { label: 'Sem Glúten', value: 'GLUTEN_FREE' },
+        { label: 'Sem Lactose', value: 'LACTOSE_FREE' },
     ];
 
-    const fieldsSurface = [
-        { key: "name", label: "Nome", type: "text", large: false },
-        { key: "age", label: "Idade", type: "number", large: false },
-        { key: "email", label: "Email", type: "text", large: false },
-        { key: "weight", label: "Peso", type: "number", large: false },
-        { key: "height", label: "Altura", type: "number", large: false },
-        { key: "gender", label: "Gênero", type: "dropdown", options: enumToArray(Gender, GenderLabels), large: false },
-        { key: "activity_lvl", label: "Atividade Física", type: "dropdown", options: enumToArray(ActivityLvl, ActivityLvlLabels), large: false },
-        { key: "objective", label: "Objetivo", type: "dropdown", options: enumToArray(Objective, ObjectiveLabels), large: false },
-        { key: "restrictions", label: "Restrições", type: "multi-select", options: restrictionOptions, large: true },
+    // ---------------------------------------------
+    // Campos exibidos no formulário
+    // ---------------------------------------------
+    const fieldsSurface: Field[] = [
+        { key: 'name', label: 'Nome', type: 'text', large: false },
+        { key: 'age', label: 'Idade', type: 'number', large: false },
+        { key: 'email', label: 'Email', type: 'text', large: false },
+        { key: 'weight', label: 'Peso', type: 'number', large: false },
+        { key: 'height', label: 'Altura', type: 'number', large: false },
+        {
+            key: 'gender',
+            label: 'Gênero',
+            type: 'dropdown',
+            options: enumToArray(Gender, GenderLabels),
+            large: false,
+        },
+        {
+            key: 'activity_lvl',
+            label: 'Atividade Física',
+            type: 'dropdown',
+            options: enumToArray(ActivityLvl, ActivityLvlLabels),
+            large: false,
+        },
+        {
+            key: 'objective',
+            label: 'Objetivo',
+            type: 'dropdown',
+            options: enumToArray(Objective, ObjectiveLabels),
+            large: false,
+        },
+        {
+            key: 'restrictions',
+            label: 'Restrições',
+            type: 'multi-select',
+            options: restrictionOptions,
+            large: true,
+        },
     ];
 
+    // ---------------------------------------------
+    // Função para salvar perfil
+    // ---------------------------------------------
+    const saveProfile = async () => {
+        try {
+            console.log('Enviando dados para salvar:', userData);
+            const putData = await basePutUnique(`/users`, userData);
+            if (putData && (putData.status === 200 || putData.status === 201)) {
+                handlePath('/profile/seeProfile');
+            }
+        } catch (e) {
+            console.error('Erro ao salvar perfil:', e);
+        }
+    };
+
+    // ---------------------------------------------
+    // Buscar dados do usuário
+    // ---------------------------------------------
     const fetchData = async () => {
         try {
             const response = await baseUniqueGet('users');
             if (response) {
                 const rawData = { ...response.data };
-                rawData.age = rawData.age !== null && rawData.age !== undefined ? String(rawData.age) : "";
+                rawData.age =
+                    rawData.age !== null && rawData.age !== undefined
+                        ? String(rawData.age)
+                        : '';
                 setUserData(rawData);
                 const validatedUser = userSchema.parse(rawData);
-                console.log("Validated user (backend-friendly):", validatedUser);
-                console.log("Frontend-ready user:", rawData);
+                console.log('Validated user (backend-friendly):', validatedUser);
+                console.log('Frontend-ready user:', rawData);
             }
         } catch (err) {
             console.log(err);
@@ -79,23 +165,9 @@ export default function editProfile() {
         fetchData();
     }, []);
 
-    const saveProfile = async () => {
-        const id = await getItem('id');
-        const token = await getItem('token');
-        try {
-            console.log(userData);
-            const fetchUser = await axios.put(`${back_url}/users/${id}`, userData, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-            console.log(fetchUser.data);
-        } catch (e) {
-            console.error(e);
-        }
-        handlePath("/profile/seeProfile");
-    }
-
+    // ---------------------------------------------
+    // Renderização
+    // ---------------------------------------------
     return (
         <ScrollView
             style={{ flex: 1, backgroundColor: '#ece1c3' }}
@@ -110,60 +182,108 @@ export default function editProfile() {
             <View>
                 <Text style={styles.title}>Dados de Perfil</Text>
             </View>
+
             <View style={styles.firstRow}>
                 <View style={styles.icon}>
-                    <Avatar.Image size={100} source={HealthyPNG}></Avatar.Image>
+                    <Avatar.Image size={100} source={HealthyPNG} />
                 </View>
                 <View style={styles.textsFirstRow}>
-                    <Text>{userData?.name ? userData.name : "Não informado"}</Text>
-                    <Text>{userData?.age ? userData.age : "Não informado"} Anos</Text>
+                    <Text>{userData?.name ? userData.name : 'Não informado'}</Text>
+                    <Text>
+                        {userData?.age ? userData.age : 'Não informado'} Anos
+                    </Text>
                 </View>
             </View>
+
             <View style={styles.surfaceTexts}>
                 {fieldsSurface.map((field) => {
                     const value = userData[field.key];
 
-                    if (field.type === "dropdown") {
-                        // Não é mais necessário verificar o field.key para o gender,
-                        // pois a função enumToArray já aplica o label em português para todos.
+                    // -------- Dropdown ----------
+                    if (field.type === 'dropdown') {
                         return (
-                            <View key={field.key} style={field.large ? styles.surfaceItemLarge : styles.surfaceItem}>
+                            <View
+                                key={String(field.key)}
+                                style={
+                                    field.large ? styles.surfaceItemLarge : styles.surfaceItem
+                                }
+                            >
                                 <Text style={styles.surfaceLabel}>{field.label}</Text>
                                 <Picker
                                     selectedValue={value}
-                                    onValueChange={(val) => setUserData((prev) => ({ ...prev, [field.key]: val }))}
-                                    style={{ height: 35, width: '95%', borderWidth: 0, marginLeft: 6 }} // match TextInput height
+                                    onValueChange={(val) =>
+                                        setUserData((prev) => ({ ...prev, [field.key]: val }))
+                                    }
+                                    style={{
+                                        height: 35,
+                                        width: '95%',
+                                        borderWidth: 0,
+                                        marginLeft: 6,
+                                    }}
                                 >
                                     <Picker.Item label="Selecione..." value={null} />
-                                    {field.options.map((opt) => (
-                                        <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
+                                    {field.options?.map((opt) => (
+                                        <Picker.Item
+                                            key={opt.value}
+                                            label={opt.label}
+                                            value={opt.value}
+                                        />
                                     ))}
                                 </Picker>
-
                             </View>
                         );
                     }
 
-                    if (field.type === "multi-select") {
-                        const selectedValues = userData[field.key] || []; // assuming array for multi-select
+                    // -------- Multi-select ----------
+                    if (field.type === 'multi-select') {
+                        const selectedValues: string[] = Array.isArray(userData[field.key])
+                            ? (userData[field.key] as string[])
+                            : [];
+
                         return (
-                            <View key={field.key} style={field.large ? styles.surfaceItemLarge : styles.surfaceItem}>
+                            <View
+                                key={String(field.key)}
+                                style={
+                                    field.large ? styles.surfaceItemLarge : styles.surfaceItem
+                                }
+                            >
                                 <Text style={styles.surfaceLabel}>{field.label}</Text>
-                                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginLeft: 10, marginTop: 5 }}>
-                                    {field.options.map((opt) => {
+                                <View
+                                    style={{
+                                        flexDirection: 'row',
+                                        flexWrap: 'wrap',
+                                        gap: 6,
+                                        marginLeft: 10,
+                                        marginTop: 5,
+                                    }}
+                                >
+                                    {field.options?.map((opt) => {
                                         const isSelected = selectedValues.includes(opt.value);
                                         return (
                                             <Pressable
                                                 key={opt.value}
                                                 onPress={() => {
                                                     setUserData((prev) => {
-                                                        const current = prev[field.key] || [];
+                                                        const current: string[] = Array.isArray(
+                                                            prev[field.key]
+                                                        )
+                                                            ? (prev[field.key] as string[])
+                                                            : [];
+
                                                         if (isSelected) {
                                                             // remove
-                                                            return { ...prev, [field.key]: current.filter((v: string) => v !== opt.value) };
+                                                            return {
+                                                                ...prev,
+                                                                [field.key]: current.filter(
+                                                                    (v: string) => v !== opt.value
+                                                                ),
+                                                            };
                                                         } else {
                                                             // add
-                                                            return { ...prev, [field.key]: [...current, opt.value] };
+                                                            return {
+                                                                ...prev,
+                                                                [field.key]: [...current, opt.value],
+                                                            };
                                                         }
                                                     });
                                                 }}
@@ -171,10 +291,18 @@ export default function editProfile() {
                                                     paddingHorizontal: 10,
                                                     paddingVertical: 5,
                                                     borderRadius: 20,
-                                                    backgroundColor: isSelected ? '#2E7D32' : '#E0E0E0',
+                                                    backgroundColor: isSelected
+                                                        ? '#2E7D32'
+                                                        : '#E0E0E0',
                                                 }}
                                             >
-                                                <Text style={{ color: isSelected ? '#fff' : '#000' }}>{opt.label}</Text>
+                                                <Text
+                                                    style={{
+                                                        color: isSelected ? '#fff' : '#000',
+                                                    }}
+                                                >
+                                                    {opt.label}
+                                                </Text>
                                             </Pressable>
                                         );
                                     })}
@@ -183,21 +311,37 @@ export default function editProfile() {
                         );
                     }
 
-
-                    // numeric or text
+                    // -------- Text / Number ----------
                     return (
-                        <View key={field.key} style={field.large ? styles.surfaceItemLarge : styles.surfaceItem}>
+                        <View
+                            key={String(field.key)}
+                            style={
+                                field.large ? styles.surfaceItemLarge : styles.surfaceItem
+                            }
+                        >
                             <TextInput
-                                key={field.key}
                                 label={field.label}
-                                style={{ backgroundColor: "transparent", borderWidth: 0, width: "95%", marginLeft: 10 }}
-                                value={value !== null && value !== undefined ? String(value) : ""}
-                                keyboardType={field.type === "number" ? (Platform.OS === "web" ? "default" : "decimal-pad") : "default"}
+                                style={{
+                                    backgroundColor: 'transparent',
+                                    borderWidth: 0,
+                                    width: '95%',
+                                    marginLeft: 10,
+                                }}
+                                value={
+                                    value !== null && value !== undefined ? String(value) : ''
+                                }
+                                keyboardType={
+                                    field.type === 'number'
+                                        ? Platform.OS === 'web'
+                                            ? 'default'
+                                            : 'decimal-pad'
+                                        : 'default'
+                                }
                                 onChangeText={(text) => {
                                     setUserData((prev) => {
-                                        if (field.type === "number") {
+                                        if (field.type === 'number') {
                                             if (/^\d*\.?\d*$/.test(text)) {
-                                                const parsed = text === "" ? null : parseFloat(text);
+                                                const parsed = text === '' ? null : parseFloat(text);
                                                 return { ...prev, [field.key]: parsed };
                                             }
                                             return prev;
@@ -223,16 +367,19 @@ export default function editProfile() {
                     <Text style={styles.btnText}>Salvar perfil</Text>
                 </Pressable>
             </View>
-        </ScrollView >
+        </ScrollView>
     );
 }
 
+// ---------------------------------------------
+// Estilos
+// ---------------------------------------------
 const styles = StyleSheet.create({
     container: {
         paddingTop: 50,
         alignItems: 'center',
         justifyContent: 'flex-start',
-        backgroundColor: "F5F5DC",
+        backgroundColor: 'F5F5DC',
     },
     title: {
         fontSize: 22,
@@ -275,7 +422,7 @@ const styles = StyleSheet.create({
     },
     surfaceLabel: {
         margin: 5,
-        marginLeft: 10
+        marginLeft: 10,
     },
     surfaceItem: {
         width: '48%',
@@ -315,5 +462,5 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontWeight: 'bold',
         fontSize: 16,
-    }
+    },
 });

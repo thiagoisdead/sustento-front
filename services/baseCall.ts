@@ -4,6 +4,8 @@ import { getItem } from "./secureStore";
 
 
 const back_url_thiago = Constants.expoConfig?.extra?.backUrlThiago;
+const token = await getItem('token');
+const id = await getItem('id');
 
 export async function baseFetch(route: string) {
 
@@ -53,9 +55,6 @@ export async function baseValidate(token: string) {
 }
 export async function baseUniqueGet(route: string) {
 
-  const token = await getItem('token');
-  const id = await getItem('id');
-
   try {
     const fetchData = await axios.get(`${back_url_thiago}/${route}/${id}`, {
       headers: {
@@ -65,5 +64,18 @@ export async function baseUniqueGet(route: string) {
     return fetchData;
   } catch (err: any) {
     console.log("Erro ao buscar dados:", err.message);
+  }
+}
+
+export async function basePutUnique(route: string, data: any) {
+  try {
+    const putData = await axios.put(`${back_url_thiago}/${route}/${id}`, data, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return putData;
+  } catch (err: any) {
+    console.log("Erro ao atualizar dados:", err.message);
   }
 }
