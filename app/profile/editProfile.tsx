@@ -8,10 +8,13 @@ import { Avatar, IconButton, Surface, TextInput } from 'react-native-paper';
 import HealthyPNG from "../../assets/rodrigo.jpg"
 import { usePath } from '../../hooks/usePath';
 import { Picker } from '@react-native-picker/picker';
+import { baseFetch, basePutUnique, baseUniqueGet } from '../../services/baseCall';
 
 
 export default function editProfile() {
-    const back_url = Constants.expoConfig?.extra?.backUrl;
+
+    const handlePath = usePath();
+
     const [userData, setUserData] = useState<User>({
         active_plan_id: null,
         activity_lvl: null,
@@ -28,7 +31,6 @@ export default function editProfile() {
         weight: "",
         restrictions: [],
     });
-    const handlePath = usePath();
 
     const genderOptions = [
         { label: "Masculino", value: "M" },
@@ -64,20 +66,27 @@ export default function editProfile() {
         { key: "activity_lvl", label: "Atividade Física", type: "dropdown", options: activityOptions, large: true },
         { key: "objective", label: "Objetivo", type: "dropdown", options: objectiveOptions, large: true },
         { key: "restrictions", label: "Restrições", type: "multi-select", options: restrictionOptions, large: true },
+
     ];
+
+    const saveProfile = async () => {
+        try {
+            console.log("Enviando dados para salvar:", userData);
+            const putData = await basePutUnique(`/users`, userData);
+            if (putData && (putData.status === 200 || putData.status === 201)) {
+                handlePath("/profile/seeProfile");
+            }
+        } catch (e) {
+            console.error("Erro ao salvar perfil:", e);
+        }
+    }
 
     useEffect(() => {
         const fetchData = async () => {
-            const id = await getItem('id');
-            const token = await getItem('token');
             try {
-                const fetchUser = await axios.get(`${back_url}/users/${id}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                });
+                const fetchUser = await baseUniqueGet(`/users`);
+                if (!fetchUser) return;
                 const validatedUser = userSchema.parse(fetchUser.data);
-                // Garante que 'restrictions' nunca seja null para evitar erros no multi-select
                 setUserData({ ...validatedUser, restrictions: validatedUser.restrictions || null });
             }
             catch (err) {
@@ -86,22 +95,6 @@ export default function editProfile() {
         }
         fetchData()
     }, [])
-
-    const saveProfile = async () => {
-        const id = await getItem('id');
-        const token = await getItem('token');
-        try {
-            console.log("Enviando dados para salvar:", userData);
-            await axios.put(`${back_url}/users/${id}`, userData, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-            handlePath("/profile/seeProfile");
-        } catch (e) {
-            console.error("Erro ao salvar perfil:", e);
-        }
-    }
 
     return (
         <ScrollView
