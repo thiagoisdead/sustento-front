@@ -9,9 +9,9 @@ import Octicons from '@expo/vector-icons/Octicons';
 import { useLogout } from '../../hooks/useLogout';
 import { baseUniqueGet } from '../../services/baseCall';
 import { AnimatedButton } from '../../components/animatedButton';
-import { ActivityLvl, ActivityLvlLabels, Gender, GenderLabels, Objective, ObjectiveLabels } from '../enum/profileEnum';
+import { ActivityLvl, ActivityLvlLabels, Gender, GenderLabels, Objective, ObjectiveLabels } from '../../enum/profileEnum';
 
-export default function seeProfile() {
+export default function SeeProfile() {
   const handlePath = usePath();
   const handleLogout = useLogout();
 

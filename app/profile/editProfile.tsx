@@ -21,7 +21,7 @@ import {
     GenderLabels,
     Objective,
     ObjectiveLabels,
-} from '../enum/profileEnum';
+} from '../../enum/profileEnum';
 
 // ---------------------------------------------
 // Tipos auxiliares
