@@ -1,13 +1,18 @@
 import axios from "axios";
 import Constants from "expo-constants";
 import { getItem } from "./secureStore";
+import { useState } from "react";
 
 
 const back_url_thiago = Constants.expoConfig?.extra?.backUrlThiago;
-const token = await getItem('token');
-const id = await getItem('id');
+
+// const token = await getItem('token');
+// const id = await getItem('id');
 
 export async function baseFetch(route: string) {
+
+  const token = await getItem('token');
+  const id = await getItem('id');
 
   try {
 
@@ -23,6 +28,9 @@ export async function baseFetch(route: string) {
 }
 export async function basePost(route: string, data: any) {
 
+  const token = await getItem('token');
+  const id = await getItem('id');
+
   try {
     console.log(`${back_url_thiago}/${route}`)
     const result = await axios.post(`${back_url_thiago}${route}`, data)
@@ -36,7 +44,10 @@ export async function basePost(route: string, data: any) {
   }
 }
 
-export async function baseValidate(token: string) {
+export async function baseValidate() {
+
+  const token = await getItem('token');
+  const id = await getItem('id');
   try {
     const result = await axios.post(
       `${back_url_thiago}/auth/validateToken`,
@@ -55,6 +66,9 @@ export async function baseValidate(token: string) {
 }
 export async function baseUniqueGet(route: string) {
 
+  const token = await getItem('token');
+  const id = await getItem('id');
+
   try {
     const fetchData = await axios.get(`${back_url_thiago}/${route}/${id}`, {
       headers: {
@@ -68,6 +82,9 @@ export async function baseUniqueGet(route: string) {
 }
 
 export async function basePutUnique(route: string, data: any) {
+
+  const token = await getItem('token');
+  const id = await getItem('id');
   try {
     const putData = await axios.put(`${back_url_thiago}/${route}/${id}`, data, {
       headers: {

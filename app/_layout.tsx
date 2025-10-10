@@ -23,7 +23,7 @@ export default function RootLayout() {
       if (!token) return;
 
       try {
-        const verifyToken = await baseValidate(token)
+        const verifyToken = await baseValidate()
         if (!verifyToken.valid && !hideNavBar.includes(pathname)) handlePath('/auth')
       }
       catch (err) {

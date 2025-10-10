@@ -25,7 +25,7 @@
     "**/*.js",
     "**/*.jsx",
     "app", "assets", "declarations.d.ts" 
-  ],
+, "enum"  ],
   "exclude": [
     "node_modules"
   ],
