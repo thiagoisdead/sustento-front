@@ -11,7 +11,7 @@ export default function NavBar() {
   const handlePath = usePath();
 
   const navButtons: NavButtonsArray = navButtonsSchemaArray.parse([
-    { Icon: Entypo, name: 'calendar', path: '' },
+    { Icon: Entypo, name: 'calendar', path: '/calendar/seeCalendar' },
     { Icon: Feather, name: 'clipboard', path: '/meals/seeMeals' },
     { Icon: MaterialCommunityIcons, name: 'food-apple-outline', path: '' },
     { Icon: MaterialCommunityIcons, name: 'food-turkey', path: '/foods/editFoods' },
