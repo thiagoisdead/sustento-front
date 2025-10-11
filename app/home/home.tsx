@@ -6,8 +6,7 @@ export default function Home() {
   const handlePath = usePath();
   return (
     <View style={styles.container}>
-      <Button onPress={() => handlePath('auth/login')}>eqweq</Button>
-      <Text>!!!</Text>
+      <Button onPress={() => handlePath('auth/login')}>Login</Button>
     </View>
   );
 }
