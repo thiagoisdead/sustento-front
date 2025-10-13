@@ -65,11 +65,10 @@ export default function Register() {
         const { name, ...dataLogin } = dataRegister;
         try {
           const responseLogin = await basePost('/auth/login', dataLogin)
-
-          console.log(responseLogin?.data?.token)
           await setItem("token", responseLogin?.data?.token)
-          await setItem("id", responseLogin?.data?.user_id)
-          handlePath('/home')
+          const userId = String(responseLogin?.data?.id) as string;
+          await setItem("id", userId)
+          handlePath('home')
         }
         catch (loginErr: any) {
           console.log("Erro no login:", loginErr)

@@ -1,7 +1,23 @@
+import { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Button } from "react-native-paper";
+import { baseUniqueGet } from "../../services/baseCall";
+import { getItem } from "../../services/secureStore";
 
 export default function seeMeals() {
+
+  useEffect(() => {
+
+    const fetchAsync = async () => {
+      const fetchMeals = await baseUniqueGet(`mealPlans`);
+      console.log("Fetched", fetchMeals);
+    }
+
+    fetchAsync();
+  }, [])
+
+
+
   return (
     <View style={styles.container}>
       <View style={styles.upperButtons}>
