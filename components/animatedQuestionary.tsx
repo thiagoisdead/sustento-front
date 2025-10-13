@@ -11,52 +11,10 @@ import {
 import { Picker } from "@react-native-picker/picker";
 import { basePutUnique } from "../services/baseCall";
 import { useUser } from "../hooks/useUser";
+import { usePath } from "../hooks/usePath";
+import { ActivityLvlLabels, GenderLabels, ObjectiveLabels, restrictionOptions } from "../enum/profileEnum";
 
-export enum Objective {
-  LOSE_WEIGHT = "LOSE_WEIGHT",
-  GAIN_MUSCLE = "GAIN_MUSCLE",
-  MAINTENANCE = "MAINTENANCE",
-}
 
-export const ObjectiveLabels: Record<Objective, string> = {
-  [Objective.LOSE_WEIGHT]: "Perder Peso",
-  [Objective.GAIN_MUSCLE]: "Ganhar Massa",
-  [Objective.MAINTENANCE]: "Manutenção",
-};
-
-export enum Gender {
-  M = "M",
-  F = "F",
-}
-export const GenderLabels: Record<Gender, string> = {
-  [Gender.M]: "Masculino",
-  [Gender.F]: "Feminino",
-};
-
-export enum ActivityLvl {
-  SEDENTARY = "SEDENTARY",
-  LIGHTLY_ACTIVE = "LIGHTLY_ACTIVE",
-  MODERATELY_ACTIVE = "MODERATELY_ACTIVE",
-  ACTIVE = "ACTIVE",
-  VERY_ACTIVE = "VERY_ACTIVE",
-}
-
-export const ActivityLvlLabels: Record<ActivityLvl, string> = {
-  [ActivityLvl.SEDENTARY]: "Sedentário",
-  [ActivityLvl.LIGHTLY_ACTIVE]: "Levemente Ativo",
-  [ActivityLvl.MODERATELY_ACTIVE]: "Moderadamente Ativo",
-  [ActivityLvl.ACTIVE]: "Ativo",
-  [ActivityLvl.VERY_ACTIVE]: "Muito Ativo",
-};
-
-type Option = { label: string; value: string };
-
-const restrictionOptions: Option[] = [
-  { label: "Vegano", value: "VEGAN" },
-  { label: "Vegetariano", value: "VEGETARIAN" },
-  { label: "Sem Glúten", value: "GLUTEN_FREE" },
-  { label: "Sem Lactose", value: "LACTOSE_FREE" },
-];
 
 export default function QuestionaryScreen() {
   const [step, setStep] = useState(0);
@@ -66,6 +24,8 @@ export default function QuestionaryScreen() {
     activity_lvl: "",
     restrictions: [] as string[],
   });
+
+  const handlePath = usePath()
 
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(-20)).current;
@@ -167,11 +127,15 @@ export default function QuestionaryScreen() {
       console.log("🧠 Dados finais:", data);
       const mergedData = { ...userData, ...data }
 
-      console.log('n', mergedData)
+      
+      const { restrictions, ...payload } = mergedData;
+      
+      console.log('n', payload)
 
-      const response = await basePutUnique("users", mergedData);
+      const response = await basePutUnique("users", payload);
       if (response && response.status === 200) {
         Alert.alert("Sucesso", "Seus dados foram salvos com sucesso!");
+        handlePath('/profile/seeProfile')
       } else {
         Alert.alert("Erro", "Houve um problema ao salvar seus dados. Tente novamente.");
       }

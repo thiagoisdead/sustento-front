@@ -34,3 +34,12 @@ export const ActivityLvlLabels: Record<ActivityLvl, string> = {
     [ActivityLvl.ACTIVE]: "Ativo",
     [ActivityLvl.VERY_ACTIVE]: "Muito Ativo",
 };
+
+type Option = { label: string; value: string };
+
+export const restrictionOptions: Option[] = [
+    { label: "Vegano", value: "VEGAN" },
+    { label: "Vegetariano", value: "VEGETARIAN" },
+    { label: "Sem Glúten", value: "GLUTEN_FREE" },
+    { label: "Sem Lactose", value: "LACTOSE_FREE" },
+];
