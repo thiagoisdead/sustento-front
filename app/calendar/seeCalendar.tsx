@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { Calendar, LocaleConfig } from "react-native-calendars";
 import { AnimatedButton } from "../../components/animatedButton";
-import RemoveButton from "./removeButton/removeButton";
+import RemoveButton from "../../components/removeButton";
 
 LocaleConfig.locales["pt-br"] = {
     monthNames: [
