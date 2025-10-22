@@ -60,15 +60,15 @@ export default function Register() {
     try {
       const registerValidate = registerSchema.parse(dados)
 
-      const responseRegister = await basePost('/auth/register', registerValidate);
+      const responseRegister = await basePost('auth/register', registerValidate);
       if (responseRegister && responseRegister.status === 201) {
         const { name, ...dataLogin } = dataRegister;
         try {
           const responseLogin = await basePost('/auth/login', dataLogin)
 
           console.log(responseLogin?.data?.token)
-          await setItem("token", responseLogin?.data?.token)
-          await setItem("id", responseLogin?.data?.user_id)
+          await setItem("token", String(responseLogin?.data?.token))
+          await setItem("id", String(responseLogin?.data?.user_id))
           handlePath('/home')
         }
         catch (loginErr: any) {
