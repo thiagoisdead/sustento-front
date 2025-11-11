@@ -4,7 +4,7 @@ import { getItem } from "./secureStore";
 import { useState } from "react";
 
 
-const back_url_thiago = Constants.expoConfig?.extra?.backUrlThiago;
+const back_url_thiago = "http://192.168.1.105:3000/api";
 
 // const token = await getItem('token');
 // const id = await getItem('id');
@@ -32,9 +32,9 @@ export async function basePost(route: string, data: any) {
   const id = await getItem('id');
 
   try {
-    console.log(`${back_url_thiago}/${route}`)
+    console.log(`${back_url_thiago}${route}`)
     console.log(data)
-    const result = await axios.post(`${back_url_thiago}${route}`, data)
+    const result = await axios.post(`${back_url_thiago}/${route}`, data)
     if (result.status === 200 || result.status === 201) {
       console.log('deu certo')
       return result;

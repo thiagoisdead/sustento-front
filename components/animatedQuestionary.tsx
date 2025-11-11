@@ -127,18 +127,18 @@ export default function QuestionaryScreen() {
       console.log("🧠 Dados finais:", data);
       const mergedData = { ...userData, ...data }
 
-      
+
       const { restrictions, ...payload } = mergedData;
-      
+
       console.log('n', payload)
 
       const response = await basePutUnique("users", payload);
-      if (response && response.status === 200) {
-        Alert.alert("Sucesso", "Seus dados foram salvos com sucesso!");
-        handlePath('/profile/seeProfile')
-      } else {
-        Alert.alert("Erro", "Houve um problema ao salvar seus dados. Tente novamente.");
-      }
+      // if (response && response.status === 200) {
+      Alert.alert("Sucesso", "Seus dados foram salvos com sucesso!");
+      handlePath('/profile/seeProfile')
+      // } else {
+      //   Alert.alert("Erro", "Houve um problema ao salvar seus dados. Tente novamente.");
+      // }
     }
   };
 
