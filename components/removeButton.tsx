@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
-import { RemoveButtonProps } from "../../../types/calendar";
+import { RemoveButtonProps } from "../types/calendar";
 
 
 
