@@ -95,11 +95,11 @@ export default function EditProfile() {
             return;
         }
         const payload = { ...changedData };
-        if (payload.age !== undefined) payload.age = payload.age === null || String(payload.age).trim() === '' ? null : Number(payload.age);
-        if (payload.weight !== undefined) payload.weight = payload.weight === null || String(payload.weight).trim() === '' ? null : Number(payload.weight);
-        if (payload.height !== undefined) payload.height = payload.height === null || String(payload.height).trim() === '' ? null : Number(payload.height);
+        if (payload.age !== undefined) payload.age = payload.age === null || String(payload.age).trim() === '' ? null : String(payload.age);
+        if (payload.weight !== undefined) payload.weight = payload.weight === null || String(payload.weight).trim() === '' ? null : String(payload.weight);
+        if (payload.height !== undefined) payload.height = payload.height === null || String(payload.height).trim() === '' ? null : String(payload.height);
         try {
-            const putData = await basePutUnique(`/users/${userData.user_id}`, payload);
+            const putData = await basePutUnique(`/users`, payload);
             if (putData && (putData.status === 200 || putData.status === 201)) {
                 handlePath('/profile/seeProfile');
             }
@@ -111,9 +111,6 @@ export default function EditProfile() {
             const response = await baseUniqueGet('users');
             if (response) {
                 const rawData = { ...response.data };
-                rawData.age = rawData.age !== null ? String(rawData.age) : null;
-                rawData.weight = rawData.weight !== null ? String(rawData.weight) : null;
-                rawData.height = rawData.height !== null ? String(rawData.height) : null;
                 setUserData(rawData);
                 setInitialUserData(rawData);
             }

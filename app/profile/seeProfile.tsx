@@ -31,7 +31,6 @@ export default function SeeProfile() {
     weight: null,
     restrictions: null,
   });
-  const [test, setTest] = useState<string>();
 
   const fetchData = async () => {
     try {

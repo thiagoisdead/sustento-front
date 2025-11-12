@@ -5,10 +5,13 @@ import {
     View,
     Text,
     useWindowDimensions,
+    Alert,
 } from "react-native";
 import { Calendar, LocaleConfig } from "react-native-calendars";
 import { AnimatedButton } from "../../components/animatedButton";
 import RemoveButton from "../../components/removeButton";
+import { BREAKPOINTS } from "../../constants/breakpoints";
+import { Event } from "../../types/calendar";
 
 LocaleConfig.locales["pt-br"] = {
     monthNames: [
@@ -29,16 +32,9 @@ LocaleConfig.defaultLocale = "pt-br";
 
 const getTodaysDate = () => new Date().toISOString().split("T")[0];
 
-type Event = {
-    id: number;
-    calendarDate: string; // yyyy-mm-dd
-    time: string;         // HH:mm
-    description: string;
-};
-
 export default function SeeCalendar() {
     const { width } = useWindowDimensions();
-    const isMobile = width < 600;
+    const isMobile = width < BREAKPOINTS.MOBILE;
 
     const [selectedDate, setSelectedDate] = useState(getTodaysDate());
     const [events, setEvents] = useState<Event[]>([]);
@@ -77,37 +73,46 @@ export default function SeeCalendar() {
 
     const insertEvent = () => {
         const today = getTodaysDate();
-        if (selectedDate < today) {
-            alert("Não é possível adicionar eventos em datas passadas.");
+        if (new Date(selectedDate) < new Date(today)) {
+            Alert.alert("Não é possível adicionar eventos em datas passadas.");
             return;
         }
 
-        const description = prompt("Insira a descrição do evento:");
-        const time = prompt("Insira o horário do evento (HH:MM):");
+        Alert.prompt(
+            "Insira a descrição do evento:",
+            "",
+            (description) => {
+                Alert.prompt(
+                    "Insira o horário do evento (HH:MM):",
+                    "",
+                    (time) => {
+                        if (!isValid24HourTime(time || "")) {
+                            alert("Horário inválido! Por favor, insira no formato HH:MM (24 horas).");
+                            return;
+                        }
 
-        if (!isValid24HourTime(time || "")) {
-            alert("Horário inválido! Por favor, insira no formato HH:MM (24 horas).");
-            return;
-        }
+                        if (description.trim() && time) {
+                            const newEvent: Event = {
+                                id: Math.max(0, ...events.map(e => e.id)) + 1,
+                                calendarDate: selectedDate,
+                                time,
+                                description,
+                            };
 
-        if (description && time) {
-            const newEvent: Event = {
-                id: events.length + 1,
-                calendarDate: selectedDate,
-                time,
-                description,
-            };
-
-            setEvents((prevEvents) => {
-                const updated = [...prevEvents, newEvent];
-                return updated.sort((a, b) => {
-                    if (a.calendarDate !== b.calendarDate) return 0;
-                    const [ah, am] = a.time.split(":").map(Number);
-                    const [bh, bm] = b.time.split(":").map(Number);
-                    return ah * 60 + am - (bh * 60 + bm);
-                });
-            });
-        }
+                            setEvents((prevEvents) => {
+                                const updated = [...prevEvents, newEvent];
+                                return updated.sort((a, b) => {
+                                    if (a.calendarDate !== b.calendarDate) return 0;
+                                    const [ah, am] = a.time.split(":").map(Number);
+                                    const [bh, bm] = b.time.split(":").map(Number);
+                                    return ah * 60 + am - (bh * 60 + bm);
+                                });
+                            });
+                        }
+                    }
+                );
+            }
+        );
     };
 
     const eventsForSelectedDate = events.filter(
@@ -170,7 +175,6 @@ export default function SeeCalendar() {
                         selectedDate < getTodaysDate() && { opacity: 0.5 },
                     ]}
                     onPress={insertEvent}
-                    disabled={selectedDate < getTodaysDate()}
                 >
                     <Text style={styles.addButtonText}>Adicionar Evento</Text>
                 </AnimatedButton>
