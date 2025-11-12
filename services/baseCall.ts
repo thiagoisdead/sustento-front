@@ -33,6 +33,7 @@ export async function basePost(route: string, data: any) {
 
   try {
     console.log(`${back_url_thiago}/${route}`)
+    console.log(data)
     const result = await axios.post(`${back_url_thiago}${route}`, data)
     if (result.status === 200 || result.status === 201) {
       console.log('deu certo')
@@ -68,6 +69,8 @@ export async function baseUniqueGet(route: string) {
 
   const token = await getItem('token');
   const id = await getItem('id');
+
+  console.log(`ROTA: ${back_url_thiago}/${route}/${id}`)
 
   try {
     const fetchData = await axios.get(`${back_url_thiago}/${route}/${id}`, {
