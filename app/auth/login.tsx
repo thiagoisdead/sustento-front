@@ -47,11 +47,11 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     try {
       const loginValidate = loginSchema.parse(dados);
+      console.log('Login válido:', loginValidate);
       const responseLogin = await basePost('auth/login', loginValidate);
-      console.log('RESPONSE LOGIN', responseLogin);
       if (responseLogin && (responseLogin.status === 200 || responseLogin.status === 201)) {
-        await setItem("token", responseLogin?.data?.token)
-        await setItem("id", responseLogin?.data?.id.toString())
+        await setItem("token", String(responseLogin?.data?.token))
+        await setItem("id", String(responseLogin?.data?.id))
         handlePath('/home/home');
       } else {
         console.log('Não deu login');

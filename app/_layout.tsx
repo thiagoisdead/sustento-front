@@ -12,7 +12,7 @@ export default function RootLayout() {
   const pathname = usePathname()
   const handlePath = usePath();
 
-  const hideNavBar = ["/auth/login", "/auth/register", "/auth"]
+  const hideNavBar = ["/auth/login", "/auth/register", "/auth", "/"]
   const showNavbar = !hideNavBar.includes(pathname);
 
   useEffect(() => {

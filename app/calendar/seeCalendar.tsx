@@ -10,6 +10,7 @@ import {
 import { Calendar, LocaleConfig } from "react-native-calendars";
 import { AnimatedButton } from "../../components/animatedButton";
 import RemoveButton from "../../components/removeButton";
+import { BREAKPOINTS } from "../../constants/breakpoints";
 import { Event } from "../../types/calendar";
 
 LocaleConfig.locales["pt-br"] = {
@@ -33,7 +34,7 @@ const getTodaysDate = () => new Date().toISOString().split("T")[0];
 
 export default function SeeCalendar() {
     const { width } = useWindowDimensions();
-    const isMobile = width < 600;
+    const isMobile = width < BREAKPOINTS.MOBILE;
 
     const [selectedDate, setSelectedDate] = useState(getTodaysDate());
     const [events, setEvents] = useState<Event[]>([]);
@@ -72,8 +73,8 @@ export default function SeeCalendar() {
 
     const insertEvent = () => {
         const today = getTodaysDate();
-        if (selectedDate < today) {
-            alert("Não é possível adicionar eventos em datas passadas.");
+        if (new Date(selectedDate) < new Date(today)) {
+            Alert.alert("Não é possível adicionar eventos em datas passadas.");
             return;
         }
 
@@ -174,7 +175,6 @@ export default function SeeCalendar() {
                         selectedDate < getTodaysDate() && { opacity: 0.5 },
                     ]}
                     onPress={insertEvent}
-                    disabled={selectedDate < getTodaysDate()}
                 >
                     <Text style={styles.addButtonText}>Adicionar Evento</Text>
                 </AnimatedButton>

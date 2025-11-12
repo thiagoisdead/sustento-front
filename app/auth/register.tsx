@@ -9,6 +9,7 @@ import Constants from "expo-constants";
 import { removeItem, setItem } from '../../services/secureStore';
 import { usePath } from '../../hooks/usePath';
 import { basePost } from '../../services/baseCall';
+import { ResponseLogin } from '../../types/response';
 
 
 export default function Register() {
@@ -65,11 +66,12 @@ export default function Register() {
         const { name, ...dataLogin } = dataRegister;
         try {
           const responseLogin = await basePost('/auth/login', dataLogin)
-
-          console.log(responseLogin?.data?.token)
-          await setItem("token", responseLogin?.data?.token)
-          await setItem("id", responseLogin?.data?.user_id)
-          handlePath('/home')
+          if (responseLogin) {
+            const data = responseLogin.data as ResponseLogin;
+            await setItem("token", String(data?.token))
+            await setItem("id", String(data?.user_id))
+            handlePath('/home')
+          }
         }
         catch (loginErr: any) {
           console.log("Erro no login:", loginErr)
