@@ -87,11 +87,11 @@ export default function SeeCalendar() {
                     "",
                     (time) => {
                         if (!isValid24HourTime(time || "")) {
-                            alert("Horário inválido! Por favor, insira no formato HH:MM (24 horas).");
+                            Alert.alert("Horário inválido! Por favor, insira no formato HH:MM (24 horas).");
                             return;
                         }
 
-                        if (description.trim() && time) {
+                        if (description && time) {
                             const newEvent: Event = {
                                 id: Math.max(0, ...events.map(e => e.id)) + 1,
                                 calendarDate: selectedDate,
