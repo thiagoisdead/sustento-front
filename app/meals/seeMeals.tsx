@@ -167,10 +167,9 @@ export default function DashboardScreen() {
   // Function to load data
   const loadData = useCallback(async () => {
     try {
-      // If using refresh control, don't show the full screen loader, just the spinner
       if (!refreshing) setLoading(true);
 
-      const result = await fetchDashboardData(); // Call your service here
+      const result = await fetchDashboardData();
       setData(result);
     } catch (error) {
       console.error("Error loading dashboard", error);
