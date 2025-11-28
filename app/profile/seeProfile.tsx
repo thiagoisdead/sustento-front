@@ -30,6 +30,7 @@ export default function SeeProfile() {
     user_id: 0,
     weight: null,
     restrictions: null,
+    profile_picture_url: null,
   });
 
   const fetchData = async () => {
@@ -86,7 +87,18 @@ export default function SeeProfile() {
 
       <View style={styles.firstRow}>
         <View style={styles.icon}>
-          <Avatar.Image size={100} source={HealthyPNG} />
+
+          {/* LÓGICA DE EXIBIÇÃO DA IMAGEM */}
+          <Avatar.Image
+            size={100}
+            source={(() => {
+              if (userData?.profile_picture_url) {
+                return { uri: "http://192.168.1.105:3000/" + userData.profile_picture_url };
+              }
+
+              return HealthyPNG;
+            })()}
+          />
         </View>
         <View style={styles.textsFirstRow}>
           <Text style={styles.name}>{userData?.name ? `${userData.name}` : "Não informado"}</Text>

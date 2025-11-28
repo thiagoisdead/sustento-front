@@ -15,6 +15,7 @@ export const userSchema = z.object({
   user_id: z.number(),
   weight: z.string().nullable(),
   restrictions: z.array(z.string()).nullable().optional(),
+  profile_picture_url: z.string().nullable().optional(),
 });
 
 export type User = z.infer<typeof userSchema>;

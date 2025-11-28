@@ -2,7 +2,8 @@ import axios from "axios";
 import Constants from "expo-constants";
 import { getItem } from "./secureStore";
 import { useState } from "react";
-
+// Adicione o "/legacy" no final
+import { uploadAsync, FileSystemUploadType } from 'expo-file-system/legacy';
 
 const back_url_thiago = "http://192.168.1.105:3000/api";
 
@@ -97,5 +98,32 @@ export async function basePutUnique(route: string, data: any) {
     return putData;
   } catch (err: any) {
     console.log("Erro ao atualizar dados:", err.message);
+  }
+}
+
+export async function basePutMultidata(route: string, imageUri: string) {
+  const token = await getItem('token');
+  const url = `${back_url_thiago}${route}`;
+
+  try {
+    const response = await uploadAsync(url, imageUri, {
+      fieldName: 'profilePicture',
+      httpMethod: 'PUT',
+      uploadType: FileSystemUploadType.MULTIPART, // Usando o Enum do legacy
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+      },
+    });
+
+
+    if (response.status >= 200 && response.status < 300) {
+      return response.body ? JSON.parse(response.body) : {};
+    } else {
+      throw new Error(`Erro Servidor: ${response.status} - ${response.body}`);
+    }
+
+  } catch (err: any) {
+    console.log('❌ FALHA NO UPLOAD:', err.message);
   }
 }
