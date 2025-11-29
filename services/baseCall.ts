@@ -115,19 +115,17 @@ export async function basePutMultidata(route: string, imageUri: string) {
   }
 }
 
-export async function baseDelete(route: string, data: any) {
+export async function baseDelete(route: string) {
   const token = await getItem('token');
   const url = `${back_url}/${route}`.replace(/([^:]\/)\/+/g, "$1");
 
   try {
-    console.log(`DELETE: ${url}`, JSON.stringify(data)); // Confirme o JSON aqui
 
     const response = await axios.delete(url, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
-      data: data
     });
 
     return response;

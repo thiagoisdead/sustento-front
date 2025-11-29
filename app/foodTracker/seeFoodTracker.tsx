@@ -61,7 +61,6 @@ export default function SeeFoodTracker() {
             >
                 <ProgressCard totalCalories={totalCalories} dailyGoal={dailyGoal} />
 
-                {/* Meal Grid */}
                 <View style={styles.mealGrid}>
                     {Object.keys(groupedMeals).map((category) => (
                         <View key={category} style={styles.mealSection}>

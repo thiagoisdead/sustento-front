@@ -9,11 +9,11 @@ import { User } from '../../types/data';
 import { ActivityLvl, ActivityLvlLabels, Gender, GenderLabels, Objective, ObjectiveLabels } from '../../enum/profileEnum';
 import { SERVER_URL } from '../../constants/config';
 
-import { ImagePickerModal } from '../../components/editProfile/ImagePickerModal';
 import { EditableAvatar } from '../../components/editProfile/editableAvatar';
 import { EditProfileHeader } from '../../components/editProfile/editProfileHeader';
 import { FormField } from '../../components/editProfile/formField';
 import { syncUserRestrictions } from '../../utils/profileHelper';
+import { ImagePickerModal } from '../../components/editProfile/imagePickerModal';
 
 // --- Configuration & Types ---
 type Option = { label: string; value: string };
@@ -239,8 +239,6 @@ export default function EditProfile() {
 
 const styles = StyleSheet.create({
     container: {
-        paddingTop: 50,
-        paddingBottom: 30,
         alignItems: 'center',
         backgroundColor: "#F5F5DC",
     },
@@ -255,10 +253,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: 40,
         paddingVertical: 15,
         borderRadius: 10,
-        marginVertical: 32,
         width: '90%',
         alignItems: 'center',
         elevation: 4,
+        marginBottom: -4235
     },
     saveButtonText: {
         color: '#FFFFFF',

@@ -32,10 +32,7 @@ export const syncUserRestrictions = async (
         // Verificação de segurança antes de chamar
         if (rId && userId) {
             promises.push(
-                baseDelete('/userRestrictions', {
-                    user_id: userId,
-                    restriction_id: rId
-                })
+                baseDelete(`/userRestrictions?user_id=${userId}&restriction_id=${rId}`)
             );
         } else {
             console.error("Dados inválidos para Delete:", { userId, rId, rKey });
