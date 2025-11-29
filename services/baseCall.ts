@@ -4,21 +4,13 @@ import { getItem } from "./secureStore";
 import { useState } from "react";
 // Adicione o "/legacy" no final
 import { uploadAsync, FileSystemUploadType } from 'expo-file-system/legacy';
+import { RESTRICTION_IDS } from "../enum/profileEnum";
 
-const back_url_thiago = "http://192.168.1.105:3000/api";
-
-// const token = await getItem('token');
-// const id = await getItem('id');
+const back_url = "http://192.168.1.105:3000/api";
 
 export async function baseFetch(route: string) {
-
-  const token = await getItem('token');
-  const id = await getItem('id');
-
   try {
-
-    const result = await axios.get(`${back_url_thiago}${route}`)
-
+    const result = await axios.get(`${back_url}${route}`)
     if (result.status === 200 || result.status === 201)
       return result;
   } catch (err: any) {
@@ -28,14 +20,8 @@ export async function baseFetch(route: string) {
   }
 }
 export async function basePost(route: string, data: any) {
-
-  const token = await getItem('token');
-  const id = await getItem('id');
-
   try {
-    console.log(`${back_url_thiago}${route}`)
-    console.log(data)
-    const result = await axios.post(`${back_url_thiago}/${route}`, data)
+    const result = await axios.post(`${back_url}/${route}`, data);
     if (result.status === 200 || result.status === 201) {
       console.log('deu certo')
       return result;
@@ -49,10 +35,9 @@ export async function basePost(route: string, data: any) {
 export async function baseValidate() {
 
   const token = await getItem('token');
-  const id = await getItem('id');
   try {
     const result = await axios.post(
-      `${back_url_thiago}/auth/validateToken`,
+      `${back_url}/auth/validateToken`,
       {},
       {
         headers: {
@@ -71,14 +56,15 @@ export async function baseUniqueGet(route: string) {
   const token = await getItem('token');
   const id = await getItem('id');
 
-  console.log(`ROTA: ${back_url_thiago}/${route}/${id}`)
+  console.log(`ROTA: ${back_url}/${route}/${id}`)
 
   try {
-    const fetchData = await axios.get(`${back_url_thiago}/${route}/${id}`, {
+    const fetchData = await axios.get(`${back_url}/${route}/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
     });
+    console.log("Fetched data: ", fetchData.data);
     return fetchData;
   } catch (err: any) {
     console.log("Erro ao buscar dados:", err.message);
@@ -90,7 +76,8 @@ export async function basePutUnique(route: string, data: any) {
   const token = await getItem('token');
   const id = await getItem('id');
   try {
-    const putData = await axios.put(`${back_url_thiago}/${route}/${id}`, data, {
+    console.log("Data: ", data);
+    const putData = await axios.put(`${back_url}/${route}/${id}`, data, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -103,7 +90,7 @@ export async function basePutUnique(route: string, data: any) {
 
 export async function basePutMultidata(route: string, imageUri: string) {
   const token = await getItem('token');
-  const url = `${back_url_thiago}${route}`;
+  const url = `${back_url}/${route}`;
 
   try {
     const response = await uploadAsync(url, imageUri, {
@@ -125,5 +112,27 @@ export async function basePutMultidata(route: string, imageUri: string) {
 
   } catch (err: any) {
     console.log('❌ FALHA NO UPLOAD:', err.message);
+  }
+}
+
+export async function baseDelete(route: string, data: any) {
+  const token = await getItem('token');
+  const url = `${back_url}/${route}`.replace(/([^:]\/)\/+/g, "$1");
+
+  try {
+    console.log(`DELETE: ${url}`, JSON.stringify(data)); // Confirme o JSON aqui
+
+    const response = await axios.delete(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      data: data
+    });
+
+    return response;
+  } catch (err: any) {
+    console.log("Erro no DELETE:", err.response?.data || err.message);
+    throw err;
   }
 }

@@ -1,15 +1,22 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { User, userSchema } from '../../types/data';
-import { Avatar, Surface } from 'react-native-paper';
-import HealthyPNG from "../../assets/rodrigo.jpg"
-import { usePath } from '../../hooks/usePath';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import Octicons from '@expo/vector-icons/Octicons';
-import { useLogout } from '../../hooks/useLogout';
+
+// Services & Hooks
 import { baseUniqueGet } from '../../services/baseCall';
+import { usePath } from '../../hooks/usePath';
+import { useLogout } from '../../hooks/useLogout';
+
+// Types & Constants
+import { User } from '../../types/data';
+import { COLORS } from '../../constants/theme';
+
+// Components
 import { AnimatedButton } from '../../components/animatedButton';
-import { ActivityLvl, ActivityLvlLabels, Gender, GenderLabels, Objective, ObjectiveLabels } from '../../enum/profileEnum';
+import { ProfileHeader } from '../../components/profile/profileHeader';
+import { ProfileAvatar } from '../../components/profile/profileAvatar';
+import { ProfileField } from '../../components/profile/profileField';
+import { RestrictionLabels } from '../../enum/profileEnum';
+import { SERVER_URL } from '../../constants/config';
 
 export default function SeeProfile() {
   const handlePath = usePath();
@@ -37,38 +44,15 @@ export default function SeeProfile() {
     try {
       const response = await baseUniqueGet('users');
       if (response) {
-        // Create a copy of the data
         const rawData = { ...response.data };
-
-        // Convert age to string for frontend usage
+        // Ensure age is string for display logic
         rawData.age = rawData.age !== null && rawData.age !== undefined ? String(rawData.age) : "";
-
-        // Set to state (frontend-friendly)
         setUserData(rawData);
-
-        // Optionally, validate the original data with schema for safety
-        const validatedUser = userSchema.parse(rawData);
-        console.log("Validated user (backend-friendly):", validatedUser);
-
-        console.log("Frontend-ready user:", rawData);
       }
     } catch (err) {
-      console.log(err);
+      console.log("Error fetching user data:", err);
     }
   };
-
-
-
-  const fieldsSurface = [
-    { label: 'Peso', value: userData?.weight, large: false },
-    { label: 'Altura', value: userData?.height, large: false },
-    { label: 'Gênero', value: userData?.gender, large: false },
-    { label: 'Imc', value: userData?.bmi, large: false },
-    { label: 'Atividade Física', value: userData?.activity_lvl, large: true },
-    { label: 'Objetivo', value: userData?.objective, large: true },
-    { label: 'Restrições', value: userData?.restrictions, large: true },
-    { label: 'Email', value: userData?.email, large: true },
-  ];
 
   useEffect(() => {
     fetchData();
@@ -76,98 +60,38 @@ export default function SeeProfile() {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: '#F5F5DC' }}
+      style={styles.scrollView}
       contentContainerStyle={styles.container}
     >
-      <View style={styles.header}>
-        <Octicons name="gear" size={24} color="black" />
-        <Text style={styles.title}>Dados de Perfil</Text>
-        <MaterialIcons name="logout" size={24} color="black" onPress={handleLogout} />
+      <ProfileHeader onLogout={handleLogout} />
+
+      <ProfileAvatar
+        name={userData.name}
+        age={userData.age}
+        pictureUrl={userData.profile_picture_url}
+      />
+
+      <View style={styles.fieldsContainer}>
+        <ProfileField label="Peso" value={userData.weight} />
+        <ProfileField label="Altura" value={userData.height} />
+        <ProfileField label="Gênero" value={userData.gender} />
+        <ProfileField label="Imc" value={userData.bmi} />
+
+        {/* Large Fields */}
+        <ProfileField label="Atividade Física" value={userData.activity_lvl} large />
+        <ProfileField label="Objetivo" value={userData.objective} large />
+        <ProfileField
+          label="Restrições"
+          value={userData.restrictions?.map(r => RestrictionLabels[r]).join(', ') || "Nenhuma"}
+          large
+        />
+        <ProfileField label="Email" value={userData.email} large />
       </View>
 
-      <View style={styles.firstRow}>
-        <View style={styles.icon}>
-
-          {/* LÓGICA DE EXIBIÇÃO DA IMAGEM */}
-          <Avatar.Image
-            size={100}
-            source={(() => {
-              if (userData?.profile_picture_url) {
-                return { uri: "http://192.168.1.105:3000/" + userData.profile_picture_url };
-              }
-
-              return HealthyPNG;
-            })()}
-          />
-        </View>
-        <View style={styles.textsFirstRow}>
-          <Text style={styles.name}>{userData?.name ? `${userData.name}` : "Não informado"}</Text>
-          <Text style={styles.age}>{userData?.age ? `${userData?.age} Anos` : "Não informado"}</Text>
-        </View>
-      </View>
-      <View style={styles.surfaceTexts}>
-        {fieldsSurface.map((field, index) => {
-          if (field.label == "Objetivo") {
-            return (
-              <Surface
-                key={index}
-                style={field.large ? styles.surfaceItemLarge : styles.surfaceItem}
-              >
-                <Text style={styles.surfaceLabel}>{field.label}</Text>
-                <Text>
-                  {field.value && ObjectiveLabels[field.value as Objective]
-                    ? ObjectiveLabels[field.value as Objective]
-                    : "Não informado"}
-                </Text>
-              </Surface>
-            )
-          }
-          if (field.label == "Atividade Física") {
-            return (
-              <Surface
-                key={index}
-                style={field.large ? styles.surfaceItemLarge : styles.surfaceItem}
-              >
-                <Text style={styles.surfaceLabel}>{field.label}</Text>
-                <Text>
-                  {field.value && ActivityLvlLabels[field.value as ActivityLvl]
-                    ? ActivityLvlLabels[field.value as ActivityLvl]
-                    : "Não informado"}
-                </Text>
-
-              </Surface>
-            )
-          }
-          if (field.label == "Gênero") {
-            return (
-              <Surface
-                key={index}
-                style={field.large ? styles.surfaceItemLarge : styles.surfaceItem}
-              >
-                <Text style={styles.surfaceLabel}>{field.label}</Text>
-                <Text>
-                  {field.value && GenderLabels[field.value as Gender]
-                    ? GenderLabels[field.value as Gender]
-                    : "Não informado"}
-                </Text>
-
-              </Surface>
-            )
-          }
-          return (
-            <Surface
-              key={index}
-              style={field.large ? styles.surfaceItemLarge : styles.surfaceItem}
-            >
-              <Text style={styles.surfaceLabel}>{field.label}</Text>
-              <Text >{field.value}</Text>
-            </Surface>
-          )
-        })}
-      </View>
       <AnimatedButton
         onPress={() => handlePath('/profile/editProfile')}
-        style={styles.btnBase} scaleTo={0.9}
+        style={styles.btnBase}
+        scaleTo={0.9}
       >
         <Text style={styles.btnText}>Editar perfil</Text>
       </AnimatedButton>
@@ -176,98 +100,37 @@ export default function SeeProfile() {
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
   container: {
     paddingTop: 50,
     alignItems: 'center',
     justifyContent: 'flex-start',
-    backgroundColor: "#F5F5DC",
+    paddingBottom: 40,
+    paddingHorizontal: 16,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#212121',
-    marginBottom: 1,
-  },
-  firstRow: {
+  fieldsContainer: {
     width: '100%',
-    padding: 10,
-    flexDirection: 'row',
-    marginVertical: 30,
-    alignItems: 'center',
-  },
-  icon: {
-    width: '35%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  textsFirstRow: {
-    width: '65%',
-    justifyContent: 'center',
-    paddingLeft: 10,
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#212121',
-  },
-  age: {
-    fontSize: 16,
-    color: '#616161',
-  },
-  surfaceTexts: {
-    width: '90%',
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     gap: 12,
   },
-  surfaceItem: {
-    width: '48%',
-    padding: 15,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    borderStartColor: '#2E7D32',
-    borderStartWidth: 6,
-  },
-  surfaceItemLarge: {
-    width: '100%',
-    padding: 15,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    borderStartColor: '#2E7D32',
-    borderStartWidth: 6,
-  },
-  surfaceLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2E7D32',
-  },
-  surfaceValue: {
-    fontSize: 16,
-    color: '#212121',
-  },
   btnBase: {
     backgroundColor: '#4CAF50',
     paddingHorizontal: 40,
-    paddingVertical: 10,
+    paddingVertical: 15,
     borderRadius: 10,
     marginVertical: 25,
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 4,
   },
-  btnPressed: {
-    backgroundColor: '#1B5E20',
-  },
   btnText: {
     color: '#FFFFFF',
     fontWeight: 'bold',
     fontSize: 16,
   },
-  header: {
-    width: '85%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  }
 });

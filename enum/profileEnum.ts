@@ -37,9 +37,16 @@ export const ActivityLvlLabels: Record<ActivityLvl, string> = {
 
 type Option = { label: string; value: string };
 
-export const restrictionOptions: Option[] = [
-    { label: "Vegano", value: "VEGAN" },
-    { label: "Vegetariano", value: "VEGETARIAN" },
-    { label: "Sem Glúten", value: "GLUTEN_FREE" },
-    { label: "Sem Lactose", value: "LACTOSE_FREE" },
-];
+export const RestrictionLabels: Record<string, string> = {
+    VEGAN: 'Vegano',
+    VEGETARIAN: 'Vegetariano',
+    GLUTEN_FREE: 'Sem Glúten',
+    LACTOSE_FREE: 'Sem Lactose',
+};
+
+export const RESTRICTION_IDS: Record<string, number> = {
+    'VEGAN': 1,
+    'VEGETARIAN': 2,
+    'GLUTEN_FREE': 3,
+    'LACTOSE_FREE': 4
+};

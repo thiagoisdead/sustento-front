@@ -1,34 +1,49 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { usePath } from '../../hooks/usePath';
 import QuestionaryScreen from '../../components/animatedQuestionary';
 import { useEffect, useState } from 'react';
 import { getItem } from '../../services/secureStore';
 
 export default function Home() {
-  const handlePath = usePath()
+  const handlePath = usePath();
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const [bool, setBool] = useState<boolean>(true)
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const token = await getItem('token');
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     const token = await getItem('token')
-  //     if (token) {
-  //       handlePath('/profile/seeProfile')
-  //     }
-  //     else {
-  //       handlePath('/auth')
-  //     }
-  //     setBool(true)
-  //   }
-  //   fetchData()
-  // }, [])
+        if (token) {
+          // User is logged in
+          handlePath('/meals/seeMeals');
+        } else {
+          // User is NOT logged in
+          handlePath('/auth');
+        }
+      } catch (error) {
+        console.error("Auth check failed", error);
+        // Safety fallback
+        handlePath('/auth');
+      } finally {
+        // Stop loading (though if navigation happens fast, this unmounts anyway)
+        setIsLoading(false);
+      }
+    };
 
+    checkAuth();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#A8D5BA" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      {bool && (
-        <QuestionaryScreen />
-      )}
+      <QuestionaryScreen />
     </View>
   );
 }
