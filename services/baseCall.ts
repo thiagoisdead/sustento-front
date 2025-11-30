@@ -4,7 +4,7 @@ import { getItem } from "./secureStore";
 import { useState } from "react";
 
 
-const back_url_thiago = "http://192.168.1.105:3000/api";
+const back_url_thiago = "http://192.168.15.6:3000/api";
 
 // const token = await getItem('token');
 // const id = await getItem('id');
@@ -28,13 +28,11 @@ export async function baseFetch(route: string) {
 }
 export async function basePost(route: string, data: any) {
 
-  const token = await getItem('token');
-  const id = await getItem('id');
-
   try {
     console.log(`${back_url_thiago}${route}`)
-    console.log(data)
-    const result = await axios.post(`${back_url_thiago}/${route}`, data)
+    console.log('ó a data', data)
+    const result = await axios.post(`${back_url_thiago}${route}`, data)
+    console.log('resultado do basePost', result)
     if (result.status === 200 || result.status === 201) {
       console.log('deu certo')
       return result;
@@ -99,3 +97,19 @@ export async function basePutUnique(route: string, data: any) {
     console.log("Erro ao atualizar dados:", err.message);
   }
 }
+export async function baseSearch(query: string) {
+  try {
+    console.log(">> baseSearch chamada com:", query)
+
+    console.log(`${back_url_thiago}/aliments/search/combined?query=${query}`)
+    const search = await axios.get(`${back_url_thiago}/aliments/search/combined?query=${query}`)
+
+    console.log(">> resposta da API:", search)
+
+    return search.data
+  } catch (err) {
+    console.error("❌ Erro no axios:", err)
+    throw err
+  }
+}
+

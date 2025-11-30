@@ -1,3 +1,4 @@
+import axios from "axios";
 import React, { useState } from "react";
 import {
   FlatList,
@@ -15,6 +16,7 @@ import {
   Searchbar
 } from "react-native-paper";
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { baseSearch } from "../../services/baseCall";
 
 // --- MODIFICADO: Tipo Foods agora inclui Categoria ---
 type Foods = {
@@ -26,9 +28,6 @@ type Foods = {
   serving: "portion" | "g" | "ml";
   category: string; // NOVO
 };
-
-// --- MODIFICADO: 'recentes' agora usa o tipo Foods ---
-// Isso permite que 'handleSelectMeal' funcione com eles
 const recentes: Foods[] = [
   {
     title: 'Frango Grelhado',
@@ -49,13 +48,13 @@ const recentes: Foods[] = [
     category: 'Grãos'
   },
   {
-    title: 'Brócolis Cozido',
+    title: 'Arroz Integral',
     serving: 'g',
-    protein: 3,
-    carbs: 7,
-    fats: 0.5,
-    kcal: 35,
-    category: 'Vegetais'
+    protein: 4,
+    carbs: 35,
+    fats: 2,
+    kcal: 180,
+    category: 'Grãos'
   },
 ];
 
@@ -67,10 +66,13 @@ const categorias = [
   { id: 5, name: 'Laticínios', icon: 'cow' },
 ];
 
+const servingRecord: Record<"portion" | "g" | "ml", string> = {
+  portion: "Por porção",
+  g: "Por 100 gramas",
+  ml: "Por 100 ML"
+}
 
-// --- MODIFICADO: Componente agora aceita 'onPress' ---
 const CategoryItem = ({ icon, name, onPress }: { icon: string, name: string, onPress: () => void }) => (
-  // MODIFICADO: Adicionado onPress
   <Pressable style={styles.categoryItem} onPress={onPress}>
     <View style={styles.categoryIconBox}>
       <MaterialCommunityIcons name={icon} size={30} color="#A8D5BA" />
@@ -79,11 +81,9 @@ const CategoryItem = ({ icon, name, onPress }: { icon: string, name: string, onP
   </Pressable>
 );
 
-// --- MODIFICADO: Componente aceita 'onPress' e 'item' do tipo Foods ---
 const RecentItem = ({ item, onPress }: { item: Foods, onPress: () => void }) => (
-  // MODIFICADO: Adicionado onPress
   <Pressable style={styles.recentItemCard} onPress={onPress}>
-    <View style={styles.recentItemIconBox} />
+    {/* <View style={styles.recentItemIconBox} /> */}
     <View style={styles.recentItemDetails}>
       <Text style={styles.recentItemTitle}>{item.title}</Text>
       {/* MODIFICADO: A lógica de 'serving' agora vem do 'servingRecord' */}
@@ -92,15 +92,15 @@ const RecentItem = ({ item, onPress }: { item: Foods, onPress: () => void }) => 
         <View style={styles.macroItem}>
           <MaterialCommunityIcons name="leaf" size={14} color="#A8D5BA" />
           {/* MODIFICADO: Usando os campos corretos do tipo Foods */}
-          <Text style={styles.macroText}>{item.protein}g P</Text>
+          <Text style={styles.macroText}>{item.protein}g Prot</Text>
         </View>
         <View style={styles.macroItem}>
           <MaterialCommunityIcons name="barley" size={14} color="#A8D5BA" />
-          <Text style={styles.macroText}>{item.carbs}g C</Text>
+          <Text style={styles.macroText}>{item.carbs}g Carb</Text>
         </View>
         <View style={styles.macroItem}>
           <MaterialCommunityIcons name="water-outline" size={14} color="#A8D5BA" />
-          <Text style={styles.macroText}>{item.fats}g G</Text>
+          <Text style={styles.macroText}>{item.fats}g Gord</Text>
         </View>
       </View>
     </View>
@@ -110,16 +110,8 @@ const RecentItem = ({ item, onPress }: { item: Foods, onPress: () => void }) => 
   </Pressable>
 );
 
-// Objeto 'servingRecord' precisa estar disponível globalmente (movido para cima)
-const servingRecord: Record<"portion" | "g" | "ml", string> = {
-  portion: "Por porção",
-  g: "Por 100 gramas",
-  ml: "Por 100 ML"
-}
-
 export default function MealsHome() {
 
-  // --- MODIFICADO: 'products' agora têm categorias ---
   const products: Foods[] = [
     { title: 'Banana', protein: 1.1, carbs: 23, fats: 0.3, kcal: 89, serving: "g", category: "Frutas" },
     { title: 'Maçã', protein: 0.3, carbs: 14, fats: 0.2, kcal: 52, serving: "g", category: "Frutas" },
@@ -135,8 +127,10 @@ export default function MealsHome() {
   const [searchData, setSearchData] = useState<Foods[]>([])
   const [selectedMeal, setSelectedMeal] = useState<Foods | null>(null)
 
-  const handleSearch = (text: string) => {
+  const handleSearch = async (text: string) => {
     setSearchParams(text)
+    const haha = await baseSearch(text)
+    console.log(haha)
 
     // Se a busca estiver vazia, limpa os resultados e volta para a home
     if (!text.length) return setSearchData([])
@@ -201,22 +195,7 @@ export default function MealsHome() {
             />
           ))}
 
-          <Text style={styles.sectionTitle}>Categorias</Text>
-          <View style={styles.categoryGrid}>
-            {/* MODIFICADO: 'categorias' agora é funcional */}
-            {categorias.map(cat => (
-              <CategoryItem
-                key={cat.id}
-                icon={cat.icon}
-                name={cat.name}
-                onPress={() => handleCategoryPress(cat.name)} // <-- AQUI
-              />
-            ))}
-          </View>
-
-          <Pressable style={styles.registerButton}>
-            <Text style={styles.registerButtonText}>Registrar Refeição</Text>
-          </Pressable>
+          {/* <Text style={styles.sectionTitle}>Categorias</Text> */}
         </ScrollView>
       ) : (
         // Esta é a sua tela de resultados (agora usada para Busca e Categoria)
@@ -227,18 +206,30 @@ export default function MealsHome() {
             keyExtractor={(item, index) => `${item.title}-${index}`}
             contentContainerStyle={{ alignItems: 'center', gap: 10, paddingBottom: 40 }}
             renderItem={({ item }) => (
-              <Card style={styles.itemCard} onPress={() => handleSelectMeal(item)}>
-                <Card.Title
-                  title={item.title}
-                  subtitle={servingRecord[item.serving]}
-                  titleStyle={{ color: '#3D3D3D', fontWeight: 'bold' }}
-                />
-                <Card.Content>
-                  <Text style={{ color: '#3D3D3D' }}>
-                    Kcal: {item.kcal} Prot: {item.protein} Carb: {item.carbs} Gord: {item.fats}
-                  </Text>
-                </Card.Content>
-              </Card>
+              <Pressable style={styles.recentItemCard} onPress={() => handleSelectMeal(item)}>
+                {/* <View style={styles.recentItemIconBox} /> */}
+                <View style={styles.recentItemDetails}>
+                  <Text style={styles.recentItemTitle}>{item.title}</Text>
+                  <Text style={styles.recentItemServing}>{servingRecord[item.serving]}</Text>
+                  <View style={styles.recentItemMacros}>
+                    <View style={styles.macroItem}>
+                      <MaterialCommunityIcons name="leaf" size={14} color="#A8D5BA" />
+                      <Text style={styles.macroText}>{item.protein}g Prot</Text>
+                    </View>
+                    <View style={styles.macroItem}>
+                      <MaterialCommunityIcons name="barley" size={14} color="#A8D5BA" />
+                      <Text style={styles.macroText}>{item.carbs}g Carb</Text>
+                    </View>
+                    <View style={styles.macroItem}>
+                      <MaterialCommunityIcons name="water-outline" size={14} color="#A8D5BA" />
+                      <Text style={styles.macroText}>{item.fats}g Gord</Text>
+                    </View>
+                  </View>
+                </View>
+                <Text style={styles.recentItemKcal}>
+                  {item.kcal} <Text style={styles.kcalLabel}>kcal</Text>
+                </Text>
+              </Pressable>
             )}
             // NOVO: Mostra uma mensagem se a busca/categoria não tiver resultados
             ListEmptyComponent={
@@ -251,6 +242,23 @@ export default function MealsHome() {
           />
         </View>
       )}
+      <View style={styles.bottomContent}>
+        <View style={styles.categoryGrid}>
+          {/* MODIFICADO: 'categorias' agora é funcional */}
+          {categorias.map(cat => (
+            <CategoryItem
+              key={cat.id}
+              icon={cat.icon}
+              name={cat.name}
+              onPress={() => handleCategoryPress(cat.name)} // <-- AQUI
+            />
+          ))}
+        </View>
+
+        <Pressable style={styles.registerButton}>
+          <Text style={styles.registerButtonText}>Registrar Refeição</Text>
+        </Pressable>
+      </View>
 
       {/* Seu Dialog (sem modificações, já funciona com o tipo Foods) */}
       <Portal>
@@ -280,6 +288,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5F5DC",
     paddingTop: 50
   },
+  bottomContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
   header: {
     alignItems: 'center',
     paddingBottom: 10,
@@ -288,10 +300,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#3D3D3D',
+    marginBottom: 5,
   },
   searchBarContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 10,
+    paddingBottom: 0,
   },
   searchBar: {
     backgroundColor: '#FFFFFF',
@@ -323,11 +336,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
     elevation: 2,
+    width: '90%',
+    alignSelf: 'center',
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 3,
     shadowOffset: { width: 0, height: 1 },
   },
+
   recentItemIconBox: {
     width: 50,
     height: 50,
@@ -375,11 +391,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-around',
-    marginTop: 5,
+    marginTop: 10,
   },
   categoryItem: {
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 5,
     width: '20%',
   },
   categoryIconBox: {
@@ -422,17 +438,6 @@ const styles = StyleSheet.create({
   searchResults: {
     width: '100%',
   },
-  itemCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 10,
-    width: '90%',
-    alignSelf: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-  },
-  // NOVO: Estilo para lista vazia
   emptyList: {
     paddingTop: 50,
     alignItems: 'center'

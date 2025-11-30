@@ -48,7 +48,7 @@ export default function LoginScreen() {
     try {
       const loginValidate = loginSchema.parse(dados);
       console.log('Login válido:', loginValidate);
-      const responseLogin = await basePost('auth/login', loginValidate);
+      const responseLogin = await basePost('/auth/login', loginValidate);  
       if (responseLogin && (responseLogin.status === 200 || responseLogin.status === 201)) {
         await setItem("token", String(responseLogin?.data?.token))
         await setItem("id", String(responseLogin?.data?.id))
