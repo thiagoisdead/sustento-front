@@ -1,35 +1,49 @@
-import { useRef } from "react";
-import { Animated, Pressable } from 'react-native';
-import { AnimatedButtonProp } from "../types/interfaces";
+import React, { useRef } from 'react';
+import { Pressable, Animated, StyleProp, ViewStyle } from 'react-native';
 
-export function AnimatedButton(props: AnimatedButtonProp) {
+interface AnimatedButtonProps {
+  onPress: () => void;
+  children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+  scaleTo?: number;
+}
 
-  const scale = useRef(new Animated.Value(1)).current;
+export const AnimatedButton = ({
+  onPress,
+  children,
+  style,
+  scaleTo = 0.95,
+}: AnimatedButtonProps) => {
+  const scaleValue = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
-    Animated.spring(scale, {
-      toValue: props.scaleTo || 0.95,
+    Animated.spring(scaleValue, {
+      toValue: scaleTo,
       useNativeDriver: true,
       speed: 50,
-      bounciness: 0,
+      bounciness: 4,
     }).start();
   };
 
   const handlePressOut = () => {
-    Animated.spring(scale, {
+    Animated.spring(scaleValue, {
       toValue: 1,
       useNativeDriver: true,
       speed: 50,
-      bounciness: 5,
+      bounciness: 4,
     }).start();
   };
 
   return (
-    <Pressable onPressIn={handlePressIn} onPressOut={handlePressOut} onPress={props.onPress}>
-      <Animated.View style={[{ transform: [{ scale }] }, props.style]}>
-        {props.children}
+    <Pressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={{ width: '100%', alignItems: 'center' }}
+    >
+      <Animated.View style={[style, { transform: [{ scale: scaleValue }] }]}>
+        {children}
       </Animated.View>
     </Pressable>
-  )
-
-}
+  );
+};
