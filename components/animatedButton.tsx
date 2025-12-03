@@ -1,49 +1,35 @@
-import React, { useRef } from 'react';
-import { Pressable, Animated, StyleProp, ViewStyle } from 'react-native';
+import { useRef } from "react";
+import { Animated, Pressable } from 'react-native';
+import { AnimatedButtonProp } from "../types/interfaces";
 
-interface AnimatedButtonProps {
-  onPress: () => void;
-  children: React.ReactNode;
-  style?: StyleProp<ViewStyle>;
-  scaleTo?: number;
-}
+export function AnimatedButton(props: AnimatedButtonProp) {
 
-export const AnimatedButton = ({
-  onPress,
-  children,
-  style,
-  scaleTo = 0.95,
-}: AnimatedButtonProps) => {
-  const scaleValue = useRef(new Animated.Value(1)).current;
+  const scale = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
-    Animated.spring(scaleValue, {
-      toValue: scaleTo,
+    Animated.spring(scale, {
+      toValue: props.scaleTo || 0.95,
       useNativeDriver: true,
       speed: 50,
-      bounciness: 4,
+      bounciness: 0,
     }).start();
   };
 
   const handlePressOut = () => {
-    Animated.spring(scaleValue, {
+    Animated.spring(scale, {
       toValue: 1,
       useNativeDriver: true,
       speed: 50,
-      bounciness: 4,
+      bounciness: 5,
     }).start();
   };
 
   return (
-    <Pressable
-      onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={{ width: '100%', alignItems: 'center' }}
-    >
-      <Animated.View style={[style, { transform: [{ scale: scaleValue }] }]}>
-        {children}
+    <Pressable onPressIn={handlePressIn} onPressOut={handlePressOut} onPress={props.onPress}>
+      <Animated.View style={[{ transform: [{ scale }] }, props.style]}>
+        {props.children}
       </Animated.View>
     </Pressable>
-  );
-};
+  )
+
+}
