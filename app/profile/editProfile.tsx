@@ -9,11 +9,11 @@ import { User } from '../../types/data';
 import { ActivityLvl, ActivityLvlLabels, Gender, GenderLabels, Objective, ObjectiveLabels } from '../../enum/profileEnum';
 import { SERVER_URL } from '../../constants/config';
 
-import { ImagePickerModal } from '../../components/editProfile/ImagePickerModal';
 import { EditableAvatar } from '../../components/editProfile/editableAvatar';
 import { EditProfileHeader } from '../../components/editProfile/editProfileHeader';
 import { FormField } from '../../components/editProfile/formField';
 import { syncUserRestrictions } from '../../utils/profileHelper';
+import { ImagePickerModal } from '../../components/editProfile/imagePickerModal';
 
 // --- Configuration & Types ---
 type Option = { label: string; value: string };
