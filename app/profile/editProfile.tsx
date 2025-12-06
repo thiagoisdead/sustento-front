@@ -9,9 +9,9 @@ import { syncUserRestrictions } from '../../utils/profileHelper';
 
 // --- Imports de Constantes e Tipos (Ajuste os caminhos conforme seu projeto) ---
 import { SERVER_URL } from '../../constants/config';
-import { User, Gender, ActivityLvl, Objective } from '../../types/data'; // <-- Adicionado os Enums
+import { Gender, ActivityLvl, Objective, GenderLabels, ActivityLvlLabels, ObjectiveLabels } from '../../enum/profileEnum';
+import { User } from '../../types/data'; 
 // Assumindo que os labels estão em um arquivo de constantes:
-import { GenderLabels, ActivityLvlLabels, ObjectiveLabels } from '../../constants/labels'; // <-- Adicionado os Labels
 
 // --- Imports de Componentes ---
 import { EditableAvatar } from '../../components/editProfile/editableAvatar';

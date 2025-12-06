@@ -14,18 +14,14 @@ export default function Home() {
         const token = await getItem('token');
 
         if (token) {
-          // User is logged in
           handlePath('/calendar/seeCalendar');
         } else {
-          // User is NOT logged in
           handlePath('/auth');
         }
       } catch (error) {
         console.error("Auth check failed", error);
-        // Safety fallback
         handlePath('/auth');
       } finally {
-        // Stop loading (though if navigation happens fast, this unmounts anyway)
         setIsLoading(false);
       }
     };

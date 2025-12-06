@@ -12,9 +12,8 @@ import { Picker } from "@react-native-picker/picker";
 import { basePutUnique } from "../services/baseCall";
 import { useUser } from "../hooks/useUser";
 import { usePath } from "../hooks/usePath";
-import { ActivityLvlLabels, GenderLabels, ObjectiveLabels, restrictionOptions } from "../enum/profileEnum";
-
-
+import { ActivityLvlLabels, GenderLabels, ObjectiveLabels } from "../enum/profileEnum";
+import { restrictionOptions } from "../constants/editProfileConfig";
 
 export default function QuestionaryScreen() {
   const [step, setStep] = useState(0);
@@ -47,7 +46,7 @@ export default function QuestionaryScreen() {
   };
 
   const userData = useUser();
-  console.log(userData)
+  console.log('oi', userData)
 
   useEffect(() => {
     const timeout = setTimeout(() => {

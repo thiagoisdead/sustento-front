@@ -16,12 +16,12 @@ import {
 } from "react-native-paper";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-// Imports
 import { Foods } from "../../types/data";
 import { COLORS } from "../../constants/theme";
 import { RecentItem } from "../../components/recentItem";
 import { CategoryItem } from "../../components/categoryItem";
 import { SERVING_LABELS } from "../../constants/food";
+import { baseFetch } from "../../services/baseCall";
 
 // Static Data
 const recentes: Foods[] = [
@@ -54,10 +54,12 @@ export default function MealsHome() {
   const [searchData, setSearchData] = useState<Foods[]>([])
   const [selectedMeal, setSelectedMeal] = useState<Foods | null>(null)
 
-  const handleSearch = (text: string) => {
+  const handleSearch = async (text: string) => {
     setSearchParams(text)
     if (!text.length) return setSearchData([])
     setSearchData(products.filter(p => p.title.toLowerCase().includes(text.toLowerCase())));
+    const haha = await baseFetch(`search?${text}`)
+    console.log(text)
   }
 
   const handleSelectMeal = (foodData: Foods) => {
