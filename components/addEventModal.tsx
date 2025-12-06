@@ -4,9 +4,8 @@ import {
     View,
     Text,
     TextInput,
-    TouchableOpacity,
+    Pressable,
     StyleSheet,
-    TouchableWithoutFeedback,
     Keyboard,
     Alert
 } from 'react-native';
@@ -35,7 +34,8 @@ export const AddEventModal = ({ visible, onClose, onSave }: AddEventModalProps) 
         }
 
         onSave(description, time);
-        // Limpa os campos e fecha
+
+        // Reset and close
         setDescription('');
         setTime('');
         onClose();
@@ -48,44 +48,53 @@ export const AddEventModal = ({ visible, onClose, onSave }: AddEventModalProps) 
             visible={visible}
             onRequestClose={onClose}
         >
-            <TouchableWithoutFeedback onPress={onClose}>
-                <View style={styles.overlay}>
-                    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                        <View style={styles.modalContainer}>
-                            <Text style={styles.title}>Novo Evento</Text>
+            <Pressable
+                style={styles.overlay}
+                onPress={() => { Keyboard.dismiss(); onClose(); }}
+            >
+                <Pressable
+                    style={styles.modalContainer}
+                    onPress={(e) => e.stopPropagation()}
+                >
+                    <Text style={styles.title}>Novo Evento</Text>
 
-                            <Text style={styles.label}>Descrição</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Ex: Reunião de equipe"
-                                value={description}
-                                onChangeText={setDescription}
-                                autoFocus
-                            />
+                    <Text style={styles.label}>Descrição</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Ex: Reunião de equipe"
+                        placeholderTextColor={COLORS.textLight}
+                        value={description}
+                        onChangeText={setDescription}
+                    />
 
-                            <Text style={styles.label}>Horário (HH:MM)</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="09:00"
-                                value={time}
-                                onChangeText={setTime}
-                                keyboardType="numbers-and-punctuation"
-                                maxLength={5}
-                            />
+                    <Text style={styles.label}>Horário (HH:MM)</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="09:00"
+                        placeholderTextColor={COLORS.textLight}
+                        value={time}
+                        onChangeText={setTime}
+                        keyboardType="numbers-and-punctuation"
+                        maxLength={5}
+                    />
 
-                            <View style={styles.buttonRow}>
-                                <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose}>
-                                    <Text style={styles.cancelText}>Cancelar</Text>
-                                </TouchableOpacity>
+                    <View style={styles.buttonRow}>
+                        <Pressable
+                            style={[styles.button, styles.cancelButton]}
+                            onPress={onClose}
+                        >
+                            <Text style={styles.cancelText}>Cancelar</Text>
+                        </Pressable>
 
-                                <TouchableOpacity style={[styles.button, styles.saveButton]} onPress={handleSave}>
-                                    <Text style={styles.saveText}>Salvar</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </TouchableWithoutFeedback>
-                </View>
-            </TouchableWithoutFeedback>
+                        <Pressable
+                            style={[styles.button, styles.saveButton]}
+                            onPress={handleSave}
+                        >
+                            <Text style={styles.saveText}>Salvar</Text>
+                        </Pressable>
+                    </View>
+                </Pressable>
+            </Pressable>
         </Modal>
     );
 };
@@ -104,10 +113,6 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.cardBg,
         borderRadius: 20,
         padding: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
         elevation: 5,
     },
     title: {
@@ -137,13 +142,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginTop: 10,
+        gap: 10,
     },
     button: {
         flex: 1,
         padding: 12,
         borderRadius: 10,
         alignItems: 'center',
-        marginHorizontal: 5,
     },
     cancelButton: {
         backgroundColor: '#F5F5F5',
@@ -156,7 +161,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     saveText: {
-        color: COLORS.textDark, // ou White dependendo do contraste
+        color: '#FFFFFF',
         fontWeight: 'bold',
     },
 });
