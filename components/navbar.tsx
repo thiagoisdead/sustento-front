@@ -6,17 +6,22 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { NavButtonsArray, navButtonsSchemaArray } from '../types/ui';
 import { usePath } from '../hooks/usePath';
 import { AnimatedButton } from './animatedButton';
+import { getItem } from 'expo-secure-store';
 
 export default function NavBar() {
   const handlePath = usePath();
-
+  const token = getItem("token");
   const navButtons: NavButtonsArray = navButtonsSchemaArray.parse([
     { Icon: Entypo, name: 'calendar', path: '/calendar/seeCalendar' },
-    { Icon: Feather, name: 'clipboard', path: '/meals/seeMeals' },
+    { Icon: Feather, name: 'clipboard', path: '/dashboard/dashboard' },
     { Icon: MaterialCommunityIcons, name: 'food-apple-outline', path: '/foodTracker/seeFoodTracker' },
     { Icon: MaterialCommunityIcons, name: 'food-turkey', path: '/foods/editFoods' },
     { Icon: Ionicons, name: 'person', path: '/profile/seeProfile' },
   ]);
+
+  if (!token) {
+    handlePath("auth");
+  }
 
   return (
     <View style={styles.container}>

@@ -15,7 +15,7 @@ export default function Home() {
 
         if (token) {
           // User is logged in
-          handlePath('/meals/seeMeals');
+          handlePath('/calendar/seeCalendar');
         } else {
           // User is NOT logged in
           handlePath('/auth');
