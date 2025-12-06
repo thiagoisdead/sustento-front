@@ -1,5 +1,11 @@
-import { RESTRICTION_IDS } from "../enum/profileEnum";
 import { baseDelete, basePost } from "../services/baseCall";
+
+const RESTRICTION_IDS: Record<string, number> = {
+    'VEGAN': 1,
+    'VEGETARIAN': 2,
+    'GLUTEN_FREE': 3,
+    'LACTOSE_FREE': 4
+};
 
 export const syncUserRestrictions = async (
     userId: number,
@@ -18,24 +24,22 @@ export const syncUserRestrictions = async (
 
     // ADD
     toAdd.forEach(rKey => {
-        // CORREÇÃO 2: .toUpperCase() para garantir match
         const rId = RESTRICTION_IDS[rKey.toUpperCase()];
         if (rId && userId) {
-            promises.push(basePost('/userRestrictions', { user_id: userId, restriction_id: rId }));
+            promises.push(basePost('userRestrictions', { user_id: userId, restriction_id: rId }));
         }
     });
 
-    // REMOVE (DELETE)
+    // REMOVE
     toRemove.forEach(rKey => {
         const rId = RESTRICTION_IDS[rKey.toUpperCase()];
-
-        // Verificação de segurança antes de chamar
         if (rId && userId) {
             promises.push(
-                baseDelete(`/userRestrictions?user_id=${userId}&restriction_id=${rId}`)
+                baseDelete('userRestrictions', {
+                    user_id: userId,
+                    restriction_id: rId
+                })
             );
-        } else {
-            console.error("Dados inválidos para Delete:", { userId, rId, rKey });
         }
     });
 
