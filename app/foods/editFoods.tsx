@@ -15,14 +15,15 @@ import {
   Searchbar
 } from "react-native-paper";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+
+// Imports
 import { Foods } from "../../types/data";
 import { COLORS } from "../../constants/theme";
 import { RecentItem } from "../../components/recentItem";
 import { CategoryItem } from "../../components/categoryItem";
+import { SERVING_LABELS } from "../../constants/food";
 
-// Imports
-
-// Static Data (Could also move to a services/data file)
+// Static Data
 const recentes: Foods[] = [
   { title: 'Frango Grelhado', serving: 'g', protein: 40, carbs: 5, fats: 9, kcal: 250, category: 'Proteínas' },
   { title: 'Arroz Integral', serving: 'g', protein: 4, carbs: 35, fats: 2, kcal: 180, category: 'Grãos' },
@@ -122,16 +123,22 @@ export default function MealsHome() {
             style={styles.searchResults}
             data={searchData}
             keyExtractor={(item, index) => `${item.title}-${index}`}
-            contentContainerStyle={{ alignItems: 'center', gap: 10, paddingBottom: 40 }}
+            contentContainerStyle={styles.listContent}
             renderItem={({ item }) => (
-              <Card style={styles.itemCard} onPress={() => handleSelectMeal(item)} mode="elevated">
-                <Card.Title
-                  title={item.title}
-                  subtitle={`${item.kcal} kcal`}
-                  titleStyle={{ color: COLORS.textDark, fontWeight: 'bold' }}
-                  subtitleStyle={{ color: COLORS.textLight }}
-                  right={(props) => <MaterialCommunityIcons {...props} name="chevron-right" color={COLORS.primary} />}
-                />
+              <Card style={styles.itemCard} onPress={() => handleSelectMeal(item)}>
+                <View style={styles.cardContent}>
+                  <View style={styles.textContainer}>
+                    <Text style={styles.foodTitle}>{item.title}</Text>
+                    <Text style={styles.foodSubtitle}>
+                      {SERVING_LABELS[item.serving] || item.serving} • {item.kcal} kcal
+                    </Text>
+                  </View>
+                  <MaterialCommunityIcons
+                    name="chevron-right"
+                    size={24}
+                    color={COLORS.primary}
+                  />
+                </View>
               </Card>
             )}
             ListEmptyComponent={
@@ -151,22 +158,10 @@ export default function MealsHome() {
           <Dialog.Title style={styles.dialogTitle}>{selectedMeal?.title}</Dialog.Title>
           <Dialog.Content>
             <View style={styles.dialogMacroRow}>
-              <View style={styles.dialogMacroItem}>
-                <Text style={styles.dialogMacroLabel}>Calorias</Text>
-                <Text style={styles.dialogMacroValue}>{selectedMeal?.kcal}</Text>
-              </View>
-              <View style={styles.dialogMacroItem}>
-                <Text style={styles.dialogMacroLabel}>Proteínas</Text>
-                <Text style={styles.dialogMacroValue}>{selectedMeal?.protein}g</Text>
-              </View>
-              <View style={styles.dialogMacroItem}>
-                <Text style={styles.dialogMacroLabel}>Carbos</Text>
-                <Text style={styles.dialogMacroValue}>{selectedMeal?.carbs}g</Text>
-              </View>
-              <View style={styles.dialogMacroItem}>
-                <Text style={styles.dialogMacroLabel}>Gorduras</Text>
-                <Text style={styles.dialogMacroValue}>{selectedMeal?.fats}g</Text>
-              </View>
+              <MacroStat label="Calorias" value={selectedMeal?.kcal} />
+              <MacroStat label="Proteínas" value={`${selectedMeal?.protein}g`} />
+              <MacroStat label="Carbos" value={`${selectedMeal?.carbs}g`} />
+              <MacroStat label="Gorduras" value={`${selectedMeal?.fats}g`} />
             </View>
           </Dialog.Content>
           <Dialog.Actions>
@@ -179,6 +174,14 @@ export default function MealsHome() {
     </View>
   )
 }
+
+// Helper component for cleaner Dialog code
+const MacroStat = ({ label, value }: { label: string, value: any }) => (
+  <View style={styles.dialogMacroItem}>
+    <Text style={styles.dialogMacroLabel}>{label}</Text>
+    <Text style={styles.dialogMacroValue}>{value}</Text>
+  </View>
+);
 
 const styles = StyleSheet.create({
   container: {
@@ -203,7 +206,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.cardBg,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: '#E0E0E0',
   },
   mainScroll: {
     flex: 1,
@@ -219,11 +222,15 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 15,
   },
+
+  // --- Category Grid ---
   categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
+
+  // --- Buttons ---
   registerButton: {
     backgroundColor: COLORS.primary,
     paddingVertical: 15,
@@ -237,19 +244,53 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+
+  // --- Search Results List ---
   resultsContainer: {
     flex: 1,
     marginTop: 10,
   },
   searchResults: {
-    width: '100%',
+    flex: 1,
   },
+  listContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+
+  // --- Card Item Style (Manual Layout) ---
   itemCard: {
     backgroundColor: COLORS.cardBg,
     borderRadius: 12,
-    width: '90%',
-    marginBottom: 5
+    marginBottom: 10,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
   },
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+  },
+  textContainer: {
+    flex: 1,
+    marginRight: 10,
+  },
+  foodTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.textDark, // Ensure dark text
+    marginBottom: 4,
+  },
+  foodSubtitle: {
+    fontSize: 14,
+    color: COLORS.textLight, // Ensure readable grey
+  },
+
+  // --- Empty State ---
   emptyList: {
     paddingTop: 50,
     alignItems: 'center'
@@ -258,6 +299,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.textLight
   },
+
+  // --- Dialog Styles ---
   dialog: {
     backgroundColor: 'white',
     borderRadius: 16,

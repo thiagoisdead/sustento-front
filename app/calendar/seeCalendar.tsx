@@ -20,7 +20,6 @@ setupCalendarLocale();
 export default function SeeCalendar() {
     const { width } = useWindowDimensions();
     const isMobile = width < BREAKPOINTS.MOBILE;
-
     const [selectedDate, setSelectedDate] = useState(getTodaysDate());
     const [events, setEvents] = useState<Event[]>([]);
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -106,7 +105,9 @@ export default function SeeCalendar() {
                 </View>
                 <Text style={styles.todayTitle}>{selectedDate === getTodaysDate() ? "Hoje" : formatDisplayDate(selectedDate)}</Text>
                 {eventsForSelectedDate.length === 0 ? (
-                    <Text style={styles.emptyText}>Nenhum evento para este dia.</Text>
+                    <>
+                        <Text style={styles.emptyText}>Nenhum evento para este dia.</Text>
+                    </>
                 ) : (
                     eventsForSelectedDate.map((event) => (
                         <CalendarEventCard key={event.id} event={event} onDelete={() => handleDeleteEvent(event.id)} />

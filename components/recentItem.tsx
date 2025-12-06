@@ -3,6 +3,7 @@ import { Pressable, View, Text, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 import { Foods } from '../types/data';
+import { SERVING_LABELS } from '../constants/food';
 
 interface RecentItemProps {
     item: Foods;
@@ -18,12 +19,14 @@ const servingRecord: Record<"portion" | "g" | "ml", string> = {
 export const RecentItem = ({ item, onPress }: RecentItemProps) => (
     <Pressable style={styles.recentItemCard} onPress={onPress}>
         <View style={styles.recentItemIconBox}>
-            {/* You can add dynamic icons based on category here if you want */}
             <MaterialCommunityIcons name="food" size={24} color="#FFF" />
         </View>
         <View style={styles.recentItemDetails}>
             <Text style={styles.recentItemTitle}>{item.title}</Text>
-            <Text style={styles.recentItemServing}>{servingRecord[item.serving]}</Text>
+
+            {/* FIX: Use the imported constant */}
+            <Text style={styles.recentItemServing}>{SERVING_LABELS[item.serving]}</Text>
+
             <View style={styles.recentItemMacros}>
                 <View style={styles.macroItem}>
                     <MaterialCommunityIcons name="leaf" size={12} color={COLORS.primary} />

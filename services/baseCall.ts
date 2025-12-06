@@ -6,6 +6,26 @@ const API_URL = "http://192.168.1.105:3000/api";
 
 const cleanUrl = (route: string) => `${API_URL}/${route}`.replace(/([^:]\/)\/+/g, "$1");
 
+export async function baseValidate() {
+  const token = await getItem('token');
+
+  try {
+    const result = await axios.post(
+      `${API_URL}/auth/validateToken`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
+      }
+    );
+    return result.data;
+  } catch (err: any) {
+    console.log("Erro ao validar token:", err.response?.data || err.message);
+    throw err;
+  }
+}
+
 export async function baseFetch(route: string) {
   const token = await getItem('token');
   try {
@@ -20,7 +40,7 @@ export async function baseFetch(route: string) {
 
 export async function baseUniqueGet(route: string) {
   const token = await getItem('token');
-  const id = await getItem('id'); // Recupera ID salvo no login
+  const id = await getItem('id');
 
   try {
     const url = cleanUrl(`${route}/${id}`);
@@ -101,5 +121,21 @@ export async function basePutMultidata(route: string, imageUri: string) {
     }
   } catch (err: any) {
     console.log('❌ FALHA NO UPLOAD:', err.message);
+  }
+}
+
+export async function basePutById(route: string, id: number, data: any) {
+  const token = await getItem('token');
+  try {
+    const url = cleanUrl(`${route}/${id}`);
+    console.log(`PUT By ID: ${url}`, data);
+
+    const result = await axios.put(url, data, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return result;
+  } catch (err: any) {
+    console.log(`Erro no PUT ${route}/${id}:`, err.message);
+    throw err;
   }
 }
