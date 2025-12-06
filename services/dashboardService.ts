@@ -1,8 +1,9 @@
 import { baseUniqueGet, baseFetch } from './baseCall';
-import { DashboardData, dashboardDataSchema } from '../types/dashboard';
+import { DashboardData } from '../types/dashboard';
 import { getItem } from './secureStore';
+import { MealPlan } from '../types/meals'; // Certifique-se que o tipo está aqui
 
-// Helper to check if a date is today
+// Helper de Data
 const isSameDay = (d1: Date, d2: Date) =>
     d1.getFullYear() === d2.getFullYear() &&
     d1.getMonth() === d2.getMonth() &&
@@ -10,39 +11,59 @@ const isSameDay = (d1: Date, d2: Date) =>
 
 export const getDashboardData = async (): Promise<DashboardData | null> => {
     try {
-        const userId = await getItem('id');
-        if (!userId) return null;
+        const userIdStr = await getItem('id');
+        if (!userIdStr) return null;
+        const userId = Number(userIdStr);
 
-        // 1. Fetch Meal Records (History) - GET /api/mealRecords/user/:id
-        const recordsRes = await baseUniqueGet('api/mealPlans');
-        const allRecords = Array.isArray(recordsRes?.data) ? recordsRes?.data : [];
-
-        // 2. Fetch Meal Plans (Targets) - GET /api/mealPlans?user_id=:id
-        // We try to find the active plan for targets
+        // 1. Buscar Planos
         const plansRes = await baseFetch(`mealPlans?user_id=${userId}`);
         const userPlans = Array.isArray(plansRes?.data) ? plansRes?.data : [];
-        // Find active plan or fallback to first one
-        const activePlan = userPlans.find((p: any) => p.active) || userPlans[0];
 
-        // --- DEFAULTS (Targets) ---
-        // If no plan exists, we use safe defaults
+        // --- CORREÇÃO AQUI ---
+        // Filtra todos que estão marcados como ativos
+        const activePlans = userPlans.filter((p: any) => p.active);
+
+        // Ordena pela data de atualização (updated_at) decrescente.
+        // O primeiro item [0] será o plano que o usuário alterou/ativou mais recentemente.
+        const activePlan = activePlans.sort((a: any, b: any) =>
+            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        )[0] || userPlans[userPlans.length - 1]; // Fallback: último da lista geral
+
+        // Helper para limpar números e remover negativos
+        const cleanNum = (val: any) => Math.abs(Number(val) || 0);
+
+        // Valores do plano selecionado
         const targets = {
-            calories: Number(activePlan?.target_calories) || 2000,
-            protein: Number(activePlan?.target_protein) || 150,
-            carbs: Number(activePlan?.target_carbs) || 250,
-            fat: Number(activePlan?.target_fat) || 70,
-            water: Number(activePlan?.target_water) || 2500, // ml
+            calories: cleanNum(activePlan?.target_calories) || 2000,
+            protein: cleanNum(activePlan?.target_protein) || 150,
+            carbs: cleanNum(activePlan?.target_carbs) || 250,
+            fat: cleanNum(activePlan?.target_fat) || 70,
+            water: cleanNum(activePlan?.target_water) || 2500,
         };
 
-        // --- CALCULATE TODAY'S CONSUMPTION ---
-        const today = new Date();
-        const todayRecords = allRecords.filter((rec: any) => isSameDay(new Date(rec.meal_date), today));
+        // 2. Buscar Consumo (Refeições)
+        const recordsRes = await baseUniqueGet('mealRecords/user');
+        const allRecords = Array.isArray(recordsRes?.data) ? recordsRes?.data : [];
 
-        // Sum up macros from today's records
+        // 3. Buscar Consumo (Água)
+        const waterRes = await baseUniqueGet('waterRecords/user');
+        const allWater = Array.isArray(waterRes?.data) ? waterRes?.data : [];
+
+        // --- HOJE ---
+        const today = new Date();
+
+        // Filtra registros do dia atual
+        const todayRecords = allRecords.filter((rec: any) => isSameDay(new Date(rec.meal_date), today));
+        const todayWater = allWater.filter((rec: any) => isSameDay(new Date(rec.water_record_date), today));
+
+        // Soma Água
+        const currentWater = todayWater.reduce((acc: number, rec: any) => acc + Number(rec.water_consumption || 0), 0);
+
+        // Soma Macros e Calorias
         const currentStats = todayRecords.reduce((acc: any, rec: any) => {
             if (!rec.aliment) return acc;
 
-            // Calculation: (Value per 100g * Amount consumed) / 100
+            // O banco guarda por 100g. O registro tem a quantidade comida.
             const ratio = Number(rec.amount) / 100;
 
             return {
@@ -53,7 +74,7 @@ export const getDashboardData = async (): Promise<DashboardData | null> => {
             };
         }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
-        // --- CALCULATE WEEKLY CHART (Last 7 Days) ---
+        // --- SEMANA (Gráfico) ---
         const weekDays = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
         const weeklyActivity = [];
 
@@ -73,19 +94,23 @@ export const getDashboardData = async (): Promise<DashboardData | null> => {
             });
         }
 
-        // --- MEAL NAMES FOR UI ---
-        // Helper to find a food name for a specific meal ID (1=Breakfast, 2=Lunch, 3=Dinner)
-        const getMealName = (id: number) => {
-            const rec = todayRecords.find((r: any) => r.meal_id === id);
-            return rec ? rec.aliment.name : "Não registrado";
+        // --- RESUMO DO DIA (Lista de Alimentos) ---
+        // Junta os nomes dos alimentos de cada refeição (Ex: "Arroz, Frango")
+        const getMealSummary = (mealId: number) => {
+            const items = todayRecords
+                .filter((r: any) => r.meal_id === mealId)
+                .map((r: any) => r.aliment.name);
+
+            if (items.length === 0) return "Não registrado";
+            if (items.length <= 2) return items.join(", ");
+            return `${items[0]}, ${items[1]} +${items.length - 2}`;
         };
 
-        // --- CONSTRUCT RAW DATA ---
-        const rawData = {
+        return {
             stats: {
                 calories: { current: Math.round(currentStats.calories), target: targets.calories },
-                water: { current: 0, target: targets.water / 1000 }, // Placeholder until waterRecords connected
-                steps: { current: 0, target: 10000 },
+                water: { current: currentWater / 1000, target: targets.water / 1000 }, // Litros
+                steps: { current: 0, target: 0 }, // Não usado na UI, mas mantido no tipo
                 macros: {
                     protein: { current: Math.round(currentStats.protein), target: targets.protein },
                     carbs: { current: Math.round(currentStats.carbs), target: targets.carbs },
@@ -94,18 +119,14 @@ export const getDashboardData = async (): Promise<DashboardData | null> => {
             },
             weeklyActivity,
             todayMealsSummary: {
-                breakfast: getMealName(1),
-                lunch: getMealName(2),
-                dinner: getMealName(3),
+                breakfast: getMealSummary(1),
+                lunch: getMealSummary(2),
+                dinner: getMealSummary(3),
             },
             workout: {
-                title: "Treino Livre",
-                duration: "0 min",
-                status: 'PENDENTE',
+                title: "", duration: "", status: 'PENDENTE' // Não será exibido
             },
         };
-
-        return dashboardDataSchema.parse(rawData);
 
     } catch (error) {
         console.error("Dashboard Service Error:", error);
