@@ -1,3 +1,5 @@
-export { default } from './home/home';
+import AuthGate from "./guard/pathGuardion"; 
 
-// This is a test
+export default function Index() {
+  return <AuthGate />;
+}

@@ -25,6 +25,7 @@ export default function QuestionaryScreen() {
   });
 
   const handlePath = usePath()
+  const { userData, loading } = useUser();
 
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(-20)).current;
@@ -45,8 +46,9 @@ export default function QuestionaryScreen() {
     ]).start();
   };
 
-  const userData = useUser();
-  console.log('oi', userData)
+  useEffect(() => {
+    if (loading) return;
+  }, [loading]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -110,6 +112,9 @@ export default function QuestionaryScreen() {
 
 
   const handleNext = async () => {
+
+    if (loading) return;
+    
     if (!canProceed()) {
       Alert.alert("Ops!", "Por favor, selecione uma opção antes de continuar.");
       return;
@@ -124,7 +129,7 @@ export default function QuestionaryScreen() {
         return;
       }
       console.log("🧠 Dados finais:", data);
-      const mergedData = { ...userData, ...data }
+      const mergedData = { ...(userData || {}), ...data }
 
 
       const { restrictions, ...payload } = mergedData;
