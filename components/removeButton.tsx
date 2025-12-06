@@ -1,55 +1,44 @@
-import { useState } from "react";
-import { Pressable, StyleSheet, Text } from "react-native";
-import { RemoveButtonProps } from "../types/calendar";
+import React from 'react';
+import { Pressable, Text, StyleSheet } from 'react-native';
+import { COLORS } from '../constants/theme';
 
-
-
-export default function RemoveButton({ id, setEvents }: RemoveButtonProps) {
-    const [hovered, setHovered] = useState(false);
-
-    const deleteEvent = (id: number) => {
-        setEvents(prevEvents => prevEvents.filter(event => event.id !== id));
-    };
-
-    return (
-        <Pressable
-            onHoverIn={() => setHovered(true)}
-            onHoverOut={() => setHovered(false)}
-            style={[styles.removeButton, hovered && styles.removeButtonHovered]}
-            onPress={() => deleteEvent(id)}
-        >
-            <Text
-                style={[
-                    styles.removeButtonText,
-                    hovered && styles.removeButtonTextHovered,
-                ]}
-            >
-                Remover Evento
-            </Text>
-        </Pressable>
-    );
+interface RemoveButtonProps {
+    onPress: () => void;
 }
 
+export const RemoveButton = ({ onPress }: RemoveButtonProps) => {
+    return (
+        <Pressable
+            onPress={onPress}
+            style={({ pressed }) => [
+                styles.removeButton,
+                pressed && styles.removeButtonPressed
+            ]}
+        >
+            <Text style={styles.removeButtonText}>×</Text>
+        </Pressable>
+    );
+};
 
 const styles = StyleSheet.create({
     removeButton: {
-        backgroundColor: '#FFFFFF',
-        borderColor: '#A8D5BA',
-        borderWidth: 1,
-        borderRadius: 25,
-        paddingVertical: 8,
-        paddingHorizontal: 12,
+        backgroundColor: '#FFF0F0',
+        borderRadius: 12,
+        width: 32,
+        height: 32,
+        justifyContent: 'center',
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#FFCDD2',
     },
-    removeButtonHovered: {
-        backgroundColor: '#A8D5BA',
+    removeButtonPressed: {
+        backgroundColor: '#D32F2F',
+        borderColor: '#D32F2F',
     },
     removeButtonText: {
-        color: '#A8D5BA',
-        fontSize: 16,
+        color: '#D32F2F',
+        fontSize: 20,
         fontWeight: 'bold',
-    },
-    removeButtonTextHovered: {
-        color: "#FFFFFF",
+        marginTop: -2,
     },
 });
