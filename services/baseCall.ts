@@ -3,7 +3,7 @@ import { getItem, removeItem } from "./secureStore";
 import { uploadAsync, FileSystemUploadType } from 'expo-file-system/legacy';
 
 
-const API_URL = "http://192.168.15.6:3000/api";
+const API_URL = "http://192.168.1.105:3000/api";
 const cleanUrl = (route: string) => `${API_URL}/${route}`.replace(/([^:]\/)\/+/g, "$1");
 
 export async function baseValidate(handlePath?: (path: string) => void) {
@@ -54,6 +54,21 @@ export async function baseUniqueGet(route: string) {
     return fetchData;
   } catch (err: any) {
     console.log("Erro no GET Unique:", err.message);
+  }
+}
+
+export async function baseGetById(route: string, id: number) {
+  const token = await getItem('token');
+  try {
+    const url = cleanUrl(`${route}/${id}`);
+    console.log(`GET By ID: ${url}`);
+    const result = await axios.get(url, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return result;
+  } catch (err: any) {
+    console.log(`Erro no GET ${route}/${id}:`, err.message);
+    return null;
   }
 }
 

@@ -1,16 +1,16 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
+import { View, Text, StyleSheet, Pressable, TouchableOpacity } from 'react-native';
+import { MaterialCommunityIcons, FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../constants/theme';
 import { MealPlan } from '../../types/meals';
 
 interface MealPlanItemProps {
     plan: MealPlan;
     onPress: () => void;
+    onDelete: () => void; // <--- NOVA PROP
 }
 
-export const MealPlanItem = ({ plan, onPress }: MealPlanItemProps) => {
-    // Helper para limpar os números (remover sinal de negativo se vier do back)
+export const MealPlanItem = ({ plan, onPress, onDelete }: MealPlanItemProps) => {
     const formatVal = (val: string | number | null) => {
         if (val === null || val === undefined) return '0';
         return Math.abs(Number(val)).toString();
@@ -23,19 +23,35 @@ export const MealPlanItem = ({ plan, onPress }: MealPlanItemProps) => {
         >
             <View style={styles.header}>
                 <View style={styles.titleRow}>
-                    <MaterialCommunityIcons
-                        name={plan.source === 'AUTOMATIC' ? 'robot' : 'notebook-edit'}
-                        size={20}
-                        color={plan.active ? COLORS.primary : COLORS.textLight}
-                    />
-                    <Text style={styles.planName}>{plan.plan_name}</Text>
+                    {plan.active ? (
+                        <Ionicons name="radio-button-on" size={22} color={COLORS.primary} />
+                    ) : (
+                        <Ionicons name="radio-button-off" size={22} color={COLORS.textLight} />
+                    )}
+
+                    <Text style={[styles.planName, plan.active && { color: COLORS.primary }]}>
+                        {plan.plan_name}
+                    </Text>
                 </View>
 
-                {plan.active && (
-                    <View style={styles.activeBadge}>
-                        <Text style={styles.activeText}>ATIVO</Text>
-                    </View>
-                )}
+                <View style={styles.headerActions}>
+                    {plan.active && (
+                        <View style={styles.activeBadge}>
+                            <Text style={styles.activeText}>EM USO</Text>
+                        </View>
+                    )}
+
+                    {/* BOTÃO DE DELETAR */}
+                    <TouchableOpacity
+                        onPress={(e) => {
+                            e.stopPropagation(); // Impede de ativar o plano ao deletar
+                            onDelete();
+                        }}
+                        style={styles.deleteBtn}
+                    >
+                        <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
+                    </TouchableOpacity>
+                </View>
             </View>
 
             <View style={styles.divider} />
@@ -46,17 +62,10 @@ export const MealPlanItem = ({ plan, onPress }: MealPlanItemProps) => {
                     <Text style={styles.statValue}>{formatVal(plan.target_calories)} kcal</Text>
                 </View>
                 <View style={styles.statItem}>
-                    <MaterialCommunityIcons name="water" size={14} color={COLORS.accentBlue} />
-                    <Text style={styles.statValue}>
-                        {plan.target_water ? formatVal(plan.target_water) + 'ml' : '-'}
-                    </Text>
+                    <Text style={styles.macroText}>P: {formatVal(plan.target_protein)}g</Text>
+                    <Text style={styles.macroText}>C: {formatVal(plan.target_carbs)}g</Text>
+                    <Text style={styles.macroText}>G: {formatVal(plan.target_fat)}g</Text>
                 </View>
-            </View>
-
-            <View style={styles.macrosRow}>
-                <Text style={styles.macroText}>Prot: {formatVal(plan.target_protein)}g</Text>
-                <Text style={styles.macroText}>Carb: {formatVal(plan.target_carbs)}g</Text>
-                <Text style={styles.macroText}>Gord: {formatVal(plan.target_fat)}g</Text>
             </View>
         </Pressable>
     );
@@ -65,57 +74,65 @@ export const MealPlanItem = ({ plan, onPress }: MealPlanItemProps) => {
 const styles = StyleSheet.create({
     card: {
         backgroundColor: COLORS.cardBg,
-        borderRadius: 16,
+        borderRadius: 12,
         padding: 16,
-        marginBottom: 12,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
+        marginBottom: 10,
         borderWidth: 1,
-        borderColor: 'transparent',
+        borderColor: '#E0E0E0',
+        elevation: 1,
     },
     activeCard: {
         borderColor: COLORS.primary,
-        backgroundColor: '#F9FFF9', // Levemente verde se ativo
+        backgroundColor: '#F5FAF5',
+        borderWidth: 2,
+        elevation: 3,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 10,
+        marginBottom: 12,
     },
     titleRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        gap: 10,
+        flex: 1, // Para o texto não empurrar o botão de delete
+    },
+    headerActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
     },
     planName: {
         fontSize: 16,
         fontWeight: 'bold',
         color: COLORS.textDark,
+        flexShrink: 1,
     },
     activeBadge: {
         backgroundColor: COLORS.primary,
         paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 4,
+        paddingVertical: 4,
+        borderRadius: 6,
     },
     activeText: {
         fontSize: 10,
         color: '#FFF',
         fontWeight: 'bold',
     },
+    deleteBtn: {
+        padding: 4,
+    },
     divider: {
         height: 1,
-        backgroundColor: '#F0F0F0',
+        backgroundColor: '#EEE',
         marginBottom: 10,
     },
     statsRow: {
         flexDirection: 'row',
-        gap: 16,
-        marginBottom: 8,
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
     statItem: {
         flexDirection: 'row',
@@ -124,19 +141,13 @@ const styles = StyleSheet.create({
     },
     statValue: {
         fontSize: 14,
-        fontWeight: '600',
+        fontWeight: 'bold',
         color: COLORS.textDark,
-    },
-    macrosRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        backgroundColor: '#F5F5F5',
-        padding: 8,
-        borderRadius: 8,
     },
     macroText: {
         fontSize: 12,
         color: COLORS.textLight,
         fontWeight: '500',
+        marginLeft: 8,
     }
 });

@@ -1,33 +1,77 @@
-import { baseFetch, basePutById, basePost } from './baseCall'; // Assuming basePutById exists as discussed
+import { baseDelete, baseFetch, basePost, basePutById } from './baseCall';
 import { MealPlan } from '../types/meals';
 import { getItem } from './secureStore';
 
-const ROUTE = 'api/mealPlans';
+const ROUTE = 'mealPlans';
 
-// 1. List all plans for the user
 export const getUserMealPlans = async (): Promise<MealPlan[]> => {
     try {
-        const userId = await getItem('id');
-        if (!userId) return [];
+        // 1. Pega o ID do usuário logado
+        const userIdStr = await getItem('id');
+        if (!userIdStr) return [];
 
-        // Assuming backend filters by logged user or accepts query param
+        const userId = Number(userIdStr);
+
+        // 2. Faz a chamada (enviamos ?user_id=X caso o backend suporte filtro na query)
         const response = await baseFetch(`${ROUTE}?user_id=${userId}`);
-        return Array.isArray(response?.data) ? response.data : [];
+
+        const allPlans = Array.isArray(response?.data) ? response.data : [];
+
+        // 3. FILTRO DE SEGURANÇA NO FRONTEND
+        // Isso garante que, mesmo que o backend devolva tudo, nós só mostramos o do usuário.
+        const myPlans = allPlans.filter((plan: MealPlan) => plan.user_id === userId);
+
+        return myPlans;
+
     } catch (error) {
-        console.error("Error fetching plans:", error);
+        console.error("Erro ao buscar planos:", error);
         return [];
     }
 };
 
-// 2. Activate a Plan
 export const activateMealPlan = async (planId: number) => {
-    // Depending on backend logic, setting one to active might auto-deactivate others.
-    // If not, the backend should handle that logic. We just send active: true.
     return await basePutById(ROUTE, planId, { active: true });
 };
 
-// 3. Create Plan (Placeholder for the button)
-export const createMealPlan = async (data: any) => {
-    // Logic to create plan would go here
-    return await basePost(ROUTE, data);
-}
+export const deactivateMealPlan = async (planId: number) => {
+    return await basePutById(ROUTE, planId, { active: false });
+};
+
+// Desativa o antigo (se houver) e ativa o novo
+export const switchActivePlan = async (newPlanId: number, currentActiveId?: number) => {
+    try {
+        // Se tiver um plano rodando, desativa ele primeiro
+        if (currentActiveId) {
+            await basePutById(ROUTE, currentActiveId, { active: false });
+        }
+
+        // Ativa o novo
+        await basePutById(ROUTE, newPlanId, { active: true });
+        return true;
+    } catch (error) {
+        console.error("Erro ao trocar plano:", error);
+        return false;
+    }
+};
+
+// --- Criar Plano ---
+export const createNewMealPlan = async (name: string, source: 'AUTOMATIC' | 'MANUAL' = 'AUTOMATIC') => {
+    const userIdStr = await getItem('id');
+    if (!userIdStr) throw new Error("Usuário não logado");
+
+    const payload = {
+        plan_name: name,
+        source: source,
+        active: true,
+        user_id: Number(userIdStr)
+    };
+
+    console.log("Criando Plano:", payload);
+    return await basePost(ROUTE, payload);
+};
+
+// Deletar Plano
+export const deleteMealPlan = async (planId: number) => {
+    // Concatena o ID na rota: "mealPlans/1"
+    return await baseDelete(`${ROUTE}/${planId}`);
+};

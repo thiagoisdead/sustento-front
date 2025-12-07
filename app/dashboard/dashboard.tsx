@@ -8,43 +8,52 @@ import {
   StatusBar,
   ActivityIndicator,
   RefreshControl,
-  Alert,
-  TouchableOpacity
+  TouchableOpacity,
+  Alert
 } from 'react-native';
 import { Stack } from 'expo-router';
 import { FontAwesome5, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 
-// --- Types & Services ---
+// Tipos, Serviços e Constantes
 import { DashboardData } from '../../types/dashboard';
 import { MealPlan } from '../../types/meals';
 import { getDashboardData } from '../../services/dashboardService';
-import { getUserMealPlans, activateMealPlan } from '../../services/mealPlanService';
+import {
+  getUserMealPlans,
+  switchActivePlan,
+  createNewMealPlan,
+  deactivateMealPlan,
+  deleteMealPlan
+} from '../../services/mealPlanService';
 import { COLORS } from '../../constants/theme';
 
-// --- Components ---
+// Componentes
 import { StatCard } from '../../components/statCard';
 import { ActivityChart } from '../../components/activityChart';
 import { IconPill } from '../../components/iconPill';
 import { AnimatedButton } from '../../components/animatedButton';
-import { MealPlanItem } from '../../components/dashboard/mealPlanItem'; // We created this earlier
+import { MealPlanItem } from '../../components/dashboard/mealPlanItem';
+import { CreatePlanModal } from '../../components/dashboard/createPlanModal';
+import { usePath } from '../../hooks/usePath';
 
-// Define the 3 States of the screen
 type ViewState = 'LOADING' | 'EMPTY' | 'SELECTION' | 'DASHBOARD';
 
 export default function Dashboard() {
   const [viewState, setViewState] = useState<ViewState>('LOADING');
-
-  // Data State
+  const handlePath = usePath();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [availablePlans, setAvailablePlans] = useState<MealPlan[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const [activePlanId, setActivePlanId] = useState<number | null>(null);
+  const [activePlanName, setActivePlanName] = useState<string>("");
 
-  // --- Main Data Loader ---
+  const [refreshing, setRefreshing] = useState(false);
+  const [isCreateModalVisible, setCreateModalVisible] = useState(false);
+
+  // --- Loader Principal ---
   const loadInitialData = useCallback(async () => {
     try {
       if (!refreshing) setViewState('LOADING');
 
-      // 1. Fetch all plans to see where we stand
       const plans = await getUserMealPlans();
       setAvailablePlans(plans);
 
@@ -53,28 +62,28 @@ export default function Dashboard() {
         return;
       }
 
-      // 2. Check if there is an ACTIVE plan
-      const activePlan = plans.find(p => p.active);
+      const active = plans.find(p => p.active);
 
-      if (activePlan) {
-        // 3. If active, fetch the heavy dashboard data
+      if (active) {
+        setActivePlanId(active.plan_id);
+        setActivePlanName(active.plan_name);
+
         const dashData = await getDashboardData();
         if (dashData) {
           setDashboardData(dashData);
           setViewState('DASHBOARD');
         } else {
-          // Fallback if data fetch fails but plan exists
           setViewState('SELECTION');
         }
       } else {
-        // 4. Plans exist, but none active -> Go to Selection
+        setActivePlanId(null);
         setViewState('SELECTION');
       }
 
     } catch (error) {
-      console.error("Error loading dashboard flow", error);
-      Alert.alert("Erro", "Falha ao carregar informações.");
+      Alert.alert("Erro", "Falha ao carregar dados.");
     } finally {
+      setLoading(false);
       setRefreshing(false);
     }
   }, [refreshing]);
@@ -89,46 +98,105 @@ export default function Dashboard() {
   };
 
   // --- Handlers ---
-
-  const handleActivatePlan = async (plan: MealPlan) => {
+  const handleSelectPlan = async (plan: MealPlan) => {
+    if (plan.active) {
+      const dashData = await getDashboardData();
+      setDashboardData(dashData);
+      setViewState('DASHBOARD');
+      return;
+    }
     try {
       setViewState('LOADING');
-      await activateMealPlan(plan.plan_id);
-      // Reload everything to refresh data with new targets
+      await switchActivePlan(plan.plan_id, activePlanId || undefined);
       await loadInitialData();
-    } catch (error) {
-      Alert.alert("Erro", "Não foi possível ativar o plano.");
+    } catch {
       setViewState('SELECTION');
     }
   };
 
-  const handleCreatePlan = () => {
-    // Navigate to Create Plan Screen
-    // router.push('/plans/create');
-    Alert.alert("Navegação", "Ir para tela de criar plano...");
+  const handleDeletePlan = async (plan: MealPlan) => {
+    Alert.alert(
+      "Excluir Plano",
+      `Tem certeza que deseja excluir o plano "${plan.plan_name}"? Esta ação não pode ser desfeita.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setViewState('LOADING');
+
+              // 1. Chama o serviço para deletar
+              await deleteMealPlan(plan.plan_id);
+
+              // 2. Se o plano deletado era o ativo, limpamos o estado do Dashboard
+              if (plan.active) {
+                setActivePlanId(null);
+                setActivePlanName("");
+                setDashboardData(null);
+              }
+
+              // 3. Recarrega a lista
+              await loadInitialData();
+            } catch (error) {
+              console.error(error);
+              Alert.alert("Erro", "Falha ao excluir plano.");
+              setViewState('SELECTION'); // Garante que volta para a lista
+            }
+          }
+        }
+      ]
+    );
   };
 
-  const handleChangePlan = () => {
-    // Allow user to switch plans manually
+  const handleDeactivateCurrentPlan = async () => {
+    if (!activePlanId) return;
+    Alert.alert("Parar Plano", "Deseja parar de seguir este plano?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Parar", style: 'destructive', onPress: async () => {
+          setViewState('LOADING');
+          await deactivateMealPlan(activePlanId);
+          await loadInitialData();
+        }
+      }
+    ]);
+  };
+
+  const handleCreatePlanSubmit = async (name: string, source: 'AUTOMATIC' | 'MANUAL') => {
+    try {
+      setViewState('LOADING');
+      if (activePlanId) await deactivateMealPlan(activePlanId);
+      await createNewMealPlan(name, source);
+      await loadInitialData();
+    } catch {
+      Alert.alert("Erro", "Falha ao criar.");
+      setViewState('EMPTY');
+    }
+  };
+
+  const handleChangePlanClick = () => {
     setViewState('SELECTION');
   };
 
-  // --- RENDERERS ---
+  const [loading, setLoading] = useState(false);
 
-  // 1. State: Loading
+  // --- RENDERIZADORES ---
+
   if (viewState === 'LOADING') {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={{ marginTop: 10, color: COLORS.textDark }}>Carregando...</Text>
       </View>
     );
   }
 
-  // 2. State: Empty (No Plans)
   if (viewState === 'EMPTY') {
+    // ... (Código do estado Empty igual ao anterior)
     return (
       <SafeAreaView style={styles.safeArea}>
+        <Stack.Screen options={{ headerShown: false }} />
         <ScrollView
           contentContainerStyle={[styles.scrollContent, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />}
@@ -136,48 +204,57 @@ export default function Dashboard() {
           <MaterialCommunityIcons name="food-variant" size={80} color={COLORS.primary} style={{ opacity: 0.5, marginBottom: 20 }} />
           <Text style={styles.headerTitle}>Bem-vindo!</Text>
           <Text style={styles.emptyText}>
-            Você ainda não possui nenhum plano alimentar. Crie um agora para começar a acompanhar sua dieta.
+            Você ainda não possui nenhum plano alimentar. Crie um agora para começar.
           </Text>
-          <AnimatedButton style={styles.createButton} onPress={handleCreatePlan}>
-            <Text style={styles.btnText}>Criar Meu Primeiro Plano</Text>
+          <AnimatedButton
+            style={[styles.createButton, { marginTop: 30, borderWidth: 1, borderColor: COLORS.primary }]}
+            onPress={() => handlePath('/foodTracker/seeFoodTracker')}
+          >
+            <Text style={[styles.btnText,]}>Criar Novo Plano</Text>
           </AnimatedButton>
         </ScrollView>
+        <CreatePlanModal visible={isCreateModalVisible} onClose={() => setCreateModalVisible(false)} onSubmit={handleCreatePlanSubmit} />
       </SafeAreaView>
     );
   }
 
-  // 3. State: Selection (Choose a Plan)
+  // 2. SELECTION STATE
   if (viewState === 'SELECTION') {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
+        <Stack.Screen options={{ headerShown: false }} />
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />}
         >
-          <Text style={styles.headerTitle}>SELECIONAR PLANO</Text>
-          <Text style={styles.subTitle}>Escolha qual plano você quer seguir hoje:</Text>
+          <Text style={styles.headerTitle}>MEUS PLANOS</Text>
+          <Text style={styles.subTitle}>Selecione um plano para ativar:</Text>
 
           <View style={{ gap: 10 }}>
             {availablePlans.map((plan) => (
               <MealPlanItem
                 key={plan.plan_id}
                 plan={plan}
-                onPress={() => handleActivatePlan(plan)}
+                onPress={() => handleSelectPlan(plan)}
+                // --- ADICIONE ESTA LINHA ---
+                onDelete={() => handleDeletePlan(plan)}
               />
             ))}
           </View>
 
-          <AnimatedButton style={[styles.createButton, { marginTop: 30, backgroundColor: 'transparent', borderWidth: 1, borderColor: COLORS.primary }]} onPress={handleCreatePlan}>
-            <Text style={[styles.btnText, { color: COLORS.primary }]}>Criar Novo Plano</Text>
+          <AnimatedButton
+            style={[styles.createButton, { marginTop: 30, borderWidth: 1, borderColor: COLORS.primary }]}
+            onPress={() => handlePath("/foodTracker/seeFoodTracker")}
+          >
+            <Text style={[styles.btnText]}>Criar Novo Plano</Text>
           </AnimatedButton>
         </ScrollView>
+        <CreatePlanModal visible={isCreateModalVisible} onClose={() => setCreateModalVisible(false)} onSubmit={handleCreatePlanSubmit} />
       </SafeAreaView>
     );
   }
 
-  // 4. State: Dashboard (Active)
-  // (This is the logic we built previously)
+  // 3. DASHBOARD STATE (ATIVO)
   return (
     <SafeAreaView style={styles.safeArea}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -190,47 +267,82 @@ export default function Dashboard() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />
         }
       >
-        {/* Header with "Change Plan" option */}
+        {/* Header */}
         <View style={styles.dashboardHeader}>
           <Text style={styles.headerTitle}>DASHBOARD</Text>
-          <TouchableOpacity onPress={handleChangePlan} style={styles.changePlanButton}>
-            <MaterialCommunityIcons name="swap-horizontal" size={20} color={COLORS.primary} />
-            <Text style={styles.changePlanText}>Trocar Plano</Text>
-          </TouchableOpacity>
+
+          <View style={styles.activePlanBadge}>
+            <Text style={styles.activePlanLabel}>{activePlanName}</Text>
+          </View>
+
+          <View style={styles.headerActions}>
+            <TouchableOpacity onPress={handleChangePlanClick} style={styles.actionButton}>
+              <MaterialCommunityIcons name="swap-horizontal" size={20} color={COLORS.primary} />
+              <Text style={styles.actionText}>Trocar</Text>
+            </TouchableOpacity>
+
+            <View style={styles.dividerVertical} />
+
+            <TouchableOpacity onPress={handleDeactivateCurrentPlan} style={styles.actionButton}>
+              <MaterialCommunityIcons name="stop-circle-outline" size={20} color="#E57373" />
+              <Text style={[styles.actionText, { color: '#E57373' }]}>Desativar</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {dashboardData && (
           <>
-            <View style={styles.statsRow}>
+            {/* --- 1. HERO: CALORIAS (LARGURA TOTAL) --- */}
+            <View style={styles.heroSection}>
               <StatCard
-                label="CALORIAS"
+                label="CALORIAS DIÁRIAS"
                 value={dashboardData.stats.calories.current}
                 subValue={dashboardData.stats.calories.target}
                 unit="kcal"
                 percentage={dashboardData.stats.calories.target > 0 ? dashboardData.stats.calories.current / dashboardData.stats.calories.target : 0}
                 color={COLORS.accentOrange}
-                icon={<FontAwesome5 name="fire" size={12} color={COLORS.accentOrange} />}
-              />
-              <StatCard
-                label="ÁGUA"
-                value={dashboardData.stats.water.current}
-                subValue={dashboardData.stats.water.target}
-                unit="L"
-                percentage={dashboardData.stats.water.target > 0 ? dashboardData.stats.water.current / dashboardData.stats.water.target : 0}
-                color={COLORS.accentBlue}
-                icon={<Ionicons name="water" size={14} color={COLORS.accentBlue} />}
-              />
-              <StatCard
-                label="PASSOS"
-                value={dashboardData.stats.steps.current}
-                subValue={dashboardData.stats.steps.target}
-                unit=""
-                percentage={dashboardData.stats.steps.target > 0 ? dashboardData.stats.steps.current / dashboardData.stats.steps.target : 0}
-                color={COLORS.primary}
-                icon={<FontAwesome5 name="walking" size={12} color={COLORS.primary} />}
+                icon={<FontAwesome5 name="fire" size={18} color={COLORS.accentOrange} />}
+                style={{ width: '100%' }} // ESTILO OVERRIDE PARA SER "HERO"
               />
             </View>
 
+            {/* --- 2. LINHA MACROS (3 COLUNAS) --- */}
+            <View style={styles.statsRow}>
+              {/* Proteína */}
+              <StatCard
+                label="PROTEÍNAS"
+                value={dashboardData.stats.macros.protein.current}
+                subValue={dashboardData.stats.macros.protein.target}
+                unit="g"
+                percentage={dashboardData.stats.macros.protein.target > 0 ? dashboardData.stats.macros.protein.current / dashboardData.stats.macros.protein.target : 0}
+                color={COLORS.primary}
+                icon={<MaterialCommunityIcons name="food-drumstick" size={14} color={COLORS.primary} />}
+              />
+
+              {/* Carbos */}
+              <StatCard
+                label="CARBOS"
+                value={dashboardData.stats.macros.carbs.current}
+                subValue={dashboardData.stats.macros.carbs.target}
+                unit="g"
+                percentage={dashboardData.stats.macros.carbs.target > 0 ? dashboardData.stats.macros.carbs.current / dashboardData.stats.macros.carbs.target : 0}
+                color={COLORS.accentBlue}
+                icon={<MaterialCommunityIcons name="barley" size={14} color={COLORS.accentBlue} />}
+              />
+
+              {/* Gorduras */}
+              <StatCard
+                label="GORDURAS"
+                value={dashboardData.stats.macros.fats.current}
+                subValue={dashboardData.stats.macros.fats.target}
+                unit="g"
+                percentage={dashboardData.stats.macros.fats.target > 0 ? dashboardData.stats.macros.fats.current / dashboardData.stats.macros.fats.target : 0}
+                color="#E6B800" // Amarelo/Dourado para gordura
+                icon={<MaterialCommunityIcons name="oil" size={14} color="#E6B800" />}
+              />
+            </View>
+
+            {/* Gráfico */}
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.decorativeBar} />
@@ -239,48 +351,33 @@ export default function Dashboard() {
               <ActivityChart data={dashboardData.weeklyActivity} />
             </View>
 
+            {/* Resumo do Dia */}
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.decorativeBar} />
                 <Text style={styles.cardTitle}>RESUMO DO DIA</Text>
               </View>
-              <View style={styles.splitRow}>
-                <View style={styles.splitColLeft}>
-                  <Text style={styles.subHeader}>PLANO ALIMENTAR</Text>
-                  <View style={styles.listItem}>
-                    <IconPill icon={<FontAwesome5 name="apple-alt" size={14} color={COLORS.primary} />} />
-                    <View style={styles.listTextWrapper}>
-                      <Text style={styles.listLabel}>Manhã</Text>
-                      <Text style={styles.listValue}>{dashboardData.todayMealsSummary.breakfast}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.listItem}>
-                    <IconPill icon={<MaterialCommunityIcons name="silverware-fork-knife" size={14} color={COLORS.primary} />} />
-                    <View style={styles.listTextWrapper}>
-                      <Text style={styles.listLabel}>Almoço</Text>
-                      <Text style={styles.listValue}>{dashboardData.todayMealsSummary.lunch}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.listItem}>
-                    <IconPill icon={<MaterialCommunityIcons name="silverware-spoon" size={14} color={COLORS.primary} />} />
-                    <View style={styles.listTextWrapper}>
-                      <Text style={styles.listLabel}>Jantar</Text>
-                      <Text style={styles.listValue}>{dashboardData.todayMealsSummary.dinner}</Text>
-                    </View>
+
+              <View style={styles.fullWidthList}>
+                <View style={styles.listItem}>
+                  <IconPill icon={<FontAwesome5 name="apple-alt" size={14} color={COLORS.primary} />} />
+                  <View style={styles.listTextWrapper}>
+                    <Text style={styles.listLabel}>Manhã</Text>
+                    <Text style={styles.listValue}>{dashboardData.todayMealsSummary.breakfast}</Text>
                   </View>
                 </View>
-                <View style={styles.verticalDivider} />
-                <View style={styles.splitColRight}>
-                  <Text style={styles.subHeader}>TREINO</Text>
-                  <View style={styles.workoutBox}>
-                    <Ionicons name="barbell" size={24} color={COLORS.primary} style={{ marginBottom: 8 }} />
-                    <Text style={styles.workoutTitle}>{dashboardData.workout.title}</Text>
-                    <Text style={styles.workoutDuration}>{dashboardData.workout.duration}</Text>
-                    <View style={[styles.statusBadge, dashboardData.workout.status === 'CONCLUÍDO' ? { backgroundColor: '#E8F5E9' } : {}]}>
-                      <Text style={[styles.statusText, dashboardData.workout.status === 'CONCLUÍDO' ? { color: COLORS.primary } : {}]}>
-                        {dashboardData.workout.status}
-                      </Text>
-                    </View>
+                <View style={styles.listItem}>
+                  <IconPill icon={<MaterialCommunityIcons name="silverware-fork-knife" size={14} color={COLORS.primary} />} />
+                  <View style={styles.listTextWrapper}>
+                    <Text style={styles.listLabel}>Almoço</Text>
+                    <Text style={styles.listValue}>{dashboardData.todayMealsSummary.lunch}</Text>
+                  </View>
+                </View>
+                <View style={styles.listItem}>
+                  <IconPill icon={<MaterialCommunityIcons name="silverware-spoon" size={14} color={COLORS.primary} />} />
+                  <View style={styles.listTextWrapper}>
+                    <Text style={styles.listLabel}>Jantar</Text>
+                    <Text style={styles.listValue}>{dashboardData.todayMealsSummary.dinner}</Text>
                   </View>
                 </View>
               </View>
@@ -288,6 +385,12 @@ export default function Dashboard() {
           </>
         )}
       </ScrollView>
+
+      <CreatePlanModal
+        visible={isCreateModalVisible}
+        onClose={() => setCreateModalVisible(false)}
+        onSubmit={handleCreatePlanSubmit}
+      />
     </SafeAreaView>
   );
 }
@@ -297,76 +400,34 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   scrollContent: { paddingVertical: 40, paddingHorizontal: 16 },
 
-  // Header
-  dashboardHeader: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  headerTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: COLORS.textDark,
-    textAlign: 'center',
-    letterSpacing: 0.5
-  },
-  subTitle: {
-    fontSize: 16,
-    color: COLORS.textLight,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  changePlanButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    padding: 8,
-  },
-  changePlanText: {
-    color: COLORS.primary,
-    fontWeight: 'bold',
-    marginLeft: 6,
-  },
+  headerTitle: { fontSize: 26, fontWeight: '800', color: COLORS.textDark, textAlign: 'center', marginBottom: 5, marginTop: 10 },
+  subTitle: { fontSize: 16, color: COLORS.textLight, textAlign: 'center', marginBottom: 20 },
 
-  // Empty State
-  emptyText: {
-    fontSize: 16,
-    color: COLORS.textLight,
-    textAlign: 'center',
-    marginBottom: 30,
-    paddingHorizontal: 20,
-  },
-  createButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 30,
-    elevation: 3,
-    alignItems: 'center',
-  },
-  btnText: {
-    color: '#FFF',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
+  dashboardHeader: { alignItems: 'center', marginBottom: 15 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', marginTop: 10, backgroundColor: '#FFF', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5, elevation: 1 },
+  actionButton: { padding: 8, flexDirection: 'row', alignItems: 'center' },
+  actionText: { fontWeight: 'bold', marginLeft: 6, fontSize: 12, color: COLORS.primary },
+  dividerVertical: { width: 1, height: 20, backgroundColor: '#EEE', marginHorizontal: 5 },
 
-  // Dashboard Layout
-  statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
+  activePlanBadge: { backgroundColor: '#E8F5E9', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, marginBottom: 5 },
+  activePlanLabel: { color: COLORS.primary, fontWeight: 'bold', fontSize: 14 },
+
+  emptyText: { fontSize: 16, color: COLORS.textLight, textAlign: 'center', marginBottom: 30, paddingHorizontal: 20 },
+  createButton: { backgroundColor: COLORS.primary, paddingVertical: 15, paddingHorizontal: 30, borderRadius: 30, elevation: 3, alignItems: 'center' },
+  btnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
+
+  // Layout Novo
+  heroSection: { marginBottom: 16 },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, gap: 8 }, // gap ajuda no espaçamento
+
   card: { backgroundColor: COLORS.cardBg, borderRadius: 20, padding: 20, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
   decorativeBar: { width: 4, height: 18, backgroundColor: COLORS.primary, borderRadius: 2, marginRight: 10 },
   cardTitle: { fontSize: 15, fontWeight: '800', color: COLORS.textDark },
-  splitRow: { flexDirection: 'row' },
-  splitColLeft: { flex: 1.5 },
-  splitColRight: { flex: 1, alignItems: 'center', paddingTop: 10 },
-  verticalDivider: { width: 1, backgroundColor: '#F0F0F0', marginHorizontal: 15 },
-  subHeader: { fontSize: 11, fontWeight: '800', color: COLORS.textLight, marginBottom: 15, textTransform: 'uppercase' },
-  listItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+
+  fullWidthList: { width: '100%' },
+  listItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, borderBottomWidth: 1, borderBottomColor: '#F5F5F5', paddingBottom: 10 },
   listTextWrapper: { flex: 1 },
   listLabel: { fontSize: 10, color: COLORS.textLight, marginBottom: 2, textTransform: 'uppercase' },
-  listValue: { fontSize: 12, fontWeight: '700', color: COLORS.textDark },
-  workoutBox: { alignItems: 'center', justifyContent: 'center', padding: 12, backgroundColor: '#FDFDFD', borderRadius: 16, borderWidth: 1, borderColor: '#F0F0F0', width: '100%' },
-  workoutTitle: { fontSize: 12, fontWeight: '700', color: COLORS.textDark, textAlign: 'center', marginBottom: 4 },
-  workoutDuration: { fontSize: 11, color: COLORS.textLight, marginBottom: 10 },
-  statusBadge: { paddingHorizontal: 12, paddingVertical: 5, backgroundColor: '#FFF0F0', borderRadius: 20 },
-  statusText: { fontSize: 8, fontWeight: '800', color: '#E57373' },
+  listValue: { fontSize: 14, fontWeight: '700', color: COLORS.textDark },
 });
