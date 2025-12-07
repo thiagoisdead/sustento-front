@@ -15,7 +15,6 @@ interface ProfileFieldProps {
 }
 
 export const ProfileField = ({ label, value, large = false }: ProfileFieldProps) => {
-    // Helper logic to format display value based on Enums
     const getDisplayValue = () => {
         if (!value) return "Não informado";
 
@@ -37,13 +36,12 @@ export const ProfileField = ({ label, value, large = false }: ProfileFieldProps)
 };
 
 const commonSurface = {
-    padding: 15,
-    borderRadius: 12,
+    padding: 5,
+    borderRadius: 8,
     backgroundColor: '#FFFFFF',
     borderStartColor: '#2E7D32',
     borderStartWidth: 6,
-    marginBottom: 12,
-    elevation: 2, // Slight shadow
+    elevation: 8, 
 };
 
 const styles = StyleSheet.create({
@@ -59,7 +57,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         color: '#2E7D32',
-        marginBottom: 4,
     },
     value: {
         fontSize: 16,

@@ -10,11 +10,6 @@ interface RecentItemProps {
     onPress: () => void;
 }
 
-const servingRecord: Record<"portion" | "g" | "ml", string> = {
-    portion: "Por porção",
-    g: "Por 100g",
-    ml: "Por 100ml"
-};
 
 export const RecentItem = ({ item, onPress }: RecentItemProps) => (
     <Pressable style={styles.recentItemCard} onPress={onPress}>
@@ -22,28 +17,27 @@ export const RecentItem = ({ item, onPress }: RecentItemProps) => (
             <MaterialCommunityIcons name="food" size={24} color="#FFF" />
         </View>
         <View style={styles.recentItemDetails}>
-            <Text style={styles.recentItemTitle}>{item.title}</Text>
+            <Text style={styles.recentItemTitle}>{item?.name}</Text>
 
-            {/* FIX: Use the imported constant */}
-            <Text style={styles.recentItemServing}>{SERVING_LABELS[item.serving]}</Text>
+            <Text style={styles.recentItemServing}>Por 100 Gramas</Text>
 
             <View style={styles.recentItemMacros}>
                 <View style={styles.macroItem}>
                     <MaterialCommunityIcons name="leaf" size={12} color={COLORS.primary} />
-                    <Text style={styles.macroText}>{item.protein}g P</Text>
+                    <Text style={styles.macroText}>{item?.nutrients?.protein_100g}g P</Text>
                 </View>
                 <View style={styles.macroItem}>
                     <MaterialCommunityIcons name="barley" size={12} color={COLORS.primary} />
-                    <Text style={styles.macroText}>{item.carbs}g C</Text>
+                    <Text style={styles.macroText}>{item?.nutrients?.carbs_100g}g C</Text>
                 </View>
                 <View style={styles.macroItem}>
                     <MaterialCommunityIcons name="water-outline" size={12} color={COLORS.primary} />
-                    <Text style={styles.macroText}>{item.fats}g G</Text>
+                    <Text style={styles.macroText}>{item?.nutrients?.fat_100g}g G</Text>
                 </View>
             </View>
         </View>
         <Text style={styles.recentItemKcal}>
-            {item.kcal} <Text style={styles.kcalLabel}>kcal</Text>
+            {item?.nutrients?.calories_100g ? item?.nutrients?.calories_100g : ''} {item?.nutrients?.calories_100g && (<Text style={styles.kcalLabel}>kcal</Text>)}
         </Text>
     </Pressable>
 );

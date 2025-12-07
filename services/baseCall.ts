@@ -31,11 +31,15 @@ export async function baseValidate(handlePath?: (path: string) => void) {
 }
 
 export async function baseFetch(route: string) {
+
+  console.log('cleanurl', cleanUrl(route))
   const token = await getItem('token');
   try {
     const result = await axios.get(cleanUrl(route), {
       headers: { Authorization: `Bearer ${token}` }
     });
+
+    console.log('data', result?.data)
     if (result.status === 200 || result.status === 201) return result;
   } catch (err: any) {
     console.log('Erro no GET:', err.message);

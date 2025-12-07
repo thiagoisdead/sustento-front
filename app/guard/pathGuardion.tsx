@@ -15,11 +15,13 @@ export default function AuthGate() {
       const token = await getItem("token");
       const id = await getItem("id");
 
+      console.log('userData no authGate', userData, token, id)
+
       if (!token || !id) {
         return handlePath("/auth");
       }
 
-      if (!userData?.activity_lvl) {
+      if (token && id && !userData?.activity_lvl) {
         return handlePath("/home/home");
       }
 

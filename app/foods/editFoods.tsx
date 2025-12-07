@@ -9,25 +9,21 @@ import {
 } from "react-native";
 import {
   Button,
-  Card,
   Dialog,
   Portal,
   Searchbar
 } from "react-native-paper";
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { Foods } from "../../types/data";
 import { COLORS } from "../../constants/theme";
 import { RecentItem } from "../../components/recentItem";
-import { CategoryItem } from "../../components/categoryItem";
-import { SERVING_LABELS } from "../../constants/food";
 import { baseFetch } from "../../services/baseCall";
 
 // Static Data
 const recentes: Foods[] = [
-  { title: 'Frango Grelhado', serving: 'g', protein: 40, carbs: 5, fats: 9, kcal: 250, category: 'Proteínas' },
-  { title: 'Arroz Integral', serving: 'g', protein: 4, carbs: 35, fats: 2, kcal: 180, category: 'Grãos' },
-  { title: 'Brócolis Cozido', serving: 'g', protein: 3, carbs: 7, fats: 0.5, kcal: 35, category: 'Vegetais' },
+  { name: 'Frango Grelhado', serving: 'g', protein: 40, carbs: 5, fats: 9, kcal: 250, category: 'Proteínas' },
+  { name: 'Arroz Integral', serving: 'g', protein: 4, carbs: 35, fats: 2, kcal: 180, category: 'Grãos' },
+  { name: 'Brócolis Cozido', serving: 'g', protein: 3, carbs: 7, fats: 0.5, kcal: 35, category: 'Vegetais' },
 ];
 
 const categorias = [
@@ -38,39 +34,43 @@ const categorias = [
   { id: 5, name: 'Laticínios', icon: 'cow' },
 ];
 
-const products: Foods[] = [
-  { title: 'Banana', protein: 1.1, carbs: 23, fats: 0.3, kcal: 89, serving: "g", category: "Frutas" },
-  { title: 'Maçã', protein: 0.3, carbs: 14, fats: 0.2, kcal: 52, serving: "g", category: "Frutas" },
-  { title: 'Pera', protein: 0.4, carbs: 15, fats: 0.1, kcal: 57, serving: "g", category: "Frutas" },
-  { title: 'Iogurte Grego', protein: 10, carbs: 3.6, fats: 5, kcal: 97, serving: "g", category: "Laticínios" },
-  { title: 'Leite Integral', protein: 3.3, carbs: 4.8, fats: 3.5, kcal: 61, serving: "ml", category: "Laticínios" },
-  { title: 'Peito de Frango', protein: 31, carbs: 0, fats: 3.6, kcal: 165, serving: "g", category: "Proteínas" },
-  { title: 'Ovo Cozido', protein: 13, carbs: 1.1, fats: 11, kcal: 155, serving: "g", category: "Proteínas" },
-  { title: 'Cenoura', protein: 0.9, carbs: 10, fats: 0.2, kcal: 41, serving: "g", category: "Vegetais" },
-];
 
 export default function MealsHome() {
   const [searchParams, setSearchParams] = useState<string>('');
   const [searchData, setSearchData] = useState<Foods[]>([])
   const [selectedMeal, setSelectedMeal] = useState<Foods | null>(null)
-
+  const [isLoading, setIsLoading] = useState(false);
+  
   const handleSearch = async (text: string) => {
-    setSearchParams(text)
-    if (!text.length) return setSearchData([])
-    setSearchData(products.filter(p => p.title.toLowerCase().includes(text.toLowerCase())));
-    const haha = await baseFetch(`search?${text}`)
-    console.log(text)
-  }
+    setSearchParams(text);
+
+    if (!text.length) {
+      setSearchData([]);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const productsFetched = await baseFetch(`/aliments/search/combined?query=${text}`);
+      setSearchData(
+        productsFetched?.data?.products?.filter((p: Foods) =>
+          p.name.toLowerCase().includes(text.toLowerCase())
+        ) || []
+      );
+    } catch (err) {
+      console.log("Erro na busca:", err);
+      setSearchData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
   const handleSelectMeal = (foodData: Foods) => {
     setSelectedMeal(foodData)
   }
 
-  const handleCategoryPress = (categoryName: string) => {
-    const results = products.filter(p => p.category === categoryName);
-    setSearchData(results);
-    setSearchParams(categoryName);
-  };
 
   return (
     <View style={styles.container}>
@@ -97,24 +97,11 @@ export default function MealsHome() {
           <Text style={styles.sectionTitle}>Recentes</Text>
           {recentes.map((item, index) => (
             <RecentItem
-              key={`${item.title}-${index}`}
+              key={`${item.name}-${index}`}
               item={item}
               onPress={() => handleSelectMeal(item)}
             />
           ))}
-
-          <Text style={styles.sectionTitle}>Categorias</Text>
-          <View style={styles.categoryGrid}>
-            {categorias.map(cat => (
-              <CategoryItem
-                key={cat.id}
-                icon={cat.icon}
-                name={cat.name}
-                onPress={() => handleCategoryPress(cat.name)}
-              />
-            ))}
-          </View>
-
           <Pressable style={styles.registerButton}>
             <Text style={styles.registerButtonText}>Registrar Refeição</Text>
           </Pressable>
@@ -124,46 +111,36 @@ export default function MealsHome() {
           <FlatList
             style={styles.searchResults}
             data={searchData}
-            keyExtractor={(item, index) => `${item.title}-${index}`}
+            keyExtractor={(item, index) => `${item.name}-${index}`}
             contentContainerStyle={styles.listContent}
             renderItem={({ item }) => (
-              <Card style={styles.itemCard} onPress={() => handleSelectMeal(item)}>
-                <View style={styles.cardContent}>
-                  <View style={styles.textContainer}>
-                    <Text style={styles.foodTitle}>{item.title}</Text>
-                    <Text style={styles.foodSubtitle}>
-                      {SERVING_LABELS[item.serving] || item.serving} • {item.kcal} kcal
-                    </Text>
-                  </View>
-                  <MaterialCommunityIcons
-                    name="chevron-right"
-                    size={24}
-                    color={COLORS.primary}
-                  />
-                </View>
-              </Card>
+              <RecentItem
+                key={`${item.name}`}
+                item={item}
+                onPress={() => handleSelectMeal(item)}
+              />
             )}
             ListEmptyComponent={
               <View style={styles.emptyList}>
                 <Text style={styles.emptyListText}>
-                  Nenhum alimento encontrado para "{searchParams}".
+                  {isLoading ? "Carregando..." : `Nenhum alimento encontrado para "${searchParams}".`}
                 </Text>
               </View>
             }
           />
+
         </View>
       )}
 
-      {/* Detail Dialog */}
       <Portal>
         <Dialog visible={!!selectedMeal} onDismiss={() => setSelectedMeal(null)} style={styles.dialog}>
-          <Dialog.Title style={styles.dialogTitle}>{selectedMeal?.title}</Dialog.Title>
+          <Dialog.Title style={styles.dialogTitle}>{selectedMeal?.name}</Dialog.Title>
           <Dialog.Content>
             <View style={styles.dialogMacroRow}>
-              <MacroStat label="Calorias" value={selectedMeal?.kcal} />
-              <MacroStat label="Proteínas" value={`${selectedMeal?.protein}g`} />
-              <MacroStat label="Carbos" value={`${selectedMeal?.carbs}g`} />
-              <MacroStat label="Gorduras" value={`${selectedMeal?.fats}g`} />
+              <MacroStat label="Calorias" value={selectedMeal?.nutrients.calories_100g} />
+              <MacroStat label="Proteínas" value={`${selectedMeal?.nutrients.protein_100g}g`} />
+              <MacroStat label="Carbos" value={`${selectedMeal?.nutrients.carbs_100g}g`} />
+              <MacroStat label="Gorduras" value={`${selectedMeal?.nutrients.fat_100g}g`} />
             </View>
           </Dialog.Content>
           <Dialog.Actions>

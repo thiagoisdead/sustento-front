@@ -12,7 +12,6 @@ interface ProfileAvatarProps {
 }
 
 export const ProfileAvatar = ({ name, age, pictureUrl }: ProfileAvatarProps) => {
-    // Logic to determine image source
     const imageSource = pictureUrl
         ? { uri: `${SERVER_URL}/${pictureUrl}` }
         : HealthyPNG;
@@ -35,7 +34,7 @@ const styles = StyleSheet.create({
         width: '100%',
         padding: 10,
         flexDirection: 'row',
-        marginVertical: 20,
+        marginVertical: 10,
         alignItems: 'center',
     },
     iconContainer: {

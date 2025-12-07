@@ -4,23 +4,26 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Octicons from '@expo/vector-icons/Octicons';
 import { COLORS } from '../../constants/theme';
 
-interface ProfileHeaderProps {
-    onLogout: () => void;
+interface HeaderProps {
+    text: string;
+    iconName: string;
+    onFunction: () => void;
+    onEdit?: () => void;
 }
 
-export const ProfileHeader = ({ onLogout }: ProfileHeaderProps) => {
+export const Header = ({ text, iconName, onFunction, onEdit }: HeaderProps) => {
     return (
         <View style={styles.header}>
-            <Octicons name="gear" size={24} color={COLORS.textDark} />
-            <Text style={styles.title}>Dados de Perfil</Text>
-            <MaterialIcons name="logout" size={24} color={COLORS.textDark} onPress={onLogout} />
+            <Octicons name="gear" size={24} color={COLORS.textDark} onPress={onEdit} />
+            <Text style={styles.title}>{text}</Text>
+            <MaterialIcons name={iconName} size={24} color={COLORS.textDark} onPress={onFunction} />
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     header: {
-        width: '85%',
+        width: '100%',
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',

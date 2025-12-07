@@ -1,22 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-// Services & Hooks
 import { baseUniqueGet } from '../../services/baseCall';
 import { usePath } from '../../hooks/usePath';
 import { useLogout } from '../../hooks/useLogout';
 
-// Types & Constants
 import { User } from '../../types/data';
 import { COLORS } from '../../constants/theme';
 
-// Components
 import { AnimatedButton } from '../../components/animatedButton';
-import { ProfileHeader } from '../../components/profile/profileHeader';
+import { Header } from '../../components/profile/profileHeader';
 import { ProfileAvatar } from '../../components/profile/profileAvatar';
 import { ProfileField } from '../../components/profile/profileField';
 import { RestrictionLabels } from '../../enum/profileEnum';
-import { SERVER_URL } from '../../constants/config';
+import { getItem } from '../../services/secureStore';
+import { BaseButton } from '../../components/baseButton';
 
 export default function SeeProfile() {
   const handlePath = usePath();
@@ -41,6 +39,10 @@ export default function SeeProfile() {
   });
 
   const fetchData = async () => {
+
+    const token = await getItem('token');
+    const id = await getItem('id');
+    console.log('oiwrw', token, id)
     try {
       const response = await baseUniqueGet('users');
       if (response) {
@@ -63,7 +65,7 @@ export default function SeeProfile() {
       style={styles.scrollView}
       contentContainerStyle={styles.container}
     >
-      <ProfileHeader onLogout={handleLogout} />
+      <Header text="Dados de Perfil" onFunction={handleLogout} iconName="logout" />
 
       <ProfileAvatar
         name={userData.name}
@@ -87,14 +89,9 @@ export default function SeeProfile() {
         />
         <ProfileField label="Email" value={userData.email} large />
       </View>
-
-      <AnimatedButton
-        onPress={() => handlePath('/profile/editProfile')}
-        style={styles.btnBase}
-        scaleTo={0.9}
-      >
-        <Text style={styles.btnText}>Editar perfil</Text>
-      </AnimatedButton>
+      <View style={{ marginTop: 20 }}>
+        <BaseButton onPress={() => handlePath('/profile/editProfile')} text="Editar perfil" />
+      </View>
     </ScrollView>
   );
 }
@@ -105,7 +102,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   container: {
-    paddingTop: 50,
+    paddingTop: 40,
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingBottom: 40,
@@ -123,10 +120,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     paddingVertical: 15,
     borderRadius: 10,
-    marginVertical: 25,
+    marginTop: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 4,
+    elevation: 8,
   },
   btnText: {
     color: '#FFFFFF',
