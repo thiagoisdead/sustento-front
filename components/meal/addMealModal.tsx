@@ -7,7 +7,7 @@ import { searchAliments } from '../../services/foodService';
 interface AddMealModalProps {
     visible: boolean;
     onClose: () => void;
-    onAdd: (alimentId: number, amount: number, mealCategory: string) => void;
+    onAdd: (name: string, amount: number, mealCategory: string) => void;
 }
 
 const MEAL_OPTIONS = ['Café da Manhã', 'Almoço', 'Café da Tarde', 'Jantar', 'Ceia'];
