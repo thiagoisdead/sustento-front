@@ -1,12 +1,12 @@
 import axios from "axios";
-import { getItem } from "./secureStore";
+import { getItem, removeItem } from "./secureStore";
 import { uploadAsync, FileSystemUploadType } from 'expo-file-system/legacy';
 
-const API_URL = "http://192.168.1.105:3000/api";
 
+const API_URL = "http://192.168.15.6:3000/api";
 const cleanUrl = (route: string) => `${API_URL}/${route}`.replace(/([^:]\/)\/+/g, "$1");
 
-export async function baseValidate() {
+export async function baseValidate(handlePath?: (path: string) => void) {
   const token = await getItem('token');
 
   try {
@@ -22,7 +22,11 @@ export async function baseValidate() {
     return result.data;
   } catch (err: any) {
     console.log("Erro ao validar token:", err.response?.data || err.message);
-    throw err;
+    if (err.response?.data?.error === "Invalid or expired token") {
+      await removeItem('token');
+      handlePath?.('/auth');
+    }
+    else throw err;
   }
 }
 

@@ -12,9 +12,8 @@ import { Picker } from "@react-native-picker/picker";
 import { basePutUnique } from "../services/baseCall";
 import { useUser } from "../hooks/useUser";
 import { usePath } from "../hooks/usePath";
-import { ActivityLvlLabels, GenderLabels, ObjectiveLabels, restrictionOptions } from "../enum/profileEnum";
-
-
+import { ActivityLvlLabels, GenderLabels, ObjectiveLabels } from "../enum/profileEnum";
+import { restrictionOptions } from "../constants/editProfileConfig";
 
 export default function QuestionaryScreen() {
   const [step, setStep] = useState(0);
@@ -26,6 +25,7 @@ export default function QuestionaryScreen() {
   });
 
   const handlePath = usePath()
+  const { userData, loading } = useUser();
 
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(-20)).current;
@@ -46,8 +46,9 @@ export default function QuestionaryScreen() {
     ]).start();
   };
 
-  const userData = useUser();
-  console.log(userData)
+  useEffect(() => {
+    if (loading) return;
+  }, [loading]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -111,6 +112,9 @@ export default function QuestionaryScreen() {
 
 
   const handleNext = async () => {
+
+    if (loading) return;
+    
     if (!canProceed()) {
       Alert.alert("Ops!", "Por favor, selecione uma opção antes de continuar.");
       return;
@@ -125,7 +129,7 @@ export default function QuestionaryScreen() {
         return;
       }
       console.log("🧠 Dados finais:", data);
-      const mergedData = { ...userData, ...data }
+      const mergedData = { ...(userData || {}), ...data }
 
 
       const { restrictions, ...payload } = mergedData;

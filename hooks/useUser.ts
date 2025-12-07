@@ -3,28 +3,41 @@ import { baseUniqueGet } from "../services/baseCall";
 import { getItem } from "../services/secureStore";
 
 export function useUser() {
-  const [user, setUser] = useState<any>(null);
+  const [userData, setUserData] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    let mounted = true;
+
     const fetchUser = async () => {
       try {
-        const id = await getItem("id");
-        const token = await getItem("token");
+        const [id, token] = await Promise.all([getItem("id"), getItem("token")]);
 
         if (!id || !token) {
-          throw new Error("ID ou token não encontrados.");
+          if (!mounted) return;
+          setUserData(null);
+          return;
         }
 
-        const response = await baseUniqueGet(`users`);
-
-        if (response) setUser(response.data);
+        const response = await baseUniqueGet("users");
+        if (!mounted) return;
+        setUserData(response?.data ?? null);
       } catch (err: any) {
-        console.log(err.message ?? "Erro ao buscar usuário");
+        console.log(err?.message ?? "Erro ao buscar usuário");
+        if (!mounted) return;
+        setUserData(null);
+      } finally {
+        if (!mounted) return;
+        setLoading(false);
       }
     };
 
     fetchUser();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  return user
+  return { userData, loading };
 }

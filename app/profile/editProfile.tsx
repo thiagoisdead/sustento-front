@@ -2,19 +2,64 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View, Text, Alert, Pressable } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 
+// --- Imports Locais ---
 import { usePath } from '../../hooks/usePath';
 import { basePutUnique, baseUniqueGet, basePutMultidata } from '../../services/baseCall';
-import { User } from '../../types/data';
-import { SERVER_URL } from '../../constants/config';
-
 import { syncUserRestrictions } from '../../utils/profileHelper';
-import { FIELDS } from '../../constants/editProfileConfig';
 
-import { ImagePickerModal } from '../../components/editProfile/imagePickerModal';
+// --- Imports de Constantes e Tipos (Ajuste os caminhos conforme seu projeto) ---
+import { SERVER_URL } from '../../constants/config';
+import { Gender, ActivityLvl, Objective, GenderLabels, ActivityLvlLabels, ObjectiveLabels } from '../../enum/profileEnum';
+import { User } from '../../types/data'; 
+// Assumindo que os labels estão em um arquivo de constantes:
+
+// --- Imports de Componentes ---
 import { EditableAvatar } from '../../components/editProfile/editableAvatar';
 import { EditProfileHeader } from '../../components/editProfile/editProfileHeader';
 import { FormField } from '../../components/editProfile/formField';
+import { ImagePickerModal } from '../../components/editProfile/imagePickerModal';
 
+
+// --- Configuration & Types ---
+type Option = { label: string; value: string };
+type FieldConfig = {
+    key: keyof User;
+    label: string;
+    type: 'text' | 'number' | 'dropdown' | 'multi-select';
+    options?: Option[];
+    large: boolean;
+};
+
+// Função auxiliar para converter Enums em array de opções para dropdown
+const enumToArray = (enumObj: any, labelsObj: any): Option[] => {
+    return Object.values(enumObj).map((val: any) => ({
+        label: labelsObj[val],
+        value: val,
+    }));
+};
+
+// Opções fixas para restrições
+const restrictionOptions: Option[] = [
+    { label: 'Vegano', value: 'VEGAN' },
+    { label: 'Vegetariano', value: 'VEGETARIAN' },
+    { label: 'Sem Glúten', value: 'GLUTEN_FREE' },
+    { label: 'Sem Lactose', value: 'LACTOSE_FREE' },
+];
+
+// Definição dos campos de formulário (agora com Enums e Labels importados)
+const FIELDS: FieldConfig[] = [
+    { key: 'name', label: 'Nome', type: 'text', large: false },
+    { key: 'age', label: 'Idade', type: 'number', large: false },
+    { key: 'email', label: 'Email', type: 'text', large: true },
+    { key: 'weight', label: 'Peso (kg)', type: 'number', large: false },
+    { key: 'height', label: 'Altura (cm)', type: 'number', large: false },
+    { key: 'gender', label: 'Gênero', type: 'dropdown', options: enumToArray(Gender, GenderLabels), large: true },
+    { key: 'activity_lvl', label: 'Atividade Física', type: 'dropdown', options: enumToArray(ActivityLvl, ActivityLvlLabels), large: true },
+    { key: 'objective', label: 'Objetivo', type: 'dropdown', options: enumToArray(Objective, ObjectiveLabels), large: true },
+    { key: 'restrictions', label: 'Restrições', type: 'multi-select', options: restrictionOptions, large: true },
+];
+
+// O restante do componente...
 export default function EditProfile() {
     const handlePath = usePath();
 
@@ -124,6 +169,7 @@ export default function EditProfile() {
                     const loadedData = { ...res.data };
                     if (loadedData.id && !loadedData.user_id) loadedData.user_id = loadedData.id;
 
+                    // Converte números para string para exibição em campos de texto
                     if (loadedData.age !== null) loadedData.age = String(loadedData.age);
                     if (loadedData.weight !== null) loadedData.weight = String(loadedData.weight);
                     if (loadedData.height !== null) loadedData.height = String(loadedData.height);
