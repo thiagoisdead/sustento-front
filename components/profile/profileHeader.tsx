@@ -29,9 +29,5 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 20,
     },
-    title: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        color: COLORS.textDark,
-    },
+    title: { fontSize: 26, fontWeight: '800', color: COLORS.textDark, textAlign: 'center', marginBottom: 5, marginTop: 10 },
 });

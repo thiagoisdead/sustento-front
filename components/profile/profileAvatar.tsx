@@ -13,9 +13,8 @@ interface ProfileAvatarProps {
 
 export const ProfileAvatar = ({ name, age, pictureUrl }: ProfileAvatarProps) => {
     const imageSource = pictureUrl
-        ? { uri: `${SERVER_URL}/${pictureUrl}` }
+        ? { uri: `${SERVER_URL}${pictureUrl}` }
         : HealthyPNG;
-
     return (
         <View style={styles.container}>
             <View style={styles.iconContainer}>

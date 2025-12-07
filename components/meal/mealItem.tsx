@@ -23,9 +23,9 @@ export const MealItem = ({ meal, onDelete }: MealItemProps) => {
 
     return (
         <View style={styles.mealRow}>
-            <Text style={styles.mealName}>{meal.name}</Text>
+            <Text style={styles.mealName}>{meal?.name}</Text>
             <View style={styles.mealDetails}>
-                <Text style={styles.mealCalories}>{meal.calories} kcal</Text>
+                <Text style={styles.mealCalories}>{meal?.calories} kcal</Text>
                 <Pressable onPress={handleDeletePress} style={styles.deleteButton}>
                     <Text style={styles.deleteButtonText}>×</Text>
                 </Pressable>

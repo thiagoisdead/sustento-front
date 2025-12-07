@@ -11,33 +11,41 @@ export function useUser() {
 
     const fetchUser = async () => {
       try {
-        const [id, token] = await Promise.all([getItem("id"), getItem("token")]);
+        // 🔥 libera a UI rapidamente
+        const [id, token] = await Promise.all([
+          getItem("id"),
+          getItem("token")
+        ]);
 
         if (!id || !token) {
-          if (!mounted) return;
-          setUserData(null);
+          if (mounted) {
+            setUserData(null);
+            setLoading(false); // libera UI imediatamente
+          }
           return;
         }
 
-        const response = await baseUniqueGet("users");
-        if (!mounted) return;
-        setUserData(response?.data ?? null);
-      } catch (err: any) {
-        console.log(err?.message ?? "Erro ao buscar usuário");
-        if (!mounted) return;
-        setUserData(null);
-      } finally {
-        if (!mounted) return;
+        // 🔥 deixa a UI carregando só o conteúdo, não o app inteiro
         setLoading(false);
+
+        const response = await baseUniqueGet("users");
+        if (mounted) {
+          setUserData(response?.data ?? null);
+        }
+
+      } catch (err) {
+        console.log(err ?? "Erro ao buscar usuário");
+        if (mounted) {
+          setUserData(null);
+          setLoading(false);
+        }
       }
     };
 
     fetchUser();
-
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, []);
 
   return { userData, loading };
 }
+

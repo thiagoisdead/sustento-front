@@ -11,7 +11,8 @@ import {
   Button,
   Dialog,
   Portal,
-  Searchbar
+  Searchbar,
+  TextInput
 } from "react-native-paper";
 
 import { Foods } from "../../types/data";
@@ -26,21 +27,12 @@ const recentes: Foods[] = [
   { name: 'Brócolis Cozido', serving: 'g', protein: 3, carbs: 7, fats: 0.5, kcal: 35, category: 'Vegetais' },
 ];
 
-const categorias = [
-  { id: 1, name: 'Frutas', icon: 'apple' },
-  { id: 2, name: 'Vegetais', icon: 'carrot' },
-  { id: 3, name: 'Proteínas', icon: 'food-drumstick' },
-  { id: 4, name: 'Grãos', icon: 'barley' },
-  { id: 5, name: 'Laticínios', icon: 'cow' },
-];
-
-
 export default function MealsHome() {
   const [searchParams, setSearchParams] = useState<string>('');
   const [searchData, setSearchData] = useState<Foods[]>([])
   const [selectedMeal, setSelectedMeal] = useState<Foods | null>(null)
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const handleSearch = async (text: string) => {
     setSearchParams(text);
 
@@ -76,6 +68,7 @@ export default function MealsHome() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Alimentação</Text>
+        
       </View>
 
       <View style={styles.searchBarContainer}>
@@ -97,7 +90,7 @@ export default function MealsHome() {
           <Text style={styles.sectionTitle}>Recentes</Text>
           {recentes.map((item, index) => (
             <RecentItem
-              key={`${item.name}-${index}`}
+              key={`${item?.name}-${index}`}
               item={item}
               onPress={() => handleSelectMeal(item)}
             />
@@ -136,11 +129,22 @@ export default function MealsHome() {
         <Dialog visible={!!selectedMeal} onDismiss={() => setSelectedMeal(null)} style={styles.dialog}>
           <Dialog.Title style={styles.dialogTitle}>{selectedMeal?.name}</Dialog.Title>
           <Dialog.Content>
+            <View style={styles.dialogQuantityRow}>
+              <TextInput
+                label="Kcal (Opcional)"
+                value={selectedMeal?.quantity?.toString() || ''}
+                onChangeText={(text) => setSelectedMeal({ ...selectedMeal, quantity: Number(text) })}
+                keyboardType="numeric"
+                mode="outlined"
+                style={styles.flexInput}
+                activeOutlineColor={COLORS.primary}
+              />
+            </View>
             <View style={styles.dialogMacroRow}>
-              <MacroStat label="Calorias" value={selectedMeal?.nutrients.calories_100g} />
-              <MacroStat label="Proteínas" value={`${selectedMeal?.nutrients.protein_100g}g`} />
-              <MacroStat label="Carbos" value={`${selectedMeal?.nutrients.carbs_100g}g`} />
-              <MacroStat label="Gorduras" value={`${selectedMeal?.nutrients.fat_100g}g`} />
+              <MacroStat label="Calorias" value={selectedMeal?.nutrients?.calories_100g} />
+              <MacroStat label="Proteínas" value={`${selectedMeal?.nutrients?.protein_100g}g`} />
+              <MacroStat label="Carbos" value={`${selectedMeal?.nutrients?.carbs_100g}g`} />
+              <MacroStat label="Gorduras" value={`${selectedMeal?.nutrients?.fat_100g}g`} />
             </View>
           </Dialog.Content>
           <Dialog.Actions>
@@ -168,13 +172,14 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     paddingTop: 50
   },
+  flexInput: { flex: 1, backgroundColor: '#FAFAFA' },
   header: {
     alignItems: 'center',
     paddingBottom: 10,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 26,
+    fontWeight: '800',
     color: COLORS.textDark,
   },
   searchBarContainer: {
@@ -224,7 +229,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
-  // --- Search Results List ---
   resultsContainer: {
     flex: 1,
     marginTop: 10,
@@ -295,6 +299,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     marginTop: 10,
     marginBottom: 10
+  },
+  dialogQuantityRow: {
+    backgroundColor: 'red'
   },
   dialogMacroItem: {
     alignItems: 'center'

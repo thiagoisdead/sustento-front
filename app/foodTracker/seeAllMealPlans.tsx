@@ -67,7 +67,8 @@ export default function SeeAllMealPlans() {
     <View style={styles.mainView}>
       <View style={styles.mainTitle}>
         <Text style={styles.mainText}>
-          Todos os planos de refeição
+
+          Todos os planos alimentares
         </Text>
       </View>
 
@@ -88,58 +89,58 @@ export default function SeeAllMealPlans() {
         </View>
       ) : (
         <View style={{ justifyContent: 'center', alignItems: 'center', flex: 0.8 }}>
-      <MaterialCommunityIcons name="food-variant" size={80} color={COLORS.primary} style={{ opacity: 0.5, marginBottom: 20 }} />
-      <Text style={styles.headerTitle}>Bem-vindo!</Text>
-      <Text style={styles.emptyText}>
-        Você ainda não possui nenhum plano alimentar. Crie um agora para começar a acompanhar sua dieta.
-      </Text>
-    </View>
+          <MaterialCommunityIcons name="food-variant" size={80} color={COLORS.primary} style={{ opacity: 0.5, marginBottom: 20 }} />
+          <Text style={styles.headerTitle}>Bem-vindo!</Text>
+          <Text style={styles.emptyText}>
+            Você ainda não possui nenhum plano alimentar. Crie um agora para começar a acompanhar sua dieta.
+          </Text>
+        </View>
 
-  )
-}
+      )
+      }
 
 
-<View style={styles.createMealPlan}>
-  <BaseButton onPress={() => setCreateDialogVisible(true)} text="Criar novo plano alimentar" />
-</View>
+      <View style={styles.createMealPlan}>
+        <BaseButton onPress={() => setCreateDialogVisible(true)} text="Criar novo plano alimentar" />
+      </View>
 
-{
-  createDialogVisible && (
-    <CreateMealPlanModal
-      onDismiss={() => {
-        setCreateDialogVisible(false);
-        fetchMealPlans();
-      }}
-    />
-  )
-}
+      {
+        createDialogVisible && (
+          <CreateMealPlanModal
+            onDismiss={() => {
+              setCreateDialogVisible(false);
+              fetchMealPlans();
+            }}
+          />
+        )
+      }
 
-<Portal>
-  <Dialog visible={deleteDialogVisible} onDismiss={() => setDeleteDialogVisible(false)} style={styles.dialog}>
-    <Dialog.Title style={styles.dialogTitle}>Excluir Plano</Dialog.Title>
-    <Dialog.Content>
-      <Text style={styles.dialogText}>
-        Tem certeza que deseja excluir este plano alimentar? Essa ação é irreversível.
-      </Text>
-    </Dialog.Content>
-    <Dialog.Actions style={styles.dialogActions}>
-      <Button
-        onPress={() => setDeleteDialogVisible(false)}
-        style={styles.btnCancel}
-        labelStyle={{ color: COLORS.textDark }}
-      >
-        Cancelar
-      </Button>
-      <Button
-        onPress={confirmDelete}
-        style={styles.btnConfirm}
-        labelStyle={{ color: '#FFF' }}
-      >
-        Excluir
-      </Button>
-    </Dialog.Actions>
-  </Dialog>
-</Portal>
+      <Portal>
+        <Dialog visible={deleteDialogVisible} onDismiss={() => setDeleteDialogVisible(false)} style={styles.dialog}>
+          <Dialog.Title style={styles.dialogTitle}>Excluir Plano</Dialog.Title>
+          <Dialog.Content>
+            <Text style={styles.dialogText}>
+              Tem certeza que deseja excluir este plano alimentar? Essa ação é irreversível.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions style={styles.dialogActions}>
+            <Button
+              onPress={() => setDeleteDialogVisible(false)}
+              style={styles.btnCancel}
+              labelStyle={{ color: COLORS.textDark }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onPress={confirmDelete}
+              style={styles.btnConfirm}
+              labelStyle={{ color: '#FFF' }}
+            >
+              Excluir
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
 
     </View >
   )
@@ -155,11 +156,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  mainText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: COLORS.textDark,
-  },
+  mainText: { fontSize: 26, fontWeight: '800', color: COLORS.textDark, textAlign: 'center', marginBottom: 5, marginTop: 10 },
   cardsContainer: {
     paddingHorizontal: 16,
     width: '100%',

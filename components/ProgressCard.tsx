@@ -1,59 +1,37 @@
 import React from 'react';
 import { View, Text, StyleSheet, DimensionValue } from 'react-native';
 import { COLORS } from '../constants/theme';
+import { MealPlan } from '../types/meal';
 
-// A interface ProgressCardProps define 'totals' e 'targets'
-interface ProgressCardProps {
-    totals: {
-        calories: number;
-        protein: number;
-        carbs: number;
-        fat: number;
-    };
-    targets: {
-        calories: number;
-        protein: number;
-        carbs: number;
-        fat: number;
-    };
-}
+export const ProgressCard = ({ data }: MealPlan) => {
+    const safeTargetCal = data?.target_calories || 1;
+    const progress = Math.min(data?.target_calories / safeTargetCal, 1);
 
-export const ProgressCard = ({ totals, targets }: ProgressCardProps) => {
-    // Evita divisão por zero
-    const safeTargetCal = targets.calories || 1;
-    const progress = Math.min(totals.calories / safeTargetCal, 1);
-
-    // --- CORREÇÃO DA TIPAGEM ---
     const rawPercent = Math.round(progress * 100);
-
-    // 1. Para o Style (exige DimensionValue, pode incluir AnimatedNode)
     const progressPctStyle = `${rawPercent}%` as DimensionValue;
-
-    // 2. Para o Texto (apenas string pura)
     const progressPctText = `${rawPercent}%`;
-    // ----------------------------
 
-    const fmt = (curr: number, total: number) => `${Math.round(curr)}/${Math.round(total || 1)}g`;
+    const fmt = (curr: number, total: number) =>
+        `${Math.round(curr)}/${Math.round(total || 1)}g`;
 
     return (
         <View style={styles.card}>
             <Text style={styles.goalText}>
-                Meta Diária: {targets.calories} kcal
+                Meta Diária: {data?.target_calories} kcal
             </Text>
 
             <View style={styles.progressBar}>
-                {/* Usamos progressPctStyle aqui */}
                 <View style={[styles.progressFill, { width: progressPctStyle }]} />
             </View>
 
             <Text style={styles.progressText}>
-                {Math.round(totals.calories)} / {targets.calories} kcal ({progressPctText})
+                {Math.round(progress)} / {data?.target_calories} kcal ({progressPctText})
             </Text>
 
             <View style={styles.macros}>
-                <MacroItem label="Proteínas" value={fmt(totals.protein, targets.protein)} />
-                <MacroItem label="Carbos" value={fmt(totals.carbs, targets.carbs)} />
-                <MacroItem label="Gorduras" value={fmt(totals.fat, targets.fat)} />
+                <MacroItem label="Proteínas" value={fmt(data?.protein, data?.target_protein)} />
+                <MacroItem label="Carbos" value={fmt(data?.carbs, data?.target_carbs)} />
+                <MacroItem label="Gorduras" value={fmt(data?.fat, data?.target_fat)} />
             </View>
         </View>
     );
@@ -92,7 +70,10 @@ const styles = StyleSheet.create({
         borderRadius: 6,
         overflow: "hidden",
     },
-    progressFill: { height: "100%", backgroundColor: COLORS.primary },
+    progressFill: {
+        height: "100%",
+        backgroundColor: COLORS.primary,
+    },
     progressText: {
         marginTop: 8,
         marginBottom: 12,
@@ -101,7 +82,11 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         fontSize: 14,
     },
-    macros: { flexDirection: "row", justifyContent: "space-between", gap: 8 },
+    macros: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        gap: 8,
+    },
     macroItem: {
         flex: 1,
         backgroundColor: '#FAFAFA',

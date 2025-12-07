@@ -91,6 +91,7 @@ export default function SeeCalendar() {
     <View style={styles.safeArea}>
       <ScrollView style={[styles.scrollView, !isMobile && styles.scrollViewDesktop]} contentContainerStyle={styles.container}>
         <View style={[styles.calendarContainer, !isMobile && styles.calendarContainerDesktop]}>
+          <Text style={styles.headerTitle}>Calendário</Text>
           <Calendar
             onDayPress={(day) => setSelectedDate(day.dateString)}
             markedDates={markedDates}
@@ -134,4 +135,6 @@ const styles = StyleSheet.create({
   addButton: { backgroundColor: COLORS.cardBg, borderColor: COLORS.primary, borderWidth: 2, borderRadius: 30, paddingVertical: 12, paddingHorizontal: 20, alignSelf: "stretch", alignItems: "center", marginTop: 10 },
   addButtonDesktop: { alignSelf: "center", width: 250 },
   addButtonText: { color: COLORS.primary, fontSize: 16, fontWeight: "bold" },
+  headerTitle: { fontSize: 26, fontWeight: '800', color: COLORS.textDark, textAlign: 'center', marginBottom: 5, marginTop: 10 },
+
 });

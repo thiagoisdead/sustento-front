@@ -227,7 +227,7 @@ export default function Dashboard() {
           contentContainerStyle={styles.scrollContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />}
         >
-          <Text style={styles.headerTitle}>MEUS PLANOS</Text>
+          <Text style={styles.headerTitle}>Meus Planos</Text>
           <Text style={styles.subTitle}>Selecione um plano para ativar:</Text>
 
           <View style={{ gap: 10 }}>
@@ -269,7 +269,7 @@ export default function Dashboard() {
       >
         {/* Header */}
         <View style={styles.dashboardHeader}>
-          <Text style={styles.headerTitle}>DASHBOARD</Text>
+          <Text style={styles.headerTitle}>Dashboard</Text>
 
           <View style={styles.activePlanBadge}>
             <Text style={styles.activePlanLabel}>{activePlanName}</Text>
@@ -296,10 +296,10 @@ export default function Dashboard() {
             <View style={styles.heroSection}>
               <StatCard
                 label="CALORIAS DIÁRIAS"
-                value={dashboardData.stats.calories.current}
-                subValue={dashboardData.stats.calories.target}
+                value={dashboardData?.stats?.calories.current}
+                subValue={dashboardData?.stats?.calories.target}
                 unit="kcal"
-                percentage={dashboardData.stats.calories.target > 0 ? dashboardData.stats.calories.current / dashboardData.stats.calories.target : 0}
+                percentage={dashboardData?.stats?.calories.target > 0 ? dashboardData?.stats?.calories.current / dashboardData?.stats?.calories.target : 0}
                 color={COLORS.accentOrange}
                 icon={<FontAwesome5 name="fire" size={18} color={COLORS.accentOrange} />}
                 style={{ width: '100%' }} // ESTILO OVERRIDE PARA SER "HERO"
@@ -319,7 +319,6 @@ export default function Dashboard() {
                 icon={<MaterialCommunityIcons name="food-drumstick" size={14} color={COLORS.primary} />}
               />
 
-              {/* Carbos */}
               <StatCard
                 label="CARBOS"
                 value={dashboardData.stats.macros.carbs.current}
@@ -330,7 +329,6 @@ export default function Dashboard() {
                 icon={<MaterialCommunityIcons name="barley" size={14} color={COLORS.accentBlue} />}
               />
 
-              {/* Gorduras */}
               <StatCard
                 label="GORDURAS"
                 value={dashboardData.stats.macros.fats.current}
@@ -342,7 +340,6 @@ export default function Dashboard() {
               />
             </View>
 
-            {/* Gráfico */}
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.decorativeBar} />

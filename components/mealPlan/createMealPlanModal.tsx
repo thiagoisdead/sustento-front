@@ -77,11 +77,11 @@ export default function MealPlanModal({ onDismiss, planToEdit }: MealPlanModalPr
       const dataPayload = {
         ...planForm,
         active: isOverrideActive,
-        target_calories: convertToNumberOrUndefined(planForm.target_calories),
-        target_water: convertToNumberOrUndefined(planForm.target_water),
-        target_protein: convertToNumberOrUndefined(planForm.target_protein),
-        target_carbs: convertToNumberOrUndefined(planForm.target_carbs),
-        target_fats: convertToNumberOrUndefined(planForm.target_fats),
+        target_calories: convertToNumberOrUndefined(planForm?.target_calories),
+        target_water: convertToNumberOrUndefined(planForm?.target_water),
+        target_protein: convertToNumberOrUndefined(planForm?.target_protein),
+        target_carbs: convertToNumberOrUndefined(planForm?.target_carbs),
+        target_fats: convertToNumberOrUndefined(planForm?.target_fats),
         source: planToEdit?.source || 'MANUAL', // Mantém a fonte original ou seta Manual
         user_id: Number(id),
       };
@@ -121,10 +121,10 @@ export default function MealPlanModal({ onDismiss, planToEdit }: MealPlanModalPr
   };
 
   const handleValidationAndCheck = async () => {
-    if (!planForm.plan_name) return Alert.alert("Erro", "Insira um nome para o plano.");
+    if (!planForm?.plan_name) return Alert.alert("Erro", "Insira um nome para o plano.");
 
     // Lógica de Conflito de Ativo
-    if (planForm.active) {
+    if (planForm?.active) {
       // Se estou editando um plano que JÁ ERA ativo, não precisa checar conflito
       if (isEditing && planToEdit?.active) {
         await executeSave(true);
@@ -143,8 +143,7 @@ export default function MealPlanModal({ onDismiss, planToEdit }: MealPlanModalPr
       }
     }
 
-    // Sem conflitos
-    executeSave(planForm.active);
+    executeSave(planForm?.active);
   };
 
   const handleSubmit = () => {
@@ -230,7 +229,7 @@ export default function MealPlanModal({ onDismiss, planToEdit }: MealPlanModalPr
               <View style={{ marginTop: 10 }}>
                 <TextInput
                   label="Nome do Plano"
-                  value={planForm.plan_name}
+                  value={planForm?.plan_name}
                   onChangeText={(text) => handleChange('plan_name', text)}
                   mode="outlined"
                   style={styles.input}
@@ -240,7 +239,7 @@ export default function MealPlanModal({ onDismiss, planToEdit }: MealPlanModalPr
                 <View style={styles.row}>
                   <TextInput
                     label="Kcal (Opcional)"
-                    value={planForm.target_calories}
+                    value={planForm?.target_calories}
                     onChangeText={(text) => handleChange('target_calories', text)}
                     keyboardType="numeric"
                     mode="outlined"
@@ -249,7 +248,7 @@ export default function MealPlanModal({ onDismiss, planToEdit }: MealPlanModalPr
                   />
                   <TextInput
                     label="Meta Água (ml)"
-                    value={planForm.target_water}
+                    value={planForm?.target_water}
                     onChangeText={(text) => handleChange('target_water', text)}
                     keyboardType="numeric"
                     mode="outlined"
@@ -259,9 +258,9 @@ export default function MealPlanModal({ onDismiss, planToEdit }: MealPlanModalPr
                 </View>
                 <Text style={styles.sectionLabel}>Macros (g) - (Opcionais)</Text>
                 <View style={styles.row}>
-                  <TextInput label="Prot" value={planForm.target_protein} onChangeText={t => handleChange('target_protein', t)} keyboardType="numeric" mode="outlined" style={styles.flexInput} activeOutlineColor={COLORS.primary} />
-                  <TextInput label="Carb" value={planForm.target_carbs} onChangeText={t => handleChange('target_carbs', t)} keyboardType="numeric" mode="outlined" style={styles.flexInput} activeOutlineColor={COLORS.primary} />
-                  <TextInput label="Gord" value={planForm.target_fats} onChangeText={t => handleChange('target_fats', t)} keyboardType="numeric" mode="outlined" style={styles.flexInput} activeOutlineColor={COLORS.primary} />
+                  <TextInput label="Prot" value={planForm?.target_protein} onChangeText={t => handleChange('target_protein', t)} keyboardType="numeric" mode="outlined" style={styles.flexInput} activeOutlineColor={COLORS.primary} />
+                  <TextInput label="Carb" value={planForm?.target_carbs} onChangeText={t => handleChange('target_carbs', t)} keyboardType="numeric" mode="outlined" style={styles.flexInput} activeOutlineColor={COLORS.primary} />
+                  <TextInput label="Gord" value={planForm?.target_fats} onChangeText={t => handleChange('target_fats', t)} keyboardType="numeric" mode="outlined" style={styles.flexInput} activeOutlineColor={COLORS.primary} />
                 </View>
               </View>
             )}

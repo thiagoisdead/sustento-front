@@ -40,7 +40,7 @@ export default function SeeFoodTracker() {
     { id: 7, category: "Jantar", name: "Salmão assado", calories: 300 },
   ]);
 
-  const totalCalories = meals.reduce((sum, m) => sum + m.calories, 0);
+  const totalCalories = meals.reduce((sum, m) => sum + m?.calories, 0);
 
   const groupedMeals = meals.reduce((acc: Record<string, Meal[]>, meal) => {
     if (!acc[meal.category]) acc[meal.category] = [];
@@ -69,6 +69,8 @@ export default function SeeFoodTracker() {
     } else {
         // Se vier array ou objeto, ajusta aqui. Assumindo que vem objeto direto pelo ID
         const data = Array.isArray(response.data) ? response.data[0] : response.data;
+
+        console.log('data', data)
         setMealPlanData(data)
         setMealPlans(true)
     }
@@ -128,7 +130,7 @@ export default function SeeFoodTracker() {
             iconName="arrow-back" 
         />
         
-        <ProgressCard totalCalories={totalCalories} dailyGoal={mealPlanData?.target_calories || 0} />
+        <ProgressCard data={mealPlanData} />
 
         <View style={styles.mealGrid}>
           {Object.keys(groupedMeals).map((category) => (

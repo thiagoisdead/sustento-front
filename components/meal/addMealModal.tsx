@@ -93,8 +93,8 @@ export const AddMealModal = ({ visible, onClose, onAdd }: AddMealModalProps) => 
                                     renderItem={({ item }) => (
                                         <Pressable style={styles.resultItem} onPress={() => handleSelect(item)}>
                                             <View style={{ flex: 1 }}>
-                                                <Text style={styles.resultName}>{item.name}</Text>
-                                                <Text style={styles.resultCal}>{Number(item.calories_100g).toFixed(0)} kcal/100g</Text>
+                                                <Text style={styles.resultName}>{item?.name}</Text>
+                                                <Text style={styles.resultCal}>{Number(item?.calories_100g).toFixed(0)} kcal/100g</Text>
                                             </View>
                                             <MaterialCommunityIcons name="plus-circle-outline" size={24} color={COLORS.primary} />
                                         </Pressable>

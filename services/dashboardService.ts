@@ -53,24 +53,24 @@ export const getDashboardData = async (): Promise<DashboardData | null> => {
         const today = new Date();
 
         // Filtra registros do dia atual
-        const todayRecords = allRecords.filter((rec: any) => isSameDay(new Date(rec.meal_date), today));
-        const todayWater = allWater.filter((rec: any) => isSameDay(new Date(rec.water_record_date), today));
+        const todayRecords = allRecords.filter((rec: any) => isSameDay(new Date(rec?.meal_date), today));
+        const todayWater = allWater.filter((rec: any) => isSameDay(new Date(rec?.water_record_date), today));
 
         // Soma Água
-        const currentWater = todayWater.reduce((acc: number, rec: any) => acc + Number(rec.water_consumption || 0), 0);
+        const currentWater = todayWater.reduce((acc: number, rec: any) => acc + Number(rec?.water_consumption || 0), 0);
 
         // Soma Macros e Calorias
         const currentStats = todayRecords.reduce((acc: any, rec: any) => {
-            if (!rec.aliment) return acc;
+            if (!rec?.aliment) return acc;
 
             // O banco guarda por 100g. O registro tem a quantidade comida.
-            const ratio = Number(rec.amount) / 100;
+            const ratio = Number(rec?.amount) / 100;
 
             return {
-                calories: acc.calories + (Number(rec.aliment.calories_100g) * ratio),
-                protein: acc.protein + (Number(rec.aliment.protein_100g) * ratio),
-                carbs: acc.carbs + (Number(rec.aliment.carbs_100g) * ratio),
-                fat: acc.fat + (Number(rec.aliment.fat_100g) * ratio),
+                calories: acc.calories + (Number(rec?.aliment?.calories_100g) * ratio),
+                protein: acc.protein + (Number(rec?.aliment?.protein_100g) * ratio),
+                carbs: acc.carbs + (Number(rec?.aliment?.carbs_100g) * ratio),
+                fat: acc.fat + (Number(rec?.aliment?.fat_100g) * ratio),
             };
         }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
@@ -108,13 +108,13 @@ export const getDashboardData = async (): Promise<DashboardData | null> => {
 
         return {
             stats: {
-                calories: { current: Math.round(currentStats.calories), target: targets.calories },
-                water: { current: currentWater / 1000, target: targets.water / 1000 }, // Litros
+                calories: { current: Math.round(currentStats?.calories), target: targets?.calories },
+                water: { current: currentWater / 1000, target: targets?.water / 1000 }, // Litros
                 steps: { current: 0, target: 0 }, // Não usado na UI, mas mantido no tipo
                 macros: {
-                    protein: { current: Math.round(currentStats.protein), target: targets.protein },
-                    carbs: { current: Math.round(currentStats.carbs), target: targets.carbs },
-                    fats: { current: Math.round(currentStats.fat), target: targets.fat },
+                    protein: { current: Math.round(currentStats?.protein), target: targets?.protein },
+                    carbs: { current: Math.round(currentStats?.carbs), target: targets?.carbs },
+                    fats: { current: Math.round(currentStats?.fat), target: targets?.fat },
                 }
             },
             weeklyActivity,
