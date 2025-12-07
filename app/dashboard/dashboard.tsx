@@ -34,12 +34,13 @@ import { IconPill } from '../../components/iconPill';
 import { AnimatedButton } from '../../components/animatedButton';
 import { MealPlanItem } from '../../components/dashboard/mealPlanItem';
 import { CreatePlanModal } from '../../components/dashboard/createPlanModal';
+import { usePath } from '../../hooks/usePath';
 
 type ViewState = 'LOADING' | 'EMPTY' | 'SELECTION' | 'DASHBOARD';
 
 export default function Dashboard() {
   const [viewState, setViewState] = useState<ViewState>('LOADING');
-
+  const handlePath = usePath();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [availablePlans, setAvailablePlans] = useState<MealPlan[]>([]);
   const [activePlanId, setActivePlanId] = useState<number | null>(null);
@@ -207,7 +208,7 @@ export default function Dashboard() {
           </Text>
           <AnimatedButton
             style={[styles.createButton, { marginTop: 30, borderWidth: 1, borderColor: COLORS.primary }]}
-            onPress={() => setCreateModalVisible(true)}
+            onPress={() => handlePath('/foodTracker/seeFoodTracker')}
           >
             <Text style={[styles.btnText,]}>Criar Novo Plano</Text>
           </AnimatedButton>
@@ -243,7 +244,7 @@ export default function Dashboard() {
 
           <AnimatedButton
             style={[styles.createButton, { marginTop: 30, borderWidth: 1, borderColor: COLORS.primary }]}
-            onPress={() => setCreateModalVisible(true)}
+            onPress={() => handlePath("/foodTracker/seeFoodTracker")}
           >
             <Text style={[styles.btnText]}>Criar Novo Plano</Text>
           </AnimatedButton>
