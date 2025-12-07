@@ -1,40 +1,64 @@
-import {
-    DimensionValue
-} from "react-native";
-import { View, Text, StyleSheet } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, DimensionValue } from 'react-native';
 import { COLORS } from '../constants/theme';
 
+// A interface ProgressCardProps define 'totals' e 'targets'
 interface ProgressCardProps {
-    totalCalories: number;
-    dailyGoal: number;
+    totals: {
+        calories: number;
+        protein: number;
+        carbs: number;
+        fat: number;
+    };
+    targets: {
+        calories: number;
+        protein: number;
+        carbs: number;
+        fat: number;
+    };
 }
 
-export const ProgressCard = ({ totalCalories, dailyGoal }: ProgressCardProps) => {
-    const progress = Math.min(totalCalories / dailyGoal, 1);
-    const progressPct = `${Math.round(progress * 100)}%`;
+export const ProgressCard = ({ totals, targets }: ProgressCardProps) => {
+    // Evita divisão por zero
+    const safeTargetCal = targets.calories || 1;
+    const progress = Math.min(totals.calories / safeTargetCal, 1);
+
+    // --- CORREÇÃO DA TIPAGEM ---
+    const rawPercent = Math.round(progress * 100);
+
+    // 1. Para o Style (exige DimensionValue, pode incluir AnimatedNode)
+    const progressPctStyle = `${rawPercent}%` as DimensionValue;
+
+    // 2. Para o Texto (apenas string pura)
+    const progressPctText = `${rawPercent}%`;
+    // ----------------------------
+
+    const fmt = (curr: number, total: number) => `${Math.round(curr)}/${Math.round(total || 1)}g`;
 
     return (
         <View style={styles.card}>
-            <Text style={styles.goalText}>Meta Diária de Calorias: {dailyGoal} kcal</Text>
+            <Text style={styles.goalText}>
+                Meta Diária: {targets.calories} kcal
+            </Text>
 
             <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: progressPct as DimensionValue }]} />
+                {/* Usamos progressPctStyle aqui */}
+                <View style={[styles.progressFill, { width: progressPctStyle }]} />
             </View>
 
             <Text style={styles.progressText}>
-                {totalCalories} / {dailyGoal} kcal
+                {Math.round(totals.calories)} / {targets.calories} kcal ({progressPctText})
             </Text>
 
             <View style={styles.macros}>
-                <MacroItem label="Proteínas" value="60%" />
-                <MacroItem label="Carboidratos" value="40%" />
-                <MacroItem label="Gorduras" value="30%" />
+                <MacroItem label="Proteínas" value={fmt(totals.protein, targets.protein)} />
+                <MacroItem label="Carbos" value={fmt(totals.carbs, targets.carbs)} />
+                <MacroItem label="Gorduras" value={fmt(totals.fat, targets.fat)} />
             </View>
         </View>
     );
 };
 
-// Sub-component for internal use
 const MacroItem = ({ label, value }: { label: string; value: string }) => (
     <View style={styles.macroItem}>
         <Text style={styles.macroLabel}>{label}</Text>
@@ -48,7 +72,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         padding: 16,
         marginBottom: 16,
-        marginTop: 32,
+        marginTop: 20,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
@@ -56,16 +80,16 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     goalText: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: "700",
         marginBottom: 10,
         color: COLORS.textDark,
         textAlign: "center",
     },
     progressBar: {
-        height: 16,
+        height: 12,
         backgroundColor: '#E0E0E0',
-        borderRadius: 8,
+        borderRadius: 6,
         overflow: "hidden",
     },
     progressFill: { height: "100%", backgroundColor: COLORS.primary },
@@ -75,27 +99,28 @@ const styles = StyleSheet.create({
         color: COLORS.textDark,
         textAlign: "center",
         fontWeight: "600",
+        fontSize: 14,
     },
     macros: { flexDirection: "row", justifyContent: "space-between", gap: 8 },
     macroItem: {
         flex: 1,
-        backgroundColor: COLORS.iconBg,
-        borderRadius: 10,
-        paddingVertical: 10,
-        paddingHorizontal: 12,
+        backgroundColor: '#FAFAFA',
+        borderRadius: 8,
+        paddingVertical: 8,
         alignItems: "center",
         borderWidth: 1,
-        borderColor: COLORS.borderColor,
+        borderColor: '#EEE',
     },
     macroLabel: {
-        color: COLORS.textDark,
-        fontSize: 12, // Adjusted for space
-        fontWeight: "600",
-        marginBottom: 4,
+        color: COLORS.textLight,
+        fontSize: 10,
+        fontWeight: "700",
+        textTransform: 'uppercase',
+        marginBottom: 2,
     },
     macroValue: {
         color: COLORS.textDark,
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: "700",
     },
 });

@@ -7,7 +7,7 @@ import { searchAliments } from '../../services/foodService';
 interface AddMealModalProps {
     visible: boolean;
     onClose: () => void;
-    onAdd: (name: string, amount: number, mealCategory: string) => void;
+    onAdd: (alimentId: number, amount: number, mealCategory: string) => void;
 }
 
 const MEAL_OPTIONS = ['Café da Manhã', 'Almoço', 'Café da Tarde', 'Jantar', 'Ceia'];
@@ -20,7 +20,6 @@ export const AddMealModal = ({ visible, onClose, onAdd }: AddMealModalProps) => 
 
     const [selectedAliment, setSelectedAliment] = useState<any | null>(null);
     const [amount, setAmount] = useState('100');
-    // NOTE: selectedCategory é usado no Modal, mas ignorado pelo SeeFoodTracker.tsx, que usa o targetMealCategory
     const [selectedCategory, setSelectedCategory] = useState<string>('Almoço');
 
     useEffect(() => {
