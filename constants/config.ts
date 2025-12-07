@@ -1,1 +1,4 @@
-export const SERVER_URL = "http://192.168.1.105:3000";
+import Constants from 'expo-constants'
+
+const ipv4 = Constants.expoConfig?.hostUri?.split(':')[0];
+export const SERVER_URL = `http://${ipv4}:3000`;
