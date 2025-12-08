@@ -146,10 +146,17 @@ export default function SeeFoodTracker() {
 
         console.log(foods, 'foods da meal');
 
-        console.log(totalCals, 'total cals da meal');
+        console.log(totalCals, 'total cals da measl');
 
 
-        return { ...meal, foods, calories: Math.round(totalCals), fats: Math.round(totalFats), carbs: Math.round(totalCarbs), proteins: Math.round(totalProteins) };
+        return {
+          ...meal,
+          foods,
+          calories: Number(totalCals.toFixed(2)),
+          fats: Number(totalFats.toFixed(2)),
+          carbs: Number(totalCarbs.toFixed(2)),
+          proteins: Number(totalProteins.toFixed(2)),
+        };
       } catch (error) {
         console.log(`Erro ao buscar alimentos para refeição ${meal.id}`, error);
         return meal;

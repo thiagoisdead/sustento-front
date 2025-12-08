@@ -68,7 +68,7 @@ export default function Register() {
           if (responseLogin) {
             const data = responseLogin.data as ResponseLogin;
             await setItem("token", String(data?.token))
-            await setItem("id", String(data?.user_id))
+            await setItem("id", String(data?.id))
             handlePath('/home/home')
           }
         }

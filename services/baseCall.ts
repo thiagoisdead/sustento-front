@@ -50,8 +50,11 @@ export async function baseUniqueGet(route: string) {
   const token = await getItem('token');
   const id = await getItem('id');
 
+
+
   try {
     const url = cleanUrl(`${route}/${id}`);
+    console.log('token e id no baseUniqueGet', token, id, url)
     const fetchData = await axios.get(url, {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -88,7 +91,7 @@ export async function basePutUnique(route: string, data: any) {
     });
     return putData;
   } catch (err: any) {
-    console.log("Erro no PUT:", err.message);
+    console.log(`Erro no PUT ${route}/${id} com o data ${JSON.stringify(data)} ou ${data}`, err.message);
   }
 }
 
@@ -189,6 +192,21 @@ export async function basePutById(route: string, id: number, data: any) {
     return result;
   } catch (err: any) {
     console.log(`Erro no PUT ${route}/${id}:`, err.message);
+    throw err;
+  }
+}
+export async function basePutNormal(route: string, data: any) {
+  const token = await getItem('token');
+  try {
+    const url = cleanUrl(`${route}`);
+    console.log(`PUT By ID: ${url}`, data);
+
+    const result = await axios.put(url, data, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return result;
+  } catch (err: any) {
+    console.log(`Erro no PUT ${route}:`, err.message);
     throw err;
   }
 }

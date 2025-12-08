@@ -9,11 +9,12 @@ import {
   Alert,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import { basePutUnique } from "../services/baseCall";
+import { baseFetch, basePost, basePutUnique } from "../services/baseCall";
 import { useUser } from "../hooks/useUser";
 import { usePath } from "../hooks/usePath";
 import { ActivityLvlLabels, GenderLabels, ObjectiveLabels } from "../enum/profileEnum";
 import { restrictionOptions } from "../constants/editProfileConfig";
+import { syncUserRestrictions } from "../utils/profileHelper";
 
 export default function QuestionaryScreen() {
   const [step, setStep] = useState(0);
@@ -57,6 +58,18 @@ export default function QuestionaryScreen() {
     return () => clearTimeout(timeout);
   }, [step]);
 
+  useEffect(() => {
+    const fetchRestrictions = async () => {
+      const restrictions = ["VEGAN", "VEGETARIAN", "GLUTEN_FREE", "LACTOSE_FREE",];
+      const res = await baseFetch("restrictions");
+      if (res && res.status === 200 && Array.isArray(res.data) && res.data.length === 0) {
+        for (const r of restrictions) {
+          await basePost("restrictions", { restriction_name: r });
+        }
+      }
+    };
+    fetchRestrictions();
+  }, []);
 
   const questions = [
     {
@@ -114,7 +127,6 @@ export default function QuestionaryScreen() {
   const handleNext = async () => {
 
     if (loading) return;
-    
     if (!canProceed()) {
       Alert.alert("Ops!", "Por favor, selecione uma opção antes de continuar.");
       return;
@@ -130,27 +142,43 @@ export default function QuestionaryScreen() {
       }
       console.log("🧠 Dados finais:", data);
       const mergedData = { ...(userData || {}), ...data }
+      const { user_id, restrictions, ...payload } = mergedData;
 
+      console.log('removed data', user_id, restrictions)
 
-      const { restrictions, ...payload } = mergedData;
+      const restrictionsPayload = {
+        restrictions: restrictions,
+        user_id: Number(user_id)
+      }
+      console.log('restricoes', restrictionsPayload)
 
-      console.log('n', payload)
+      console.log('n', mergedData)
 
       const response = await basePutUnique("users", payload);
-      // if (response && response.status === 200) {
-      Alert.alert("Sucesso", "Seus dados foram salvos com sucesso!");
-      handlePath('/profile/seeProfile')
-      // } else {
-      //   Alert.alert("Erro", "Houve um problema ao salvar seus dados. Tente novamente.");
-      // }
+
+      if (response && response.status === 200) {
+        try {
+          await syncUserRestrictions(
+            Number(user_id),
+            restrictions || [],
+            userData?.restrictions || []  
+          );
+
+          Alert.alert("Sucesso", "Seus dados foram salvos com sucesso!");
+          handlePath('/profile/seeProfile');
+        } catch (err) {
+          console.log("Erro ao sincronizar restrições:", err);
+          Alert.alert("Erro", "Não foi possível salvar suas restrições.");
+        }
+      } else {
+        Alert.alert("Erro", "Houve um problema ao salvar seus dados. Tente novamente.");
+      }
     }
   };
 
   const handleBack = () => {
     if (step > 0) setStep(step - 1);
   };
-
-
 
   return (
     <View style={styles.container}>
@@ -206,7 +234,7 @@ export default function QuestionaryScreen() {
             return (
               <View style={styles.pickerWrapper}>
                 <Picker
-                  selectedValue={safeValue} // Agora seguro
+                  selectedValue={safeValue} 
                   onValueChange={(val) =>
                     setData((prev) => ({ ...prev, [current.key]: val }))
                   }

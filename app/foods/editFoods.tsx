@@ -117,23 +117,23 @@ export default function MealsHome() {
 
     setDialogVisible(false);
     setSelectedMeal(null);
-    
-    const randomid = Math.floor(Math.random() * 1000000);
-    
+
+    const random2 = Math.floor(Math.random() * 100);
+
     const payload = {
       quantity: quantity,
       measurement_unit: selectedUnit?.toString().toUpperCase(),
       meal_id: Number(selectedMealId),
       // aliment_id: Number(selectedMeal?.id)
-      aliment_id: randomid // USANDO ID ALEATÓRIO POR ENQUANTO
+      aliment_id: random2 // USANDO ID ALEATÓRIO POR ENQUANTO
     }
-    
+
     console.log('Payload para criar mealAliments:', payload);
-    
+
     const token = await getItem('token');
-    
+
     console.log(token)
-    
+
     try {
       const req = await basePost('mealAliments', payload)
       console.log('Sucesso no post de alimentos pra uma refeição:', req?.data);

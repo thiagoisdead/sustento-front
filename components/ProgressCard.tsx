@@ -1,41 +1,57 @@
-import React from 'react';
-import { View, Text, StyleSheet, DimensionValue } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, DimensionValue, Pressable } from 'react-native';
 import { COLORS } from '../constants/theme';
-import { MealPlan } from '../types/meal';
 
-export const ProgressCard = ({ data, foodsData }) => {
-    const safeTargetCal = data?.target_calories || 1;
+export const ProgressCard = ({ data }) => {
+    const [showExact, setShowExact] = useState(false);
 
-    console.log('data in ProgressCard', data, foodsData);
-    const progress = Math.min(data?.target_calories! / safeTargetCal, 1);
+    const current = data?.current_calories || 0;
+    const target = data?.target_calories || 1; 
 
-    const rawPercent = Math.round(progress * 100);
-    const progressPctStyle = `${rawPercent}%` as DimensionValue;
-    const progressPctText = `${rawPercent}%`;
+    const realRatio = current / target;
+    const realPercent = Math.round(realRatio * 100);
+    const isOverflowing = realPercent > 100;
+
+    const visualPercent = Math.min(realPercent, 100);
+    const progressPctStyle = `${visualPercent}%` as DimensionValue;
+    const displayPercentText = (isOverflowing && !showExact) ? ">100%" : `${realPercent}%`;
+    const barColor = isOverflowing ? '#FF5252' : COLORS.primary;
 
     const fmt = (curr: number, total: number) =>
-        `${Math.round(curr)}/${Math.round(total || 1)}g`;
+        `${Math.round(curr || 0)}/${Math.round(total || 0)}g`;
 
     return (
-        <View style={styles.card}>
+        <Pressable 
+            onPress={() => setShowExact(!showExact)} 
+            style={styles.card}
+            // Feedback tátil ao clicar
+            android_ripple={{ color: 'rgba(0,0,0,0.05)' }} 
+        >
             <Text style={styles.goalText}>
-                Meta Diária: {data?.target_calories} kcal
+                Meta Diária: {target} kcal
             </Text>
 
             <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: progressPctStyle }]} />
+                <View style={[
+                    styles.progressFill, 
+                    { width: progressPctStyle, backgroundColor: barColor }
+                ]} />
             </View>
 
             <Text style={styles.progressText}>
-                {Math.round(progress)} / {data?.target_calories} kcal ({progressPctText})
+                {Math.round(current)} / {Math.round(target)} kcal ({displayPercentText})
             </Text>
+            
+            {isOverflowing && !showExact && (
+                <Text style={styles.tooltipHint}>(Toque para ver detalhes)</Text>
+            )}
 
             <View style={styles.macros}>
-                <MacroItem label="Proteínas" value={fmt(data?.current_protein || 0, data?.target_protein)} />
-                <MacroItem label="Carbos" value={fmt(data?.current_carbs || 0, data?.target_carbs)} />
-                <MacroItem label="Gorduras" value={fmt(data?.current_fat || 0, data?.target_fat)} />
+                <MacroItem label="Proteínas" value={fmt(data?.current_protein, data?.target_protein)} />
+                <MacroItem label="Carbos" value={fmt(data?.current_carbs, data?.target_carbs)} />
+                <MacroItem label="Gorduras" value={fmt(data?.current_fats || data?.current_fat, data?.target_fat || data?.target_fats)} />
             </View>
-        </View>
+        </Pressable>
     );
 };
 
@@ -74,20 +90,27 @@ const styles = StyleSheet.create({
     },
     progressFill: {
         height: "100%",
-        backgroundColor: COLORS.primary,
     },
     progressText: {
         marginTop: 8,
-        marginBottom: 12,
+        marginBottom: 4, 
         color: COLORS.textDark,
         textAlign: "center",
         fontWeight: "600",
         fontSize: 14,
     },
+    tooltipHint: {
+        fontSize: 10,
+        color: COLORS.textLight,
+        textAlign: 'center',
+        marginBottom: 12,
+        fontStyle: 'italic'
+    },
     macros: {
         flexDirection: "row",
         justifyContent: "space-between",
         gap: 8,
+        marginTop: 8 
     },
     macroItem: {
         flex: 1,

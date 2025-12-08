@@ -1,6 +1,5 @@
-import React from 'react';
 import { View, Text, StyleSheet, Alert, Pressable } from 'react-native';
-import { Checkbox } from 'react-native-paper'; // Instale se não tiver
+import { Checkbox } from 'react-native-paper'; 
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS } from '../../constants/theme';
 import { Meal } from '../../types/meal';
@@ -58,7 +57,7 @@ export const MealItem = ({ meal, onDelete }: MealItemProps) => {
                 <View style={{ marginLeft: 8 }}>
                   <Text style={styles.foodName}>{food.name}</Text>
                   <Text style={styles.foodDetails}>
-                    {food.quantity}{food.unit} - {Math.round(food.calories)} kcal
+                    {food.quantity}{food.unit} - {Number(food.calories).toFixed(2)} kcal
                   </Text>
                 </View>
               </View>

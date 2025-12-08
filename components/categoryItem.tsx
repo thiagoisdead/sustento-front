@@ -4,7 +4,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 
 interface CategoryItemProps {
-    icon: any; // material community icon name
+    icon: any;
     name: string;
     onPress: () => void;
 }
