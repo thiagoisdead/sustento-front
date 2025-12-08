@@ -1,77 +1,124 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert, Pressable } from 'react-native';
+import { Checkbox } from 'react-native-paper'; // Instale se não tiver
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS } from '../../constants/theme';
 import { Meal } from '../../types/meal';
 
+interface FoodItem {
+  id: number;
+  name: string;
+  calories: number;
+  quantity: number;
+  unit: string;
+}
+
+interface MealWithFoods extends Meal {
+  foods?: FoodItem[];
+}
+
 interface MealItemProps {
-    meal: Meal;
-    onDelete: (id: number) => void;
+  meal: MealWithFoods;
+  onDelete: (id: number) => void;
 }
 
 export const MealItem = ({ meal, onDelete }: MealItemProps) => {
 
-    const handleDeletePress = () => {
-        Alert.alert(
-            "Excluir Refeição",
-            "Tem certeza que deseja excluir esta refeição?",
-            [
-                { text: "Cancelar", style: "cancel" },
-                { text: "Excluir", style: "destructive", onPress: () => onDelete(meal.id) },
-            ]
-        );
-    };
 
-    return (
-        <View style={styles.mealRow}>
-            <Text style={styles.mealName}>{meal?.name}</Text>
-            <View style={styles.mealDetails}>
-                <Text style={styles.mealCalories}>{meal?.calories} kcal</Text>
-                <Pressable onPress={handleDeletePress} style={styles.deleteButton}>
-                    <Text style={styles.deleteButtonText}>×</Text>
-                </Pressable>
-            </View>
-        </View>
+  console.log('alimentos meal', meal);
+
+  const handleDeletePress = () => {
+    Alert.alert(
+      "Excluir Refeição",
+      "Tem certeza?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Excluir", style: "destructive", onPress: () => onDelete(meal.id) },
+      ]
     );
+    console.log('a meal id que ta sendo deletada', meal.id)
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.mealHeader}>
+        <Text style={styles.mealName}>{meal.name}</Text>
+        <Pressable onPress={handleDeletePress} hitSlop={10}>
+          <MaterialCommunityIcons name="trash-can-outline" size={20} color="#FF5252" />
+        </Pressable>
+      </View>
+
+      {/* Lista de Alimentos dentro da Refeição */}
+      {meal.foods && meal.foods.length > 0 ? (
+        <View style={styles.foodList}>
+          {meal.foods.map((food, index) => (
+            <View key={index} style={styles.foodRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <Checkbox status="unchecked" color={COLORS.primary} />
+                <View style={{ marginLeft: 8 }}>
+                  <Text style={styles.foodName}>{food.name}</Text>
+                  <Text style={styles.foodDetails}>
+                    {food.quantity}{food.unit} - {Math.round(food.calories)} kcal
+                  </Text>
+                </View>
+              </View>
+
+              {/* Botão de Excluir Alimento (Placeholder) */}
+              <Pressable onPress={() => console.log('Delete food', food.id)}>
+                <MaterialCommunityIcons name="close-circle-outline" size={18} color="#CCC" />
+              </Pressable>
+            </View>
+          ))}
+        </View>
+      ) : (
+        <Text style={styles.emptyText}>Nenhum alimento adicionado.</Text>
+      )}
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
-    mealRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingVertical: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: "#F0F0F0",
-    },
-    mealName: {
-        fontSize: 14,
-        color: COLORS.textDark,
-        flex: 1,
-        flexShrink: 1,
-        paddingRight: 8,
-    },
-    mealDetails: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 8,
-    },
-    mealCalories: {
-        fontSize: 14,
-        color: COLORS.textDark,
-        fontWeight: "600",
-    },
-    deleteButton: {
-        backgroundColor: "#FFCDD2", // Light Red
-        borderRadius: 12,
-        width: 24,
-        height: 24,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    deleteButtonText: {
-        color: "#D32F2F", // Dark Red
-        fontWeight: "bold",
-        fontSize: 16,
-        lineHeight: 20, // Centers the X better
-    },
+  container: {
+    marginBottom: 16,
+    backgroundColor: '#FFF', // Garante fundo branco se estiver num card
+    borderRadius: 8,
+  },
+  mealHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+    marginBottom: 4,
+  },
+  mealName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.textDark,
+  },
+  foodList: {
+    paddingLeft: 4,
+  },
+  foodRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+  },
+  foodName: {
+    fontSize: 14,
+    color: COLORS.textDark,
+    fontWeight: '500',
+  },
+  foodDetails: {
+    fontSize: 12,
+    color: '#888',
+  },
+  emptyText: {
+    fontStyle: 'italic',
+    color: '#AAA',
+    fontSize: 12,
+    paddingVertical: 4,
+  }
 });

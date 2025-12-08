@@ -6,11 +6,12 @@ import { COLORS } from "../constants/theme"
 interface BaseButtonProps {
   onPress: () => void;
   text: string;
+  width?: number;
 }
 
-export const BaseButton = ({ onPress, text }: BaseButtonProps) => {
+export const BaseButton = ({ onPress, text, width = 250 }: BaseButtonProps) => {
   return (
-    <AnimatedButton style={styles.createMealPlanButton} onPress={onPress}>
+    <AnimatedButton style={[styles.createMealPlanButton, { width }]}  onPress={onPress}>
       <Text style={styles.createMealPlanButtonText}>{text}</Text>
     </AnimatedButton>
   )
@@ -18,7 +19,6 @@ export const BaseButton = ({ onPress, text }: BaseButtonProps) => {
 const styles = StyleSheet.create({
   createMealPlanButton: {
     backgroundColor: COLORS.greatGreen,
-    width: 250,
     height: 45,
     borderRadius: 12,
     alignItems: 'center',

@@ -1,136 +1,108 @@
-import React, { useState, useEffect } from 'react';
-import { Modal, View, Text, TextInput, Pressable, StyleSheet, FlatList, ActivityIndicator, Alert, Keyboard } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { Modal, View, Text, TextInput, Pressable, StyleSheet, Alert, Keyboard } from 'react-native';
 import { COLORS } from '../../constants/theme';
-import { searchAliments } from '../../services/foodService';
+import { BaseButton } from '../../components/baseButton'; // Ajuste o caminho se necessário
 
 interface AddMealModalProps {
     visible: boolean;
     onClose: () => void;
-    onAdd: (alimentId: number, amount: number, mealCategory: string) => void;
+    // Atualizei a assinatura do onAdd para receber o objeto correto
+    onAdd: (mealData: { meal_name: string; meal_type: string; time: string; plan_id: number }) => void;
+    planId?: number;
 }
 
-const MEAL_OPTIONS = ['Café da Manhã', 'Almoço', 'Café da Tarde', 'Jantar', 'Ceia'];
+export const AddMealModal = ({ visible, onClose, onAdd, planId }: AddMealModalProps) => {
+    const [mealName, setMealName] = useState('');
+    const [time, setTime] = useState('');
 
-export const AddMealModal = ({ visible, onClose, onAdd }: AddMealModalProps) => {
-    const [step, setStep] = useState<'SEARCH' | 'DETAILS'>('SEARCH');
-    const [searchText, setSearchText] = useState('');
-    const [results, setResults] = useState<any[]>([]);
-    const [loading, setLoading] = useState(false);
+    const handleTimeChange = (text: string) => {
+        let cleaned = text.replace(/[^0-9]/g, '');
 
-    const [selectedAliment, setSelectedAliment] = useState<any | null>(null);
-    const [amount, setAmount] = useState('100');
-    const [selectedCategory, setSelectedCategory] = useState<string>('Almoço');
+        if (cleaned.length > 4) cleaned = cleaned.substring(0, 4);
 
-    useEffect(() => {
-        if (visible) {
-            setStep('SEARCH');
-            setSearchText('');
-            setResults([]);
-            setAmount('100');
-            setSelectedCategory('Almoço');
+        if (cleaned.length >= 3) {
+            setTime(`${cleaned.substring(0, 2)}:${cleaned.substring(2)}`);
+        } else {
+            setTime(cleaned);
         }
-    }, [visible]);
-
-    const handleSearch = async (text: string) => {
-        setSearchText(text);
-        if (text.length < 2) return;
-        setLoading(true);
-        try {
-            const data = await searchAliments(text);
-            setResults(data);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleSelect = (item: any) => {
-        setSelectedAliment(item);
-        setStep('DETAILS');
     };
 
     const handleConfirm = () => {
-        if (!selectedAliment) return;
-        const qty = Number(amount);
-        if (isNaN(qty) || qty <= 0) {
-            Alert.alert("Erro", "Quantidade inválida");
+        if (!mealName.trim()) {
+            Alert.alert("Erro", "Por favor, insira um nome para a refeição.");
+            return;
+        }
+        if (time.length < 5) { 
+            Alert.alert("Erro", "Por favor, insira um horário válido (HH:mm).");
+            return;
+        }
+        if (!planId) {
+            Alert.alert("Erro", "ID do plano não encontrado.");
             return;
         }
 
-        onAdd(selectedAliment.aliment_id, qty, selectedCategory);
+        const payload = {
+            meal_name: mealName,
+            meal_type: 'FIXED',
+            time: `${time}:00`, 
+            plan_id: Number(planId)
+        };
+
+        onAdd(payload);
+
+        setMealName('');
+        setTime('');
         onClose();
     };
 
     return (
-        <Modal animationType="slide" transparent={true} visible={visible} onRequestClose={onClose}>
+        <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onClose}>
             <Pressable style={styles.overlay} onPress={() => Keyboard.dismiss()}>
                 <View style={styles.modalContent}>
 
-                    {/* STEP 1: BUSCA */}
-                    {step === 'SEARCH' && (
-                        <>
-                            <Text style={styles.title}>Adicionar Alimento</Text>
-                            <View style={styles.searchBox}>
-                                <MaterialCommunityIcons name="magnify" size={20} color={COLORS.textLight} style={{ marginRight: 8 }} />
-                                <TextInput
-                                    style={styles.searchInput}
-                                    placeholder="Buscar (ex: Arroz)"
-                                    placeholderTextColor={COLORS.textLight}
-                                    value={searchText}
-                                    onChangeText={handleSearch}
-                                    autoFocus
-                                />
-                            </View>
-                            {loading ? (
-                                <ActivityIndicator color={COLORS.primary} style={{ marginTop: 20 }} />
-                            ) : (
-                                <FlatList
-                                    data={results}
-                                    keyExtractor={(item) => String(item.aliment_id)}
-                                    style={{ maxHeight: 300, marginTop: 10 }}
-                                    renderItem={({ item }) => (
-                                        <Pressable style={styles.resultItem} onPress={() => handleSelect(item)}>
-                                            <View style={{ flex: 1 }}>
-                                                <Text style={styles.resultName}>{item?.name}</Text>
-                                                <Text style={styles.resultCal}>{Number(item?.calories_100g).toFixed(0)} kcal/100g</Text>
-                                            </View>
-                                            <MaterialCommunityIcons name="plus-circle-outline" size={24} color={COLORS.primary} />
-                                        </Pressable>
-                                    )}
-                                    ListEmptyComponent={<Text style={styles.emptyText}>Nada encontrado.</Text>}
-                                />
-                            )}
-                            <Pressable style={styles.cancelButton} onPress={onClose}>
-                                <Text style={styles.cancelText}>Cancelar</Text>
-                            </Pressable>
-                        </>
-                    )}
+                    <Text style={styles.title}>Nova Refeição</Text>
 
-                    {/* STEP 2: DETALHES */}
-                    {step === 'DETAILS' && selectedAliment && (
-                        <>
-                            <Text style={styles.title}>{selectedAliment.name}</Text>
+                    {/* Input Nome */}
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.label}>Nome (ex: Café da Manhã)</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={mealName}
+                            onChangeText={setMealName}
+                            placeholder="Digite o nome..."
+                            placeholderTextColor="#999"
+                        />
+                    </View>
 
-                            <Text style={styles.label}>Quantidade (g):</Text>
-                            <TextInput
-                                style={styles.amountInput}
-                                value={amount}
-                                onChangeText={setAmount}
-                                keyboardType="numeric"
-                                placeholder="100"
+                    {/* Input Horário */}
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.label}>Horário</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={time}
+                            onChangeText={handleTimeChange}
+                            placeholder="00:00"
+                            placeholderTextColor="#999"
+                            keyboardType="numeric"
+                            maxLength={5} // HH:MM
+                        />
+                    </View>
+
+                    {/* Botões Lado a Lado */}
+                    <View style={styles.footerButtons}>
+                        <Pressable style={styles.cancelButton} onPress={onClose}>
+                            <Text style={styles.cancelText}>Cancelar</Text>
+                        </Pressable>
+
+                        <View style={styles.confirmButtonContainer}>
+                            <BaseButton
+                                onPress={handleConfirm}
+                                text="Criar Refeição"
+                                width={140}
                             />
-                            <View style={styles.footerButtons}>
-                                <Pressable style={styles.backButton} onPress={() => setStep('SEARCH')}>
-                                    <Text style={styles.backText}>Voltar</Text>
-                                </Pressable>
-                                <Pressable style={styles.addButton} onPress={handleConfirm}>
-                                    <Text style={styles.addText}>Confirmar</Text>
-                                </Pressable>
-                            </View>
-                        </>
-                    )}
+                        </View>
+                    </View>
+
                 </View>
             </Pressable>
         </Modal>
@@ -138,27 +110,76 @@ export const AddMealModal = ({ visible, onClose, onAdd }: AddMealModalProps) => 
 };
 
 const styles = StyleSheet.create({
-    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-    modalContent: { backgroundColor: '#FFF', borderRadius: 16, padding: 20, width: '100%', maxHeight: '80%', elevation: 5 },
-    title: { fontSize: 20, fontWeight: 'bold', color: COLORS.textDark, textAlign: 'center', marginBottom: 15 },
-    searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F5F5', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8 },
-    searchInput: { flex: 1, fontSize: 16, color: COLORS.textDark },
-    resultItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#EEE' },
-    resultName: { fontSize: 16, fontWeight: '600', color: COLORS.textDark },
-    resultCal: { fontSize: 12, color: COLORS.textLight },
-    emptyText: { textAlign: 'center', color: '#999', marginTop: 20, fontStyle: 'italic' },
-    label: { fontSize: 14, fontWeight: 'bold', color: COLORS.textDark, marginBottom: 8, marginTop: 10 },
-    mealOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 15 },
-    mealChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#DDD', backgroundColor: '#FFF' },
-    mealChipSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-    mealChipText: { fontSize: 12, color: COLORS.textLight },
-    mealChipTextSelected: { color: '#FFF', fontWeight: 'bold' },
-    amountInput: { borderWidth: 1, borderColor: '#DDD', borderRadius: 8, padding: 12, fontSize: 18, textAlign: 'center', marginBottom: 20, color: COLORS.textDark, fontWeight: 'bold' },
-    footerButtons: { flexDirection: 'row', gap: 10, marginTop: 10 },
-    backButton: { flex: 1, padding: 14, alignItems: 'center', borderRadius: 8, backgroundColor: '#F0F0F0' },
-    addButton: { flex: 1, padding: 14, alignItems: 'center', borderRadius: 8, backgroundColor: COLORS.primary },
-    backText: { fontWeight: 'bold', color: COLORS.textLight },
-    addText: { fontWeight: 'bold', color: '#FFF' },
-    cancelButton: { marginTop: 15, padding: 10, alignItems: 'center' },
-    cancelText: { color: COLORS.textLight, fontWeight: '600' }
+    overlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20
+    },
+    modalContent: {
+        backgroundColor: '#FFF',
+        borderRadius: 24,
+        padding: 24,
+        width: '100%',
+        maxWidth: 400,
+        elevation: 5,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+    },
+    title: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: COLORS.textDark,
+        textAlign: 'center',
+        marginBottom: 24
+    },
+    inputContainer: {
+        marginBottom: 16,
+    },
+    label: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: COLORS.textDark,
+        marginBottom: 8,
+        marginLeft: 4
+    },
+    input: {
+        backgroundColor: '#F7F7F7',
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        fontSize: 16,
+        color: COLORS.textDark,
+    },
+    footerButtons: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 16,
+    },
+    cancelButton: {
+        padding: 12,
+        width: 140,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#DDD',
+        backgroundColor: '#FFF'
+    },
+    cancelText: {
+        color: '#666',
+        fontWeight: '600',
+        fontSize: 16
+    },
+    confirmButtonContainer: {
+        flex: 1,
+        // O BaseButton geralmente tem sua própria altura/estilo, 
+        // mas o container garante que ele ocupe o espaço do flex
+    }
 });

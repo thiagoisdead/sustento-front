@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const userSchema = z.object({
   active_plan_id: z.string().nullable(),
   activity_lvl: z.string().nullable(),
-  age: z.string().nullable(),
+  age: z.number().nullable(),
   created_at: z.string(),
   email: z.string().email(),
   gender: z.string().nullable(),

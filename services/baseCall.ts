@@ -81,6 +81,8 @@ export async function basePutUnique(route: string, data: any) {
   const id = await getItem('id');
   try {
     const url = cleanUrl(`${route}/${id}`);
+    console.log('data', data, typeof (data?.weight));
+    console.log('token, id, url', token, id, url);
     const putData = await axios.put(url, data, {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -98,6 +100,8 @@ export async function basePost(route: string, data: any) {
     });
     if (result.status === 200 || result.status === 201) return result;
   } catch (err: any) {
+
+    console.log('info do post', cleanUrl(route), data);
     console.log('ERRO NO POST:', err.response?.data || err.message);
     throw err;
   }
@@ -106,6 +110,8 @@ export async function basePost(route: string, data: any) {
 export async function baseDelete(route: string, params?: any) {
   const token = await getItem('token');
   const url = cleanUrl(route);
+
+  console.log('parametros do delete', params, typeof (params));
 
   try {
     const response = await axios.delete(url, {
@@ -121,6 +127,30 @@ export async function baseDelete(route: string, params?: any) {
     throw err;
   }
 }
+
+export async function baseDeleteById(route: string) {
+  const token = await getItem('token');
+  const url = cleanUrl(route);
+
+
+  console.log('url do delete by id', url);
+
+  try {
+    const response = await axios.delete(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    console.log('RESPONSE DO DELETE BY ID', response)
+    return response;
+  } catch (err: any) {
+    console.log("Erro no DELETE:", err.response?.data || err.message);
+    throw err;
+  }
+}
+
+
 
 export async function basePutMultidata(route: string, imageUri: string) {
   const token = await getItem('token');

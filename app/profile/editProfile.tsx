@@ -10,7 +10,7 @@ import { syncUserRestrictions } from '../../utils/profileHelper';
 // --- Imports de Constantes e Tipos (Ajuste os caminhos conforme seu projeto) ---
 import { SERVER_URL } from '../../constants/config';
 import { Gender, ActivityLvl, Objective, GenderLabels, ActivityLvlLabels, ObjectiveLabels } from '../../enum/profileEnum';
-import { User } from '../../types/data'; 
+import { User } from '../../types/data';
 // Assumindo que os labels estão em um arquivo de constantes:
 
 // --- Imports de Componentes ---
@@ -38,7 +38,6 @@ const enumToArray = (enumObj: any, labelsObj: any): Option[] => {
     }));
 };
 
-// Opções fixas para restrições
 const restrictionOptions: Option[] = [
     { label: 'Vegano', value: 'VEGAN' },
     { label: 'Vegetariano', value: 'VEGETARIAN' },
@@ -46,7 +45,6 @@ const restrictionOptions: Option[] = [
     { label: 'Sem Lactose', value: 'LACTOSE_FREE' },
 ];
 
-// Definição dos campos de formulário (agora com Enums e Labels importados)
 const FIELDS: FieldConfig[] = [
     { key: 'name', label: 'Nome', type: 'text', large: false },
     { key: 'age', label: 'Idade', type: 'number', large: false },
@@ -59,7 +57,6 @@ const FIELDS: FieldConfig[] = [
     { key: 'restrictions', label: 'Restrições', type: 'multi-select', options: restrictionOptions, large: true },
 ];
 
-// O restante do componente...
 export default function EditProfile() {
     const handlePath = usePath();
 
@@ -134,14 +131,36 @@ export default function EditProfile() {
         }
 
         try {
-            if (Object.keys(changedData).length > 0) {
-                ['age', 'weight', 'height'].forEach(k => {
-                    const key = k as keyof User;
-                    if ((changedData as any)[key] === '') (changedData as any)[key] = null;
-                });
-                await basePutUnique(`/users`, changedData);
-            }
+            const numberFields = ["age", "weight", "height"] as const;
 
+            numberFields.forEach((key) => {
+                const val = (changedData as any)[key];
+
+                if (val === undefined) return; // não mudou
+                if (val === null || val === '') {
+                    (changedData as any)[key] = null;
+                    return;
+                }
+
+                const num = Number(val);
+                if (!isNaN(num)) {
+                    (changedData as any)[key] = num;
+                } else {
+                    (changedData as any)[key] = null;
+                }
+            });
+
+            console.log("➡️ Payload final:", changedData);
+
+            if (Object.keys(changedData).length > 0) {
+                console.log('changedData', changedData);
+
+                if ((changedData.height && !changedData.weight) || changedData.weight && !changedData.height) {
+                    return Alert.alert("Atenção", "Para calcular o IMC, altura e peso devem ser preenchidos juntos.");
+                }
+                const res = await basePutUnique(`/users`, changedData);
+                console.log("update:", res?.data);
+            }
             if (restrictionsChanged) {
                 await syncUserRestrictions(
                     userData.user_id,
@@ -155,11 +174,13 @@ export default function EditProfile() {
             }
 
             handlePath('/profile/seeProfile');
+
         } catch (e) {
-            console.error('Erro ao salvar perfil:', e);
+            console.error("❌ Erro ao salvar perfil:", e);
             Alert.alert("Erro", "Não foi possível salvar as alterações.");
         }
     };
+
 
     useEffect(() => {
         const load = async () => {

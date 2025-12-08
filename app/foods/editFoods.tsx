@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FlatList,
   StyleSheet,
   Text,
   View,
   ScrollView,
-  Pressable
+  Pressable,
+  Alert
 } from "react-native";
 import {
   Button,
@@ -18,20 +19,68 @@ import {
 import { Foods } from "../../types/data";
 import { COLORS } from "../../constants/theme";
 import { RecentItem } from "../../components/recentItem";
-import { baseFetch } from "../../services/baseCall";
+import { baseFetch, basePost, baseUniqueGet } from "../../services/baseCall";
 
-// Static Data
-const recentes: Foods[] = [
-  { name: 'Frango Grelhado', serving: 'g', protein: 40, carbs: 5, fats: 9, kcal: 250, category: 'Proteínas' },
-  { name: 'Arroz Integral', serving: 'g', protein: 4, carbs: 35, fats: 2, kcal: 180, category: 'Grãos' },
-  { name: 'Brócolis Cozido', serving: 'g', protein: 3, carbs: 7, fats: 0.5, kcal: 35, category: 'Vegetais' },
-];
+import { getItem, setItem } from "../../services/secureStore";
+
+interface MealOption {
+  meal_id: number;
+  meal_name: string;
+  meal_type: string;
+  plan_id: number;
+  time: string;
+}
+
+const RECENT_FOODS_KEY = "recent_foods";
+
 
 export default function MealsHome() {
   const [searchParams, setSearchParams] = useState<string>('');
   const [searchData, setSearchData] = useState<Foods[]>([])
   const [selectedMeal, setSelectedMeal] = useState<Foods | null>(null)
+  const [planId, setPlanId] = useState<number | null>(null);
+  const [dialogVisible, setDialogVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const [selectedUnit, setSelectedUnit] = useState<'g' | 'ml' | 'un'>('g');
+  const [mealOptions, setMealOptions] = useState<MealOption[]>([]);
+  const [selectedMealId, setSelectedMealId] = useState<number | null>(null);
+
+  const [recentes, setRecentes] = useState<Foods[]>([]);
+
+  useEffect(() => {
+    loadRecents();
+  }, []);
+
+  const loadRecents = async () => {
+    try {
+      const jsonValue = await getItem(RECENT_FOODS_KEY);
+      if (jsonValue) {
+        setRecentes(JSON.parse(jsonValue));
+      }
+    } catch (e) {
+      console.error("Erro ao carregar recentes", e);
+    }
+  };
+
+  const addToRecents = async (food: Foods) => {
+    try {
+      let newRecents = [...recentes];
+
+      newRecents = newRecents.filter(item => item.name !== food.name);
+
+      newRecents.unshift(food);
+
+      if (newRecents.length > 10) {
+        newRecents = newRecents.slice(0, 10);
+      }
+
+      setRecentes(newRecents);
+      await setItem(RECENT_FOODS_KEY, JSON.stringify(newRecents));
+    } catch (e) {
+      console.error("Erro ao salvar recente", e);
+    }
+  };
 
   const handleSearch = async (text: string) => {
     setSearchParams(text);
@@ -58,17 +107,71 @@ export default function MealsHome() {
     }
   };
 
+  const handleCreateMeal = async () => {
+    const quantity = Number(selectedMeal?.quantity?.toString().replace(/\D/g, ''));
 
-  const handleSelectMeal = (foodData: Foods) => {
-    setSelectedMeal(foodData)
+    if (!selectedMeal) return Alert.alert('Erro', 'Selecione um alimento.');
+    if (!quantity || quantity <= 0) return Alert.alert('Erro', 'Insira uma quantidade válida.');
+    if (!planId) return Alert.alert('Erro', 'Plano alimentar não encontrado.');
+    if (!selectedMealId) return Alert.alert('Erro', 'Selecione uma refeição.');
+
+    setDialogVisible(false);
+    setSelectedMeal(null);
+    
+    const randomid = Math.floor(Math.random() * 1000000);
+    
+    const payload = {
+      quantity: quantity,
+      measurement_unit: selectedUnit?.toString().toUpperCase(),
+      meal_id: Number(selectedMealId),
+      // aliment_id: Number(selectedMeal?.id)
+      aliment_id: randomid // USANDO ID ALEATÓRIO POR ENQUANTO
+    }
+    
+    console.log('Payload para criar mealAliments:', payload);
+    
+    const token = await getItem('token');
+    
+    console.log(token)
+    
+    try {
+      const req = await basePost('mealAliments', payload)
+      console.log('Sucesso no post de alimentos pra uma refeição:', req?.data);
+      await addToRecents({ ...selectedMeal, quantity: null });
+    } catch (error) {
+      Alert.alert("Erro", "Falha ao registrar refeição");
+    }
   }
 
+  const fetchMealPlans = async () => {
+    const req = await baseUniqueGet('users/mealplans')
+    const planActive = req?.data.find((plan: any) => plan?.active);
+    setPlanId(planActive?.plan_id || null)
+    return planActive?.plan_id;
+  }
+
+  const handleSelectMeal = async (foodData: Foods) => {
+    setSelectedUnit('g');
+    setSelectedMeal(foodData);
+    setDialogVisible(true)
+
+    const planIdNow = await fetchMealPlans()
+
+    if (planIdNow) {
+      const req = await baseFetch(`/mealPlans/${planIdNow}/meals`);
+      const mealsData = req?.data || [];
+      setMealOptions(mealsData);
+
+      if (mealsData.length > 0 && !selectedMealId) {
+        setSelectedMealId(mealsData[0].meal_id);
+      }
+    }
+  }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Alimentação</Text>
-        
       </View>
 
       <View style={styles.searchBarContainer}>
@@ -87,17 +190,21 @@ export default function MealsHome() {
 
       {searchParams.length === 0 ? (
         <ScrollView style={styles.mainScroll} contentContainerStyle={styles.mainContent}>
-          <Text style={styles.sectionTitle}>Recentes</Text>
-          {recentes.map((item, index) => (
-            <RecentItem
-              key={`${item?.name}-${index}`}
-              item={item}
-              onPress={() => handleSelectMeal(item)}
-            />
-          ))}
-          <Pressable style={styles.registerButton}>
-            <Text style={styles.registerButtonText}>Registrar Refeição</Text>
-          </Pressable>
+          <Text style={styles.sectionTitle}>Recentes - {recentes?.length}</Text>
+
+          {recentes.length > 0 ? (
+            recentes.map((item, index) => (
+              <RecentItem
+                key={`${item?.name}-${index}`}
+                item={item}
+                onPress={() => handleSelectMeal(item)}
+              />
+            ))
+          ) : (
+            <Text style={{ color: '#999', fontStyle: 'italic', marginBottom: 20 }}>
+              Seus alimentos recentes aparecerão aqui.
+            </Text>
+          )}
         </ScrollView>
       ) : (
         <View style={styles.resultsContainer}>
@@ -116,40 +223,110 @@ export default function MealsHome() {
             ListEmptyComponent={
               <View style={styles.emptyList}>
                 <Text style={styles.emptyListText}>
-                  {isLoading ? "Carregando..." : `Nenhum alimento encontrado para "${searchParams}".`}
+                  {isLoading ? "Carregando..." : `Nenhum alimento encontrado.`}
                 </Text>
               </View>
             }
           />
-
         </View>
       )}
 
       <Portal>
-        <Dialog visible={!!selectedMeal} onDismiss={() => setSelectedMeal(null)} style={styles.dialog}>
+        <Dialog visible={!!dialogVisible} onDismiss={() => { setSelectedMeal(null); setDialogVisible(false); setSelectedMealId(null); }} style={styles.dialog}>
           <Dialog.Title style={styles.dialogTitle}>{selectedMeal?.name}</Dialog.Title>
-          <Dialog.Content>
-            <View style={styles.dialogQuantityRow}>
-              <TextInput
-                label="Kcal (Opcional)"
-                value={selectedMeal?.quantity?.toString() || ''}
-                onChangeText={(text) => setSelectedMeal({ ...selectedMeal, quantity: Number(text) })}
-                keyboardType="numeric"
-                mode="outlined"
-                style={styles.flexInput}
-                activeOutlineColor={COLORS.primary}
-              />
+
+          <Dialog.Content style={styles.dialogContent}>
+
+            <TextInput
+              label={`Quantidade (${selectedUnit})`}
+              value={selectedMeal?.quantity?.toString() || ''}
+              onChangeText={(text) => setSelectedMeal({ ...selectedMeal, quantity: Number(text) })}
+              keyboardType="numeric"
+              mode="outlined"
+              style={styles.inputQuantity}
+              activeOutlineColor={COLORS.primary}
+              outlineColor="#E0E0E0"
+              dense
+            />
+
+            {/* Radio Unit Selector */}
+            <View style={styles.unitContainer}>
+              {(['un', 'g', 'ml'] as const).map((unit) => (
+                <Pressable
+                  key={unit}
+                  style={[
+                    styles.unitBox,
+                    selectedUnit === unit && styles.unitBoxSelected
+                  ]}
+                  onPress={() => setSelectedUnit(unit)}
+                >
+                  <Text style={[
+                    styles.unitText,
+                    selectedUnit === unit && styles.unitTextSelected
+                  ]}>
+                    {unit}
+                  </Text>
+                </Pressable>
+              ))}
             </View>
+
+            <View style={styles.mealSelectContainer}>
+              <Text style={styles.labelSection}>Adicionar em:</Text>
+              {mealOptions.length > 0 ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.mealOptionsScroll}>
+                  {mealOptions.map((option) => (
+                    <Pressable
+                      key={option.meal_id}
+                      style={[
+                        styles.mealChip,
+                        selectedMealId === option.meal_id && styles.mealChipSelected
+                      ]}
+                      onPress={() => setSelectedMealId(option.meal_id)}
+                    >
+                      <Text style={[
+                        styles.mealChipText,
+                        selectedMealId === option.meal_id && styles.mealChipTextSelected
+                      ]}>
+                        {option.meal_name}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              ) : (
+                <Text style={{ color: '#999', fontStyle: 'italic' }}>Nenhuma refeição encontrada no plano.</Text>
+              )}
+            </View>
+
+            <View style={styles.divider} />
+
+            {/* Macros */}
+            <Text style={styles.macroHeader}>Informação Nutricional (por 100g)</Text>
             <View style={styles.dialogMacroRow}>
-              <MacroStat label="Calorias" value={selectedMeal?.nutrients?.calories_100g} />
-              <MacroStat label="Proteínas" value={`${selectedMeal?.nutrients?.protein_100g}g`} />
-              <MacroStat label="Carbos" value={`${selectedMeal?.nutrients?.carbs_100g}g`} />
-              <MacroStat label="Gorduras" value={`${selectedMeal?.nutrients?.fat_100g}g`} />
+              <MacroStat label="Kcal" value={selectedMeal?.nutrients?.calories_100g || '~0'} />
+              <MacroStat label="Prot" value={`${selectedMeal?.nutrients?.protein_100g || '~0'}g`} />
+              <MacroStat label="Carb" value={`${selectedMeal?.nutrients?.carbs_100g || '~0'}g`} />
+              <MacroStat label="Gord" value={`${selectedMeal?.nutrients?.fat_100g || '~0'}g`} />
             </View>
+
           </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setSelectedMeal(null)} textColor={COLORS.textLight}>Cancelar</Button>
-            <Button onPress={() => { console.log("Added"); setSelectedMeal(null); }} textColor={COLORS.primary}>Adicionar</Button>
+
+          <Dialog.Actions style={styles.dialogActions}>
+            <Button
+              mode="contained"
+              buttonColor={COLORS.primary}
+              onPress={() => { setSelectedMeal(null); setDialogVisible(false); setSelectedMealId(null); }}
+              style={{ paddingHorizontal: 10, borderRadius: 8, marginTop: 10 }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              mode="contained"
+              buttonColor={COLORS.primary}
+              onPress={() => handleCreateMeal()}
+              style={{ paddingHorizontal: 10, borderRadius: 8, marginTop: 10 }}
+            >
+              Confirmar
+            </Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -158,11 +335,10 @@ export default function MealsHome() {
   )
 }
 
-// Helper component for cleaner Dialog code
 const MacroStat = ({ label, value }: { label: string, value: any }) => (
   <View style={styles.dialogMacroItem}>
+    <Text style={styles.dialogMacroValue}>{value || '-'}</Text>
     <Text style={styles.dialogMacroLabel}>{label}</Text>
-    <Text style={styles.dialogMacroValue}>{value}</Text>
   </View>
 );
 
@@ -172,7 +348,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     paddingTop: 50
   },
-  flexInput: { flex: 1, backgroundColor: '#FAFAFA' },
   header: {
     alignItems: 'center',
     paddingBottom: 10,
@@ -206,15 +381,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 15,
   },
-
-  // --- Category Grid ---
-  categoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-
-  // --- Buttons ---
   registerButton: {
     backgroundColor: COLORS.primary,
     paddingVertical: 15,
@@ -228,7 +394,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-
   resultsContainer: {
     flex: 1,
     marginTop: 10,
@@ -240,40 +405,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
-
-  // --- Card Item Style (Manual Layout) ---
-  itemCard: {
-    backgroundColor: COLORS.cardBg,
-    borderRadius: 12,
-    marginBottom: 10,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
-  },
-  cardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-  },
-  textContainer: {
-    flex: 1,
-    marginRight: 10,
-  },
-  foodTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.textDark, // Ensure dark text
-    marginBottom: 4,
-  },
-  foodSubtitle: {
-    fontSize: 14,
-    color: COLORS.textLight, // Ensure readable grey
-  },
-
-  // --- Empty State ---
   emptyList: {
     paddingTop: 50,
     alignItems: 'center'
@@ -282,38 +413,129 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.textLight
   },
-
   // --- Dialog Styles ---
   dialog: {
     backgroundColor: 'white',
-    borderRadius: 16,
+    borderRadius: 20,
+    paddingBottom: 10,
   },
   dialogTitle: {
-    fontSize: 20,
+    fontSize: 22,
+    fontWeight: '800',
+    color: COLORS.textDark,
+    textAlign: 'center',
+    marginBottom: 5,
+  },
+  dialogContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 0,
+  },
+  inputQuantity: {
+    backgroundColor: '#FAFAFA',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  unitContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: 20,
+  },
+  unitBox: {
+    width: 50,
+    height: 50,
+    borderRadius: 10,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  unitBoxSelected: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  unitText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textLight,
+  },
+  unitTextSelected: {
+    color: '#FFF',
+    fontWeight: 'bold',
+  },
+  mealSelectContainer: {
+    marginBottom: 15,
+  },
+  labelSection: {
+    fontSize: 14,
     fontWeight: 'bold',
     color: COLORS.textDark,
-    textAlign: 'center'
+    marginBottom: 8,
+  },
+  mealOptionsScroll: {
+    gap: 8,
+    paddingRight: 20,
+  },
+  mealChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  mealChipSelected: {
+    backgroundColor: COLORS.cardBg,
+    borderColor: COLORS.primary,
+    borderWidth: 1.5,
+  },
+  mealChipText: {
+    fontSize: 13,
+    color: COLORS.textLight,
+  },
+  mealChipTextSelected: {
+    color: COLORS.primary,
+    fontWeight: 'bold',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#F0F0F0',
+    marginVertical: 15,
+  },
+  macroHeader: {
+    fontSize: 12,
+    color: COLORS.textLight,
+    textAlign: 'center',
+    marginBottom: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   dialogMacroRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 10,
-    marginBottom: 10
-  },
-  dialogQuantityRow: {
-    backgroundColor: 'red'
+    justifyContent: 'space-between',
+    backgroundColor: '#FAFAFA',
+    padding: 12,
+    borderRadius: 12,
   },
   dialogMacroItem: {
-    alignItems: 'center'
+    alignItems: 'center',
+    flex: 1,
   },
   dialogMacroLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: COLORS.textLight,
-    textTransform: 'uppercase'
+    marginTop: 2,
   },
   dialogMacroValue: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
     color: COLORS.textDark
+  },
+  dialogActions: {
+    paddingHorizontal: 20,
+    paddingBottom: 15,
+    justifyContent: 'space-between',
   }
 });

@@ -36,7 +36,7 @@ export const ProfileField = ({ label, value, large = false }: ProfileFieldProps)
 };
 
 const commonSurface = {
-    padding: 5,
+    padding: 6.5,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
     borderStartColor: '#2E7D32',

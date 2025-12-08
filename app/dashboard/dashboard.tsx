@@ -49,7 +49,6 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [isCreateModalVisible, setCreateModalVisible] = useState(false);
 
-  // --- Loader Principal ---
   const loadInitialData = useCallback(async () => {
     try {
       if (!refreshing) setViewState('LOADING');

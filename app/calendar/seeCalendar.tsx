@@ -136,5 +136,4 @@ const styles = StyleSheet.create({
   addButtonDesktop: { alignSelf: "center", width: 250 },
   addButtonText: { color: COLORS.primary, fontSize: 16, fontWeight: "bold" },
   headerTitle: { fontSize: 26, fontWeight: '800', color: COLORS.textDark, textAlign: 'center', marginBottom: 5, marginTop: 10 },
-
 });

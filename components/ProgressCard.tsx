@@ -3,9 +3,11 @@ import { View, Text, StyleSheet, DimensionValue } from 'react-native';
 import { COLORS } from '../constants/theme';
 import { MealPlan } from '../types/meal';
 
-export const ProgressCard = ({ data }: MealPlan) => {
+export const ProgressCard = ({ data, foodsData }) => {
     const safeTargetCal = data?.target_calories || 1;
-    const progress = Math.min(data?.target_calories / safeTargetCal, 1);
+
+    console.log('data in ProgressCard', data, foodsData);
+    const progress = Math.min(data?.target_calories! / safeTargetCal, 1);
 
     const rawPercent = Math.round(progress * 100);
     const progressPctStyle = `${rawPercent}%` as DimensionValue;
@@ -29,9 +31,9 @@ export const ProgressCard = ({ data }: MealPlan) => {
             </Text>
 
             <View style={styles.macros}>
-                <MacroItem label="Proteínas" value={fmt(data?.protein, data?.target_protein)} />
-                <MacroItem label="Carbos" value={fmt(data?.carbs, data?.target_carbs)} />
-                <MacroItem label="Gorduras" value={fmt(data?.fat, data?.target_fat)} />
+                <MacroItem label="Proteínas" value={fmt(data?.current_protein || 0, data?.target_protein)} />
+                <MacroItem label="Carbos" value={fmt(data?.current_carbs || 0, data?.target_carbs)} />
+                <MacroItem label="Gorduras" value={fmt(data?.current_fat || 0, data?.target_fat)} />
             </View>
         </View>
     );
