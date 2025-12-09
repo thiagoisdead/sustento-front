@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useWindowDimensions, StyleSheet, Text, View } from 'react-native';
+import { useWindowDimensions, StyleSheet, Text, View, Pressable } from 'react-native'; // Adicionado Pressable
 import { useFonts, EpundaSlab_400Regular } from "@expo-google-fonts/epunda-slab";
 import { Button, TextInput } from 'react-native-paper';
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
@@ -21,6 +21,8 @@ export default function LoginScreen() {
     email: "",
   });
 
+  const primaryColor = "rgba(87, 143, 26, 255)"; // Extraí a cor para reutilizar
+
   const textInputStyle = {
     backgroundColor: "#f8fafc",
     borderRadius: 10,
@@ -29,7 +31,7 @@ export default function LoginScreen() {
   const textInputTheme = {
     roundness: 10,
     colors: {
-      primary: "rgba(87, 143, 26, 255)",
+      primary: primaryColor,
       outline: "transparent",
       background: "transparent",
       onSurfaceVariant: "#0d0c22",
@@ -58,6 +60,10 @@ export default function LoginScreen() {
     } catch (err: any) {
       console.error("Erro ao efetuar Login ou validar dados:", err.errors || err);
     }
+  }
+
+  const handleForgotPassword = () => {
+    handlePath('/auth/recovery'); 
   }
 
 
@@ -89,19 +95,32 @@ export default function LoginScreen() {
               style={textInputStyle}
               theme={textInputTheme}
             />
-            <TextInput
-              label="Senha"
-              mode="outlined"
-              value={dados?.password || ""}
-              underlineColor="transparent"
-              onChangeText={(text) => setDados({ ...dados, password: text })}
-              style={textInputStyle}
-              theme={textInputTheme}
-              secureTextEntry={!passwordSee}
-              right={
-                <TextInput.Icon forceTextInputFocus={false} icon={passwordSee ? 'eye-off' : 'eye'} onPress={() => setPasswordSee(!passwordSee)} />
-              }
-            />
+            
+            <View>
+              <TextInput
+                label="Senha"
+                mode="outlined"
+                value={dados?.password || ""}
+                underlineColor="transparent"
+                onChangeText={(text) => setDados({ ...dados, password: text })}
+                style={textInputStyle}
+                theme={textInputTheme}
+                secureTextEntry={!passwordSee}
+                right={
+                  <TextInput.Icon forceTextInputFocus={false} icon={passwordSee ? 'eye-off' : 'eye'} onPress={() => setPasswordSee(!passwordSee)} />
+                }
+              />
+              
+              {/* --- BOTÃO ESQUECI MINHA SENHA --- */}
+              <View style={styles.forgotPasswordContainer}>
+                <Pressable onPress={handleForgotPassword} hitSlop={10}>
+                  <Text style={[styles.forgotPasswordText, { color: 'black' }]}>
+                    Esqueci minha senha
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+
           </View>
         </View>
         <View style={{ width: '100%', height: '15%', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center' }}>
@@ -121,7 +140,17 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
-    // backgroundColor: 'blue',
     paddingVertical: 100
   },
+  forgotPasswordContainer: {
+    width: '100%',
+    alignItems: 'flex-start', // Alinha à esquerda
+    marginTop: 10,
+    marginLeft: 10
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    fontWeight: '600',
+    textDecorationLine: 'underline', 
+  }
 });
