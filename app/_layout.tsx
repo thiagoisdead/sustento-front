@@ -1,8 +1,8 @@
-import { Stack, usePathname } from "expo-router";
+import { Stack, usePathname, useRouter } from "expo-router";
 import { PaperProvider, DefaultTheme } from "react-native-paper";
 import NavBar from "../components/navbar";
 import { View } from "react-native";
-import { useEffect } from "react";
+import { use, useEffect } from "react";
 import { baseValidate } from "../services/baseCall";
 import { getItem } from "../services/secureStore";
 import { usePath } from "../hooks/usePath";
@@ -10,7 +10,10 @@ import { usePath } from "../hooks/usePath";
 export default function RootLayout() {
 
   const pathname = usePathname()
+
+  console.log('pathname no layout', pathname)
   const handlePath = usePath();
+  const router = useRouter();
 
   const hideNavBar = ["/auth/login", "/auth/register", "/auth", "/", "/home/home", "/auth/recovery"];
   const showNavbar = !hideNavBar.includes(pathname);
@@ -21,7 +24,10 @@ export default function RootLayout() {
       if (!token) return;
       try {
         const verifyToken = await baseValidate(handlePath)
-        if (!verifyToken.valid && !hideNavBar.includes(pathname)) handlePath('/auth')
+        if (!verifyToken.valid && !hideNavBar.includes(pathname)){
+          console.log('token inválido, redirecionando para auth')
+          return router.replace('/auth')
+        } 
       }
       catch (err) {
         console.log('qual erro:', err)

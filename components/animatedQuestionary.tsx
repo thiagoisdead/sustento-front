@@ -16,8 +16,12 @@ import { ActivityLvlLabels, GenderLabels, ObjectiveLabels } from "../enum/profil
 import { restrictionOptions } from "../constants/editProfileConfig";
 import { syncUserRestrictions } from "../utils/profileHelper";
 
+const { width } = Dimensions.get("window");
+
 export default function QuestionaryScreen() {
   const [step, setStep] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false); 
+  
   const [data, setData] = useState({
     gender: "",
     objective: "",
@@ -25,15 +29,16 @@ export default function QuestionaryScreen() {
     restrictions: [] as string[],
   });
 
-  const handlePath = usePath()
+  const handlePath = usePath();
   const { userData, loading } = useUser();
 
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(-20)).current;
 
-  const fadeIn = () => {
+  const runAnimation = () => {
     opacity.setValue(0);
     translateY.setValue(-20);
+    
     Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
@@ -43,29 +48,28 @@ export default function QuestionaryScreen() {
       Animated.spring(translateY, {
         toValue: 0,
         useNativeDriver: true,
+        speed: 12,
+        bounciness: 4
       }),
     ]).start();
   };
 
   useEffect(() => {
-    if (loading) return;
-  }, [loading]);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      fadeIn();
-    }, 100);
-    return () => clearTimeout(timeout);
+    runAnimation();
   }, [step]);
 
   useEffect(() => {
     const fetchRestrictions = async () => {
-      const restrictions = ["VEGAN", "VEGETARIAN", "GLUTEN_FREE", "LACTOSE_FREE",];
-      const res = await baseFetch("restrictions");
-      if (res && res.status === 200 && Array.isArray(res.data) && res.data.length === 0) {
-        for (const r of restrictions) {
-          await basePost("restrictions", { restriction_name: r });
+      const restrictionsList = ["VEGAN", "VEGETARIAN", "GLUTEN_FREE", "LACTOSE_FREE"];
+      try {
+        const res = await baseFetch("restrictions");
+        if (res && res.status === 200 && Array.isArray(res.data) && res.data.length === 0) {
+          await Promise.all(restrictionsList.map(r =>
+            basePost("restrictions", { restriction_name: r })
+          ));
         }
+      } catch (error) {
+        console.error("Erro ao popular restrições", error);
       }
     };
     fetchRestrictions();
@@ -75,26 +79,17 @@ export default function QuestionaryScreen() {
     {
       key: "gender",
       label: "Qual é o seu gênero?",
-      options: Object.entries(GenderLabels).map(([value, label]) => ({
-        label,
-        value,
-      })),
+      options: Object.entries(GenderLabels).map(([value, label]) => ({ label, value })),
     },
     {
       key: "objective",
       label: "Qual é o seu objetivo principal?",
-      options: Object.entries(ObjectiveLabels).map(([value, label]) => ({
-        label,
-        value,
-      })),
+      options: Object.entries(ObjectiveLabels).map(([value, label]) => ({ label, value })),
     },
     {
       key: "activity_lvl",
       label: "Qual é o seu nível de atividade física?",
-      options: Object.entries(ActivityLvlLabels).map(([value, label]) => ({
-        label,
-        value,
-      })),
+      options: Object.entries(ActivityLvlLabels).map(([value, label]) => ({ label, value })),
     },
     {
       key: "restrictions",
@@ -120,77 +115,89 @@ export default function QuestionaryScreen() {
   const canProceed = (): boolean => {
     const key = current.key;
     if (key === "restrictions") return true;
-    return Boolean(data[key as keyof typeof data]);
+    const val = data[key as keyof typeof data];
+    return Boolean(val && val.length > 0);
   };
 
-
   const handleNext = async () => {
+    if (loading || isProcessing) return; 
 
-    if (loading) return;
     if (!canProceed()) {
       Alert.alert("Ops!", "Por favor, selecione uma opção antes de continuar.");
       return;
     }
 
-    if (step < questions.length - 1) {
-      setStep(step + 1);
-    } else {
-      // valida todas as obrigatórias
-      if (!data.gender || !data.objective || !data.activity_lvl) {
-        Alert.alert("Atenção", "Responda todas as perguntas obrigatórias antes de finalizar.");
-        return;
-      }
-      console.log("🧠 Dados finais:", data);
-      const mergedData = { ...(userData || {}), ...data }
-      const { user_id, restrictions, ...payload } = mergedData;
+    setIsProcessing(true); // Trava UI
 
-      console.log('removed data', user_id, restrictions)
+    try {
+        if (step < questions.length - 1) {
+            setStep(step + 1);
+            setTimeout(() => setIsProcessing(false), 300); 
+        } else {
+            // LÓGICA FINAL
+            if (!data.gender || !data.objective || !data.activity_lvl) {
+                Alert.alert("Atenção", "Responda todas as perguntas obrigatórias.");
+                setIsProcessing(false);
+                return;
+            }
 
-      const restrictionsPayload = {
-        restrictions: restrictions,
-        user_id: Number(user_id)
-      }
-      console.log('restricoes', restrictionsPayload)
+            const mergedData = { ...(userData || {}), ...data };
+            const { user_id, restrictions, ...payload } = mergedData;
 
-      console.log('n', mergedData)
+            const response = await basePutUnique("users", payload);
 
-      const response = await basePutUnique("users", payload);
-
-      if (response && response.status === 200) {
-        try {
-          await syncUserRestrictions(
-            Number(user_id),
-            restrictions || [],
-            userData?.restrictions || []  
-          );
-
-          Alert.alert("Sucesso", "Seus dados foram salvos com sucesso!");
-          handlePath('/profile/seeProfile');
-        } catch (err) {
-          console.log("Erro ao sincronizar restrições:", err);
-          Alert.alert("Erro", "Não foi possível salvar suas restrições.");
+            if (response && response.status === 200) {
+                if (restrictions && restrictions.length > 0) {
+                    await syncUserRestrictions(
+                        Number(user_id),
+                        restrictions,
+                        userData?.restrictions || []
+                    );
+                }
+                
+                Alert.alert("Sucesso", "Dados salvos!");
+                
+                handlePath('/profile/seeProfile'); 
+            } else {
+                Alert.alert("Erro", "Falha ao salvar dados.");
+                setIsProcessing(false);
+            }
         }
-      } else {
-        Alert.alert("Erro", "Houve um problema ao salvar seus dados. Tente novamente.");
-      }
+    } catch (error) {
+        console.error("Erro no fluxo do questionário:", error);
+        setIsProcessing(false);
     }
   };
 
   const handleBack = () => {
-    if (step > 0) setStep(step - 1);
+    if (isProcessing) return;
+    if (step > 0) {
+        setStep(step - 1);
+    }
+  };
+
+  const renderPicker = () => {
+    const safeValue = data[current.key as keyof Omit<typeof data, 'restrictions'>] || "";
+    
+    return (
+      <View style={styles.pickerWrapper}>
+        <Picker
+          selectedValue={safeValue}
+          onValueChange={(val) => setData((prev) => ({ ...prev, [current.key]: val }))}
+          style={styles.picker}
+        >
+          <Picker.Item label="Selecione..." value="" />
+          {current.options.map((opt) => (
+            <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
+          ))}
+        </Picker>
+      </View>
+    );
   };
 
   return (
     <View style={styles.container}>
-      <View
-        style={{
-          position: "absolute",
-          top: 80,
-          left: 0,
-          right: 0,
-          alignItems: "center",
-        }}
-      >
+      <View style={styles.headerTitle}>
         <Text style={{ fontSize: 30 }}>Sustento</Text>
       </View>
 
@@ -228,26 +235,7 @@ export default function QuestionaryScreen() {
             })}
           </View>
         ) : (
-          (() => {
-            const safeValue = data[current.key as keyof Omit<typeof data, 'restrictions'>] || "";
-
-            return (
-              <View style={styles.pickerWrapper}>
-                <Picker
-                  selectedValue={safeValue} 
-                  onValueChange={(val) =>
-                    setData((prev) => ({ ...prev, [current.key]: val }))
-                  }
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Selecione..." value="" />
-                  {current.options.map((opt) => (
-                    <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
-                  ))}
-                </Picker>
-              </View>
-            );
-          })() // Usamos uma IIFE (Immediately Invoked Function Expression) para declarar a constante no escopo
+          renderPicker()
         )}
 
         <View style={styles.buttonRow}>
@@ -257,12 +245,16 @@ export default function QuestionaryScreen() {
               step === 0 && { opacity: 0.5, backgroundColor: "#A5D6A7" },
             ]}
             onPress={handleBack}
-            disabled={step === 0}
+            disabled={step === 0 || isProcessing}
           >
             <Text style={styles.buttonText}>Voltar</Text>
           </Pressable>
 
-          <Pressable style={styles.button} onPress={handleNext}>
+          <Pressable 
+            style={[styles.button, isProcessing && { opacity: 0.7 }]} 
+            onPress={handleNext}
+            disabled={isProcessing}
+          >
             <Text style={styles.buttonText}>
               {step < questions.length - 1 ? "Próximo" : "Finalizar"}
             </Text>
@@ -273,13 +265,18 @@ export default function QuestionaryScreen() {
   );
 }
 
-const { width } = Dimensions.get("window");
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+  },
+  headerTitle: {
+    position: "absolute",
+    top: 80,
+    left: 0,
+    right: 0,
+    alignItems: "center",
   },
   questionContainer: {
     width: width * 0.8,
@@ -299,9 +296,11 @@ const styles = StyleSheet.create({
     borderColor: "#BDBDBD",
     borderRadius: 8,
     marginBottom: 30,
+    height: 55, 
+    justifyContent: 'center'
   },
   picker: {
-    height: "auto",
+    height: 55,
     width: "100%",
   },
   multiSelectWrapper: {

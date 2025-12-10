@@ -8,7 +8,7 @@ export function usePath() {
 
   const handlePath = (path: string): void => {
     if (pathname === path) return
-    return router.push(path)
+    return router.replace(path)
   }
   return handlePath
 }

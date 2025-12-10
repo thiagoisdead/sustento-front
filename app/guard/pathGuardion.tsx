@@ -3,9 +3,11 @@ import { View, ActivityIndicator } from "react-native";
 import { usePath } from "../../hooks/usePath";
 import { useUser } from "../../hooks/useUser";
 import { getItem } from "../../services/secureStore";
+import { useRouter } from "expo-router";
 
 export default function AuthGate() {
-  const handlePath = usePath();
+
+  const router = useRouter();
   const { userData, loading } = useUser();
 
   useEffect(() => {
@@ -18,14 +20,14 @@ export default function AuthGate() {
       console.log('userData no authGate', userData, token, id)
 
       if (!token || !id) {
-        return handlePath("/auth");
+        return router.replace("/auth");
       }
 
       if (token && id && !userData?.activity_lvl) {
-        return handlePath("/home/home");
+        return router.replace("/home/home");
       }
 
-      return handlePath("/calendar/seeCalendar");
+      return router.replace("/calendar/seeCalendar");
     };
 
     run();

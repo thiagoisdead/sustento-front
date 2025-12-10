@@ -15,7 +15,6 @@ import { Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-// Tipos e Serviços
 import { DashboardData, ViewState } from '../../types/dashboard';
 import { MealPlan } from '../../types/meals';
 import { COLORS } from '../../constants/theme';
@@ -27,7 +26,6 @@ import {
   createNewMealPlan,
 } from '../../services/mealPlanService';
 
-// Componentes
 import { StatCard } from '../../components/statCard';
 import { ActivityChart } from '../../components/activityChart';
 import { IconPill } from '../../components/iconPill';
@@ -36,7 +34,6 @@ import { MealPlanItem } from '../../components/dashboard/mealPlanItem';
 import { CreatePlanModal } from '../../components/dashboard/createPlanModal';
 import { usePath } from '../../hooks/usePath';
 
-// HELPERS LOCAIS (Para evitar erro de importação circular ou arquivo faltante)
 const getSundayOfWeek = (d: Date) => {
   const date = new Date(d);
   const day = date.getDay();
@@ -84,7 +81,7 @@ export default function Dashboard() {
   const [viewState, setViewState] = useState<ViewState>('LOADING');
   const [refreshing, setRefreshing] = useState(false);
   const [isCreateModalVisible, setCreateModalVisible] = useState(false);
-
+  const [isLoadingData, setIsLoadingData] = useState(false); 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [availablePlans, setAvailablePlans] = useState<MealPlan[]>([]);
@@ -92,12 +89,14 @@ export default function Dashboard() {
   const [activePlanName, setActivePlanName] = useState<string>("");
 
   const changeWeek = (weeks: number) => {
+    if (isLoadingData) return; 
     const newDate = new Date(selectedDate);
     newDate.setDate(newDate.getDate() + (weeks * 7));
     setSelectedDate(newDate);
   };
 
   const resetToCurrentWeek = () => {
+    if (isLoadingData) return;
     setSelectedDate(new Date());
   };
 
@@ -109,9 +108,11 @@ export default function Dashboard() {
     return `SEMANA DE ${fmt(start)} À ${fmt(end)}`;
   };
 
-  const loadInitialData = async () => {
+  const loadInitialData = useCallback(async () => {
     try {
-      if (!refreshing) setViewState('LOADING');
+      if (!refreshing) {
+        setIsLoadingData(true);
+      }
 
       const plans = await getUserMealPlans();
       setAvailablePlans(plans);
@@ -157,18 +158,15 @@ export default function Dashboard() {
       Alert.alert("Erro", "Falha ao carregar dados.");
     } finally {
       setRefreshing(false);
+      setIsLoadingData(false); 
     }
-  };
+  }, [selectedDate, refreshing]); 
 
   useFocusEffect(
     useCallback(() => {
       loadInitialData();
-    }, [selectedDate])
+    }, [loadInitialData])
   );
-
-  useEffect(() => {
-    loadInitialData();
-  }, [selectedDate]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -202,7 +200,7 @@ export default function Dashboard() {
     }
   };
 
-  if (viewState === 'LOADING') return (<View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}><ActivityIndicator size="large" color={COLORS.primary} /></View>);
+  if (viewState === 'LOADING' && !dashboardData) return (<View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}><ActivityIndicator size="large" color={COLORS.primary} /></View>);
 
   if (viewState === 'EMPTY') {
     return (
@@ -261,8 +259,7 @@ export default function Dashboard() {
           const isFatOver = (stats.macros?.fats?.current ?? 0) > (stats.macros?.fats?.target ?? 0);
 
           return (
-            <>
-              {/* HERO */}
+            <View style={{ opacity: isLoadingData ? 0.5 : 1 }}>
               <View style={styles.heroSection}>
                 <StatCard
                   label="CALORIAS DIÁRIAS"
@@ -277,7 +274,6 @@ export default function Dashboard() {
                 />
               </View>
 
-              {/* MACROS */}
               <View style={styles.statsRow}>
                 <StatCard
                   label="PROT"
@@ -311,20 +307,36 @@ export default function Dashboard() {
                 />
               </View>
 
-              {/* GRÁFICO */}
               <View style={styles.card}>
                 <View style={styles.chartHeaderContainer}>
                   <View style={styles.decorativeBar} />
                   <View style={styles.weekNavigation}>
-                    <TouchableOpacity onPress={() => changeWeek(-1)} style={styles.navArrow}><Ionicons name="chevron-back" size={20} color={COLORS.textLight} /></TouchableOpacity>
-                    <TouchableOpacity onPress={resetToCurrentWeek}><Text style={styles.cardTitle}>{getWeekRangeTitle()}</Text></TouchableOpacity>
-                    <TouchableOpacity onPress={() => changeWeek(1)} style={styles.navArrow}><Ionicons name="chevron-forward" size={20} color={COLORS.textLight} /></TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => changeWeek(-1)}
+                      style={styles.navArrow}
+                      disabled={isLoadingData} 
+                    >
+                      <Ionicons name="chevron-back" size={20} color={isLoadingData ? '#CCC' : COLORS.textLight} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={resetToCurrentWeek} disabled={isLoadingData}>
+                      <Text style={styles.cardTitle}>
+                        {isLoadingData ? "CARREGANDO..." : getWeekRangeTitle()}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => changeWeek(1)}
+                      style={styles.navArrow}
+                      disabled={isLoadingData}
+                    >
+                      <Ionicons name="chevron-forward" size={20} color={isLoadingData ? '#CCC' : COLORS.textLight} />
+                    </TouchableOpacity>
                   </View>
                 </View>
                 <ActivityChart data={dashboardData.weeklyActivity || []} />
               </View>
 
-              {/* RESUMO DO DIA */}
               <View style={styles.card}>
                 <View style={styles.cardHeader}>
                   <View style={styles.decorativeBar} />
@@ -357,7 +369,7 @@ export default function Dashboard() {
                   )}
                 </View>
               </View>
-            </>
+            </View>
           );
         })()}
       </ScrollView>
