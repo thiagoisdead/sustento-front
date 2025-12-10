@@ -1,44 +1,41 @@
 import { z } from 'zod';
 
-// Sub-schemas for cleanliness
-const statItemSchema = z.object({
+const StatItemSchema = z.object({
     current: z.number(),
     target: z.number(),
 });
 
-const weeklyPointSchema = z.object({
+export const ActivityDataSchema = z.object({
     day: z.string(),
-    val: z.number(),
+    date: z.string(),
+    current: z.number(),
+    target: z.number(),
 });
 
-const mealSummarySchema = z.object({
-    breakfast: z.string(),
-    lunch: z.string(),
-    dinner: z.string(),
-});
-
-const workoutSchema = z.object({
-    title: z.string(),
-    duration: z.string(),
-    status: z.enum(['PENDENTE', 'CONCLUÍDO']),
-});
-
-// Main Dashboard Schema
-export const dashboardDataSchema = z.object({
+export const DashboardDataSchema = z.object({
     stats: z.object({
-        calories: statItemSchema,
-        water: statItemSchema,
-        steps: statItemSchema,
+        calories: StatItemSchema,
         macros: z.object({
-            protein: statItemSchema,
-            carbs: statItemSchema,
-            fats: statItemSchema,
+            protein: StatItemSchema,
+            carbs: StatItemSchema,
+            fats: StatItemSchema,
         }),
     }),
-    weeklyActivity: z.array(weeklyPointSchema),
-    todayMealsSummary: mealSummarySchema,
-    workout: workoutSchema,
+    weeklyActivity: z.array(ActivityDataSchema),
+    todayMealsSummary: z.array(z.object({
+        meal_name: z.string(),
+        foods: z.array(z.object({
+            name: z.string(),
+            amount: z.number(),
+            unit: z.string().optional(),
+            calories: z.number(),
+            protein: z.number(),
+            carbs: z.number(),
+            fat: z.number(),
+        }))
+    })),
 });
 
-// Infer TypeScript Type
-export type DashboardData = z.infer<typeof dashboardDataSchema>;
+export type ActivityData = z.infer<typeof ActivityDataSchema>;
+export type DashboardData = z.infer<typeof DashboardDataSchema>;
+export type ViewState = 'LOADING' | 'EMPTY' | 'SELECTION' | 'DASHBOARD';

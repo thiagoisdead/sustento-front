@@ -1,46 +1,69 @@
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
-import { COLORS, width } from '../constants/theme';
+import { View, Text, StyleSheet, ViewStyle } from 'react-native';
+import { COLORS } from '../constants/theme';
 
 interface StatCardProps {
     label: string;
-    value: string | number;
-    subValue: string | number;
+    value: number;
+    subValue: number;
     unit: string;
     percentage: number;
     color: string;
     icon: React.ReactNode;
-    style?: StyleProp<ViewStyle>; // <--- NOVA PROP
+    style?: ViewStyle;
+    valueColor?: string;
 }
 
-export const StatCard = ({ label, value, subValue, unit, percentage, color, icon, style }: StatCardProps) => {
-    const safePercent = Math.min(Math.max(percentage || 0, 0), 1);
-    const barWidth = safePercent * 100;
+export const StatCard = ({
+    label,
+    value,
+    subValue,
+    unit,
+    percentage,
+    color,
+    icon,
+    style,
+    valueColor = COLORS.textDark
+}: StatCardProps) => {
+
+    // Detecta se estourou a meta
+    const isOverLimit = subValue > 0 && value > subValue;
+    const alertColor = '#FF7043'; // Vermelho Alaranjado
+
+    // Define cores dinâmicas
+    const activeColor = isOverLimit ? alertColor : color;
+    const highlightTextColor = isOverLimit ? alertColor : '#999';
+
+    const progress = Math.min(Math.max(percentage, 0), 1);
 
     return (
-        // Aplicamos o estilo customizado aqui (ex: width: '100%')
-        <View style={[styles.statCard, style]}>
-            <View style={styles.statHeader}>
-                <View style={[styles.iconBox, { backgroundColor: color + '20' }]}>
+        <View style={[styles.container, style]}>
+            <View style={styles.header}>
+                <View style={[styles.iconContainer, { backgroundColor: `${activeColor}20` }]}>
                     {icon}
                 </View>
-                <Text style={styles.statLabel}>{label}</Text>
+                <Text style={[styles.label, { color: highlightTextColor }]}>
+                    {label}
+                </Text>
             </View>
 
-            <View style={styles.valueContainer}>
-                <Text style={styles.statValue}>{value}</Text>
-                <Text style={styles.statUnit}>{unit}</Text>
+            <View style={styles.content}>
+                <View style={styles.textContainer}>
+                    <Text style={[styles.value, { color: valueColor }]}>
+                        {value}
+                        <Text style={styles.unit}> {unit}</Text>
+                    </Text>
+                    <Text style={[styles.subValue, { color: highlightTextColor }]}>
+                        Meta: {subValue}
+                    </Text>
+                </View>
             </View>
 
-            <Text style={styles.statSubValue}>
-                Meta: <Text style={styles.statSubValueBold}>{subValue || '--'}</Text>
-            </Text>
-
-            <View style={styles.progressBarTrack}>
+            <View style={styles.progressTrack}>
                 <View
                     style={[
-                        styles.progressBarFill,
-                        { width: `${barWidth}%`, backgroundColor: color }
+                        styles.progressBar,
+                        { width: `${progress * 100}%`, backgroundColor: activeColor }
                     ]}
                 />
             </View>
@@ -49,27 +72,63 @@ export const StatCard = ({ label, value, subValue, unit, percentage, color, icon
 };
 
 const styles = StyleSheet.create({
-    statCard: {
-        width: (width - 48) / 3, // Padrão para 3 colunas
-        backgroundColor: COLORS.cardBg,
+    container: {
+        backgroundColor: '#FFFFFF',
         borderRadius: 16,
         padding: 12,
+        flex: 1,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 8,
-        elevation: 3,
+        elevation: 2,
+        minWidth: 100,
     },
-    statHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-    iconBox: { width: 24, height: 24, borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginRight: 6 },
-    statLabel: { fontSize: 10, fontWeight: '700', color: COLORS.textLight },
-    valueContainer: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 4 },
-    statValue: { fontSize: 16, fontWeight: '900', color: COLORS.textDark },
-    statUnit: { fontSize: 10, fontWeight: '600', color: COLORS.textLight, marginLeft: 2 },
-
-    statSubValue: { fontSize: 10, color: COLORS.textLight, marginBottom: 8 },
-    statSubValueBold: { fontWeight: '800', color: '#555', fontSize: 11 },
-
-    progressBarTrack: { height: 6, backgroundColor: '#F0F0F0', borderRadius: 3, overflow: 'hidden' },
-    progressBarFill: { height: '100%', borderRadius: 3 },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+        gap: 6,
+    },
+    iconContainer: {
+        padding: 6,
+        borderRadius: 8,
+    },
+    label: {
+        fontSize: 10,
+        fontWeight: '800',
+        textTransform: 'uppercase',
+        flex: 1,
+    },
+    content: {
+        marginBottom: 8,
+    },
+    textContainer: {
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+    },
+    value: {
+        fontSize: 18,
+        fontWeight: '800',
+    },
+    unit: {
+        fontSize: 10,
+        fontWeight: '600',
+        color: '#999',
+    },
+    subValue: {
+        fontSize: 10,
+        fontWeight: '600',
+        marginTop: 2,
+    },
+    progressTrack: {
+        height: 4,
+        backgroundColor: '#F0F0F0',
+        borderRadius: 2,
+        overflow: 'hidden',
+    },
+    progressBar: {
+        height: '100%',
+        borderRadius: 2,
+    },
 });
