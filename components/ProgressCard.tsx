@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, DimensionValue, Pressable } from 'react-native';
 import { COLORS } from '../constants/theme';
 
-export const ProgressCard = ({ data }) => {
+export const ProgressCard = ({ data } : any) => {
     const [showExact, setShowExact] = useState(false);
 
     const current = data?.current_calories || 0;
