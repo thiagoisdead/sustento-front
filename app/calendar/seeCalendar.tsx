@@ -91,38 +91,27 @@ export default function SeeCalendar() {
     }
   };
 
-  // --- 2. BUSCAR REFEIÇÕES E ALIMENTOS PARA O DIA ---
+  // --- 2. BUSCAR TODAS AS REFEIÇÕES DO PLANO (SEM FILTRO DE DATA) ---
   const fetchDailyPlan = useCallback(async () => {
-    if (!activePlanId || !selectedDate) return;
+    // Removemos 'selectedDate' da verificação inicial, pois não depende mais dela
+    if (!activePlanId) return;
 
     setIsLoading(true);
     try {
-      // A. Busca todas as refeições (Meals) do plano
+      // A. Busca todas as refeições (Meals) do plano ativo
       const mealsRes = await baseFetch(`meals?plan_id=${activePlanId}`);
+
+      // PEGA TUDO O QUE VIER (Sem filtrar por data)
       const allMeals = Array.isArray(mealsRes?.data) ? mealsRes?.data : [];
 
-      // B. Filtra quais refeições aparecem na data selecionada
-      const filteredMeals = allMeals.filter((meal: any) => {
-        const createdYmd = formatIsoToLocalDate(meal.created_at);
-        const isRecurring = meal.time && String(meal.time).includes('1970');
-
-        // Regra 1: Recorrente (1970) -> Aparece sempre
-        if (isRecurring) return true;
-
-        // Regra 2: Data Específica -> Compara created_at com selectedDate
-        return createdYmd === selectedDate;
-      });
-
-      // C. Para cada refeição filtrada, busca os alimentos (MealAliments)
-      const mealsWithFoods = await Promise.all(filteredMeals.map(async (meal: any) => {
+      // C. Para cada refeição, busca os alimentos (MealAliments)
+      // Usamos 'allMeals' diretamente aqui em vez de 'filteredMeals'
+      const mealsWithFoods = await Promise.all(allMeals.map(async (meal: any) => {
         try {
-          // Busca os itens desta refeição específica
-          // Rota sugerida: mealAliments?meal_id=X
-          // Se sua API não suportar filtro, precisará buscar tudo e filtrar aqui.
-          // Vou assumir que suporta filtro ou retorna array para filtrar.
           const maRes = await baseFetch(`mealAliments?meal_id=${meal.meal_id}`);
-          // Fallback: se a API retornar tudo sem filtrar, filtramos manualmente
           const allMa = Array.isArray(maRes?.data) ? maRes?.data : [];
+
+          // Garante que é desta refeição mesmo
           const mealAliments = allMa.filter((ma: any) => String(ma.meal_id) === String(meal.meal_id));
 
           // Hidrata com os dados do Alimento (Nome, Calorias)
@@ -175,11 +164,20 @@ export default function SeeCalendar() {
       setGroupedMeals(finalGroups);
 
     } catch (error) {
-      console.error("Erro ao carregar plano do dia:", error);
+      console.error("Erro ao carregar plano completo:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [activePlanId, selectedDate]);
+  }, [activePlanId]); // <--- REMOVIDO selectedDate DAQUI
+
+  // ... (fetchInitialData continua igual)
+
+  // Atualize o useEffect para não depender mais da data também
+  useEffect(() => {
+    if (activePlanId) {
+      fetchDailyPlan();
+    }
+  }, [activePlanId, fetchDailyPlan]); // <--- REMOVIDO selectedDate DAQUI
 
   useEffect(() => { fetchInitialData(); }, []);
 
