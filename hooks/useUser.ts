@@ -4,14 +4,13 @@ import { getItem } from "../services/secureStore";
 
 export function useUser() {
   const [userData, setUserData] = useState<any>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(true); // Começa true
 
   useEffect(() => {
     let mounted = true;
 
     const fetchUser = async () => {
       try {
-        // 🔥 libera a UI rapidamente
         const [id, token] = await Promise.all([
           getItem("id"),
           getItem("token")
@@ -20,25 +19,24 @@ export function useUser() {
         if (!id || !token) {
           if (mounted) {
             setUserData(null);
-            setLoading(false); // libera UI imediatamente
+            setLoading(false);
           }
           return;
         }
 
-        // 🔥 deixa a UI carregando só o conteúdo, não o app inteiro
-        setLoading(false);
+        // NÃO defina loading false aqui. Espere o fetch.
 
         const response = await baseUniqueGet("users");
+
         if (mounted) {
           setUserData(response?.data ?? null);
         }
-
       } catch (err) {
         console.log(err ?? "Erro ao buscar usuário");
-        if (mounted) {
-          setUserData(null);
-          setLoading(false);
-        }
+        if (mounted) setUserData(null);
+      } finally {
+        // O finally garante que o loading pare independente de sucesso ou erro
+        if (mounted) setLoading(false);
       }
     };
 
@@ -48,4 +46,3 @@ export function useUser() {
 
   return { userData, loading };
 }
-
