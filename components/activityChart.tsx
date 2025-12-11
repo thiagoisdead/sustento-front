@@ -8,48 +8,80 @@ interface ActivityChartProps {
     data: ActivityData[];
 }
 
-const isPastDate = (dateString: string) => {
-    if (!dateString) return false;
-    const date = new Date(dateString);
-    const today = new Date();
-    // Comparação simples de data (UTC x UTC ou Local x Local, assumindo string ISO YYYY-MM-DD)
-    return dateString < today.toISOString().split('T')[0];
+const getLocalTodayStr = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 };
 
 export const ActivityChart = ({ data }: ActivityChartProps) => {
+    const todayStr = getLocalTodayStr();
+
     return (
         <View style={styles.container}>
             {data.map((item, index) => {
-                const safeTarget = item.target || 1;
-                const percent = Math.min((item.current / safeTarget) * 100, 100);
+                const safeTarget = item.target || 0;
+                const safeCurrent = item.current || 0;
 
-                const isPast = isPastDate(item.date);
-                const isCompleted = percent >= 100;
-                // Excedeu 5% da meta
-                const isExceeded = item.current > item.target * 1.05;
+                const isPast = item.date < todayStr;
+                const isFuture = item.date > todayStr;
 
-                const trackColor = (isPast && !isCompleted) ? '#FFCDD2' : '#F0F0F0';
-                const alertVisible = isPast && isExceeded;
+                // 1. FUTURO: Mostra o placeholder (trilho cinza vazio)
+                if (isFuture) {
+                    return (
+                        <View key={index} style={styles.column}>
+                            <View style={[styles.barTrack, { backgroundColor: '#F0F0F0' }]} />
+                            <Text style={styles.dayLabel}>{item.day}</Text>
+                        </View>
+                    );
+                }
+
+                // 2. SEM META (Dias Fantasmas no Passado): Invisível
+                // Se não tinha plano nesse dia passado, não mostra nem o trilho.
+                if (safeTarget === 0) {
+                    return (
+                        <View key={index} style={styles.column}>
+                            <View style={[styles.barTrack, { backgroundColor: 'transparent' }]} />
+                            <Text style={styles.dayLabel}>{item.day}</Text>
+                        </View>
+                    );
+                }
+
+                // 3. LÓGICA NORMAL (Passado com Meta ou Hoje)
+                const percentValue = (safeCurrent / safeTarget) * 100;
+                const visualPercent = Math.min(percentValue, 100);
+
+                const isMissed = isPast && percentValue < 99;
+
+                const activeColor = COLORS.primary;
+                // Vermelho transparente se perdeu, Cinza se ok
+                const trackColor = isMissed ? 'rgba(255, 0, 0, 0.15)' : '#F0F0F0';
 
                 return (
                     <View key={index} style={styles.column}>
-                        {alertVisible && (
+                        {isMissed && (
                             <View style={styles.alertIcon}>
-                                <Ionicons name="alert-circle" size={16} color="#E57373" />
+                                <Ionicons name="alert-circle" size={14} color="#E57373" />
                             </View>
                         )}
+
                         <View style={[styles.barTrack, { backgroundColor: trackColor }]}>
                             <View
                                 style={[
                                     styles.barFill,
                                     {
-                                        height: `${percent}%`,
-                                        backgroundColor: COLORS.primary
+                                        height: `${visualPercent}%`,
+                                        backgroundColor: activeColor
                                     }
                                 ]}
                             />
                         </View>
-                        <Text style={styles.dayLabel}>{item.day}</Text>
+
+                        <Text style={[styles.dayLabel, isMissed && { color: '#E57373' }]}>
+                            {item.day}
+                        </Text>
                     </View>
                 );
             })}
@@ -81,7 +113,6 @@ const styles = StyleSheet.create({
         width: 12,
         height: '80%',
         borderRadius: 6,
-        backgroundColor: '#F0F0F0',
         overflow: 'hidden',
         justifyContent: 'flex-end',
     },
