@@ -18,9 +18,13 @@ import MealPlanModal from "../../components/mealPlan/createMealPlanModal";
 interface FoodItem {
   id: number;
   name: string;
+  meal_aliment_id: number;
   calories: number;
   quantity: number;
   unit: string;
+  carbs?: number;
+  proteins?: number;
+  fats?: number;
 }
 
 // Extender a interface Meal para incluir foods
@@ -39,9 +43,9 @@ export default function SeeFoodTracker() {
 
   const handlePath = usePath();
 
-  const [haveMealPlans, setMealPlans] = useState(false);
+  const [haveMealPlans, setHaveMealPlans] = useState(false);
   const [mealPlanData, setMealPlanData] = useState<MealPlan>();
-  const [meals, setMeals] = useState<MealWithFoods[]>([]); // Use a nova interface
+  const [meals, setMeals] = useState<MealWithFoods[]>([]); 
 
   const handleAddMeal = async (meal: any) => {
     try {
@@ -58,8 +62,9 @@ export default function SeeFoodTracker() {
 
     console.log('Deleting meal with id:', id, typeof (id));
     const req = await baseDeleteById(`meals/${Number(id)}`);
-    console.log('req de delete de meal', req?.data)
-    // setMeals(prev => prev.filter((meal) => meal.id !== id));
+
+    console.log('Delete meal response:', req.status);
+    setMeals(prev => prev.filter((meal) => meal.id !== id));
   };
 
   const fetchMealPlan = useCallback(async () => {
@@ -67,17 +72,51 @@ export default function SeeFoodTracker() {
     const response = await baseFetch(`mealplans/${planId}`);
 
     if (!response?.data) {
-      setMealPlans(false);
+      setHaveMealPlans(false);
     } else {
       const data = Array.isArray(response.data) ? response.data[0] : response.data;
       setMealPlanData(data);
-      setMealPlans(true);
+      setHaveMealPlans(true);
     }
   }, [planId]);
 
-  // --- Função Principal de Carga de Refeições e Alimentos ---
+  const handleDeleteFood = async (mealId: number, mealAlimentId: number) => {
+    try {
+      console.log(`Deletando alimento ${mealAlimentId} da refeição ${mealId}`);
+
+      await baseDeleteById(`mealAliments/${mealAlimentId}`);
+
+      setMeals((prevMeals) =>
+        prevMeals.map((meal) => {
+          if (meal.id === mealId && meal.foods) {
+            const updatedFoods = meal.foods.filter(f => f.meal_aliment_id !== mealAlimentId);
+
+            const newCalories = updatedFoods.reduce((acc, f) => acc + (f.calories || 0), 0);
+
+            const newCarbs = updatedFoods.reduce((acc, f) => acc + (f.carbs || 0), 0);
+            const newProteins = updatedFoods.reduce((acc, f) => acc + (f.proteins || 0), 0);
+            const newFats = updatedFoods.reduce((acc, f) => acc + (f.fats || 0), 0);
+
+            return {
+              ...meal,
+              foods: updatedFoods,
+              calories: newCalories,
+              carbs: newCarbs,
+              proteins: newProteins,
+              fats: newFats
+            };
+          }
+          return meal;
+        })
+      );
+    } catch (error) {
+      console.error("Erro ao deletar alimento:", error);
+    }
+  };
+
   const fetchMealsFromMealPlan = useCallback(async () => {
     if (!planId) return;
+
     const response = await baseFetch(`mealplans/${planId}/meals`);
 
     if (!response?.data) {
@@ -87,7 +126,6 @@ export default function SeeFoodTracker() {
 
     const rawMeals = Array.isArray(response.data) ? response.data : [response.data];
 
-    // Mapeia estrutura básica das refeições
     const mappedMeals: MealWithFoods[] = rawMeals.map((item: any) => ({
       id: item.meal_id,
       name: item.meal_name,
@@ -96,31 +134,38 @@ export default function SeeFoodTracker() {
       foods: []
     }));
 
-    // Busca alimentos de cada refeição em paralelo
+    let allRelations: any[] = [];
+    try {
+      const rq = await baseFetch(`mealAliments`);
+      allRelations = rq?.data || [];
+      console.log('Lista de Relações (IDs) carregada:', allRelations.length);
+    } catch (err) {
+      console.log('Erro ao buscar relações', err);
+    }
+
     const mealsWithFoods = await Promise.all(mappedMeals.map(async (meal) => {
       try {
         const foodRes = await baseFetch(`meals/${meal.id}/aliments`);
         const data = foodRes?.data;
-
-        console.log('data de aliments da meal', data?.MealAliments);
-
-        // VERIFICAÇÃO CRUCIAL BASEADA NO SEU LOG:
-        // O array real está dentro de data.MealAliments
         const rawFoods = data?.MealAliments || [];
 
-        console.log('rawFoods da meal', rawFoods);
-
         const foods: FoodItem[] = rawFoods.map((item: any) => {
-          // O objeto 'aliment' está aninhado dentro de cada item do MealAliments
           const alimentData = item.aliment || {};
-          console.log('item INTEIRO dentro de meal', item);
+          const alimentId = alimentData.id || alimentData.aliment_id;
 
-          console.log('alimentData dentro da meal', alimentData);
+          const match = allRelations.find((rel: any) =>
+            rel.meal_id === meal.id &&
+            rel.aliment_id === alimentId
+          );
+
+          const finalMealAlimentId = match ? match.meal_aliment_id : (item.meal_aliment_id || 0);
+
+          if (!match) console.log(`AVISO: Não achei ID para apagar o alimento ${alimentData.name} na ref ${meal.id}`);
 
           return {
-            id: alimentData.id || alimentData.aliment_id || Math.random(), // Fallback de ID
+            id: alimentId,
+            meal_aliment_id: finalMealAlimentId,
             name: alimentData.name || "Alimento sem nome",
-            // Tenta pegar calorias do objeto aninhado 'nutrients' ou direto
             calories: alimentData?.calories_100g
               ? (item.quantity * alimentData.calories_100g) / 100
               : 0,
@@ -138,32 +183,24 @@ export default function SeeFoodTracker() {
           };
         });
 
-
         const totalCals = foods.reduce((acc, f) => acc + (f.calories || 0), 0);
         const totalFats = foods.reduce((acc, f) => acc + (f.fats || 0), 0);
         const totalCarbs = foods.reduce((acc, f) => acc + (f.carbs || 0), 0);
         const totalProteins = foods.reduce((acc, f) => acc + (f.proteins || 0), 0);
 
-        console.log(foods, 'foods da meal');
-
-        console.log(totalCals, 'total cals da measl');
-
-
         return {
           ...meal,
           foods,
-          calories: Number(totalCals.toFixed(2)),
-          fats: Number(totalFats.toFixed(2)),
-          carbs: Number(totalCarbs.toFixed(2)),
-          proteins: Number(totalProteins.toFixed(2)),
+          calories: totalCals,
+          fats: totalFats,
+          carbs: totalCarbs,
+          proteins: totalProteins,
         };
       } catch (error) {
         console.log(`Erro ao buscar alimentos para refeição ${meal.id}`, error);
         return meal;
       }
     }));
-    console.log('mealsWithFoods', mealsWithFoods);
-
 
     setMeals(mealsWithFoods);
   }, [planId]);
@@ -174,24 +211,15 @@ export default function SeeFoodTracker() {
   }, [fetchMealPlan, fetchMealsFromMealPlan]);
 
   const groupedMeals = meals.reduce((acc: Record<string, MealWithFoods[]>, meal) => {
-
-
-    console.log('meal for grouping', meal, meals);
-    const cat = meal.category || "Outros";
+    const cat = meal?.category || "Outros";
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(meal);
     return acc;
   }, {});
 
-  useEffect(() => {
-    console.log('groupedMeals', groupedMeals);
-
-  }, [groupedMeals]);
-
   if (!haveMealPlans) {
     return (
       <View style={styles.noMealPlans}>
-        {/* ... (código sem plano igual) */}
       </View>
     );
   }
@@ -213,7 +241,7 @@ export default function SeeFoodTracker() {
 
         {/* Somando calorias totais reais */}
         <ProgressCard
-          data={{ ...mealPlanData, current_calories: meals.reduce((acc, m) => acc + (m.calories || 0), 0), current_fats: meals.reduce((acc, m) => acc + (m?.fat || 0), 0), current_carbs: meals.reduce((acc, m) => acc + (m?.carbs || 0), 0), current_protein: meals.reduce((acc, m) => acc + (m?.proteins || 0), 0) }}
+          data={{ ...mealPlanData, current_calories: meals.reduce((acc, m) => acc + (m.calories || 0), 0), current_fats: meals.reduce((acc, m) => acc + (m?.fats || 0), 0), current_carbs: meals.reduce((acc, m) => acc + (m?.carbs || 0), 0), current_protein: meals.reduce((acc, m) => acc + (m?.proteins || 0), 0) }}
         />
 
         <View style={styles.mealGrid}>
@@ -224,6 +252,7 @@ export default function SeeFoodTracker() {
                   key={meal.id}
                   meal={meal}
                   onDelete={handleDeleteMeal}
+                  onDeleteFood={handleDeleteFood}
                 />
               ))}
             </View>

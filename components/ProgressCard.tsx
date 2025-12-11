@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, DimensionValue, Pressable } from 'react-native';
 import { COLORS } from '../constants/theme';
 
-export const ProgressCard = ({ data }) => {
+export const ProgressCard = ({ data } : any) => {
     const [showExact, setShowExact] = useState(false);
 
     const current = data?.current_calories || 0;
-    const target = data?.target_calories || 1; 
+    const target = data?.target_calories || 1;
 
     const realRatio = current / target;
     const realPercent = Math.round(realRatio * 100);
@@ -17,15 +17,21 @@ export const ProgressCard = ({ data }) => {
     const displayPercentText = (isOverflowing && !showExact) ? ">100%" : `${realPercent}%`;
     const barColor = isOverflowing ? '#FF5252' : COLORS.primary;
 
-    const fmt = (curr: number, total: number) =>
-        `${Math.round(curr || 0)}/${Math.round(total || 0)}g`;
+    const fmt = (curr: number, total: number) => {
+        const c = Number(curr) || 0;
+        const t = Number(total) || 0;
+        const cStr = c % 1 === 0 ? c : c.toFixed(2);
+        const tStr = t % 1 === 0 ? t : t.toFixed(2);
+
+        return `${cStr}/${tStr}g`;
+    };
 
     return (
-        <Pressable 
-            onPress={() => setShowExact(!showExact)} 
+        <Pressable
+            onPress={() => setShowExact(!showExact)}
             style={styles.card}
             // Feedback tátil ao clicar
-            android_ripple={{ color: 'rgba(0,0,0,0.05)' }} 
+            android_ripple={{ color: 'rgba(0,0,0,0.05)' }}
         >
             <Text style={styles.goalText}>
                 Meta Diária: {target} kcal
@@ -33,7 +39,7 @@ export const ProgressCard = ({ data }) => {
 
             <View style={styles.progressBar}>
                 <View style={[
-                    styles.progressFill, 
+                    styles.progressFill,
                     { width: progressPctStyle, backgroundColor: barColor }
                 ]} />
             </View>
@@ -41,14 +47,14 @@ export const ProgressCard = ({ data }) => {
             <Text style={styles.progressText}>
                 {Math.round(current)} / {Math.round(target)} kcal ({displayPercentText})
             </Text>
-            
+
             {isOverflowing && !showExact && (
                 <Text style={styles.tooltipHint}>(Toque para ver detalhes)</Text>
             )}
 
             <View style={styles.macros}>
                 <MacroItem label="Proteínas" value={fmt(data?.current_protein, data?.target_protein)} />
-                <MacroItem label="Carbos" value={fmt(data?.current_carbs, data?.target_carbs)} />
+                <MacroItem label="Carboidratos" value={fmt(data?.current_carbs, data?.target_carbs)} />
                 <MacroItem label="Gorduras" value={fmt(data?.current_fats || data?.current_fat, data?.target_fat || data?.target_fats)} />
             </View>
         </Pressable>
@@ -93,7 +99,7 @@ const styles = StyleSheet.create({
     },
     progressText: {
         marginTop: 8,
-        marginBottom: 4, 
+        marginBottom: 4,
         color: COLORS.textDark,
         textAlign: "center",
         fontWeight: "600",
@@ -110,7 +116,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         gap: 8,
-        marginTop: 8 
+        marginTop: 8
     },
     macroItem: {
         flex: 1,

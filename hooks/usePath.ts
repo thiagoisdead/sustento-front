@@ -4,11 +4,11 @@ export function usePath() {
   const router = useRouter()
   const pathname = usePathname()
 
-  // console.log('pathname', pathname)
+  console.log('pathname', pathname)
 
   const handlePath = (path: string): void => {
     if (pathname === path) return
-    return router.replace(path)
+    return router.push(path)
   }
   return handlePath
 }

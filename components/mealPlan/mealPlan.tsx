@@ -1,8 +1,8 @@
 import React from "react";
 import { StyleSheet, View, Pressable } from "react-native";
 import { Text, Divider } from "react-native-paper";
-import { MealPlan } from "../../types/meal"; // Ajuste o caminho se necessário
-import { COLORS } from "../../constants/theme"; // Ajuste o caminho se necessário
+import { MealPlan } from "../../types/meal"; 
+import { COLORS } from "../../constants/theme"; 
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const formatValue = (val?: number | null, suffix = "") => {

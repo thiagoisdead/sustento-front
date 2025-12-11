@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Alert, Pressable } from 'react-native';
-import { Checkbox } from 'react-native-paper'; 
+import { Checkbox } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS } from '../../constants/theme';
 import { Meal } from '../../types/meal';
@@ -7,6 +7,7 @@ import { Meal } from '../../types/meal';
 interface FoodItem {
   id: number;
   name: string;
+  meal_aliment_id: number;
   calories: number;
   quantity: number;
   unit: string;
@@ -19,9 +20,10 @@ interface MealWithFoods extends Meal {
 interface MealItemProps {
   meal: MealWithFoods;
   onDelete: (id: number) => void;
+  onDeleteFood: (mealId: number, mealAlimentId: number) => void;
 }
 
-export const MealItem = ({ meal, onDelete }: MealItemProps) => {
+export const MealItem = ({ meal, onDelete, onDeleteFood }: MealItemProps) => {
 
 
   console.log('alimentos meal', meal);
@@ -38,6 +40,21 @@ export const MealItem = ({ meal, onDelete }: MealItemProps) => {
     console.log('a meal id que ta sendo deletada', meal.id)
   };
 
+  const handleRemoveFood = (foodName: string, mealAlimentId: number) => {
+    Alert.alert(
+      "Remover Alimento",
+      `Deseja remover ${foodName}?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Remover",
+          style: "destructive",
+          onPress: () => onDeleteFood(meal.id, mealAlimentId)
+        }
+      ]
+    );
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.mealHeader}>
@@ -47,10 +64,11 @@ export const MealItem = ({ meal, onDelete }: MealItemProps) => {
         </Pressable>
       </View>
 
-      {/* Lista de Alimentos dentro da Refeição */}
       {meal.foods && meal.foods.length > 0 ? (
         <View style={styles.foodList}>
           {meal.foods.map((food, index) => (
+
+
             <View key={index} style={styles.foodRow}>
               <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                 <Checkbox status="unchecked" color={COLORS.primary} />
@@ -62,9 +80,12 @@ export const MealItem = ({ meal, onDelete }: MealItemProps) => {
                 </View>
               </View>
 
-              {/* Botão de Excluir Alimento (Placeholder) */}
-              <Pressable onPress={() => console.log('Delete food', food.id)}>
-                <MaterialCommunityIcons name="close-circle-outline" size={18} color="#CCC" />
+              {/* Botão de Deletar Alimento Específico */}
+              <Pressable
+                onPress={() => { handleRemoveFood(food.name, food.meal_aliment_id); console.log('alimento inteiro', food) }}
+                hitSlop={10}
+              >
+                <MaterialCommunityIcons name="close-circle-outline" size={20} color="#CCC" />
               </Pressable>
             </View>
           ))}

@@ -94,10 +94,7 @@ export default function SeeAllMealPlans() {
           <Text style={styles.emptyText}>
             Você ainda não possui nenhum plano alimentar. Crie um agora para começar a acompanhar sua dieta.
           </Text>
-        </View>
-
-      )
-      }
+        </View>)}
 
 
       <View style={styles.createMealPlan}>
