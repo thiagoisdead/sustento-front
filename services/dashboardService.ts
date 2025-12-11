@@ -1,183 +1,145 @@
-import { baseFetch, baseGetById, baseUniqueGet } from './baseCall';
+import { baseFetch, baseGetById } from './baseCall';
 import { getItem } from './secureStore';
 
-// --- HELPER DE DATAS (LOCAL TIME) ---
-// Garante que a data seja a do celular do usuário, ignorando UTC
-const getIsoDateStr = (dateInput: any): string => {
-    if (!dateInput) return "";
-    try {
-        if (dateInput instanceof Date) {
-            const year = dateInput.getFullYear();
-            const month = String(dateInput.getMonth() + 1).padStart(2, '0');
-            const day = String(dateInput.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-        if (typeof dateInput === 'string') {
-            return dateInput.split('T')[0];
-        }
-    } catch (e) { return ""; }
-    return String(dateInput);
+// --- HELPERS DE DATA ---
+
+const getLocalTodayStr = (): string => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 };
 
-export const getDashboardData = async (startDate?: string, endDate?: string) => {
+const normalizeDate = (dateInput: any): string => {
+    if (!dateInput) return "";
+    const s = String(dateInput);
+    if (s.includes('T')) return s.split('T')[0];
+    if (s.includes('/')) {
+        const parts = s.split('/');
+        if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return s;
+};
+
+const safeNum = (val: any) => {
+    const n = Number(val);
+    return isNaN(n) ? 0 : Math.abs(n);
+};
+
+export const getDashboardData = async (startDate?: string, endDate?: string, targetDateStr?: string) => {
     try {
         const userIdStr = await getItem('id');
         if (!userIdStr) return null;
         const userId = Number(userIdStr);
 
-        // 1. BUSCAR PLANOS
+        const filterDateIso = targetDateStr || getLocalTodayStr();
+        console.log(`📊 Dashboard (Plano) | Data: ${filterDateIso}`);
+
+        // 1. BUSCAR PLANO ATIVO
         const plansRes = await baseFetch(`mealPlans?user_id=${userId}`);
         const userPlans = Array.isArray(plansRes?.data) ? plansRes?.data : [];
 
-        const activePlans = userPlans.filter((p: any) => p.active);
-        const activePlan = activePlans.sort((a: any, b: any) =>
-            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-        )[0] || userPlans[userPlans.length - 1];
+        const activePlan = userPlans.filter((p: any) => p.active)
+            .sort((a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())[0]
+            || userPlans[0];
 
         if (!activePlan) return null;
 
-        const cleanNum = (val: any) => Math.abs(Number(val) || 0);
+        // Metas do Plano (Target)
         const targets = {
-            calories: cleanNum(activePlan?.target_calories) || 2000,
-            protein: cleanNum(activePlan?.target_protein) || 150,
-            carbs: cleanNum(activePlan?.target_carbs) || 250,
-            fat: cleanNum(activePlan?.target_fat) || cleanNum(activePlan?.target_fats) || 70,
-            water: cleanNum(activePlan?.target_water) || 2500,
+            calories: safeNum(activePlan.target_calories) || 2000,
+            protein: safeNum(activePlan.target_protein) || 150,
+            carbs: safeNum(activePlan.target_carbs) || 250,
+            fat: safeNum(activePlan.target_fat) || safeNum(activePlan.target_fats) || 70,
+            water: safeNum(activePlan.target_water) || 2500,
         };
 
-        // 2. BUSCAR REGISTROS (Com fallback de rota)
-        let allRecords = [];
-        const recordsRes = await baseFetch(`mealRecords?user_id=${userId}`);
-        allRecords = Array.isArray(recordsRes?.data) ? recordsRes?.data : [];
-
-        // 3. BUSCAR ÁGUA
-        let allWater = [];
-        const waterRes = await baseFetch(`waterRecords?user_id=${userId}`);
-        allWater = Array.isArray(waterRes?.data) ? waterRes?.data : [];
-
-        // 4. CONFIGURAÇÃO DE REFEIÇÕES DO PLANO
+        // 2. BUSCAR TODAS AS REFEIÇÕES DO PLANO
         const mealsConfigRes = await baseFetch(`meals?plan_id=${activePlan.plan_id}`);
-        const planMeals = Array.isArray(mealsConfigRes?.data) ? mealsConfigRes?.data : [];
+        const allPlanMeals = Array.isArray(mealsConfigRes?.data) ? mealsConfigRes?.data : [];
 
-        // --- HOJE ---
-        const today = new Date();
-        const todayIso = getIsoDateStr(today);
-
-        const todayRecords = allRecords.filter((rec: any) => getIsoDateStr(rec.meal_date) === todayIso);
-        const todayWater = allWater.filter((rec: any) => getIsoDateStr(rec.water_record_date) === todayIso);
-
-        const currentWater = todayWater.reduce((acc: number, rec: any) => acc + Number(rec?.water_consumption || 0), 0);
-
-        // --- CACHE DE ALIMENTOS (JOIN MANUAL) ---
-        const alimentCache: Record<number, any> = {};
-        const uniqueAlimentIds = [...new Set(todayRecords.map((r: any) => r.aliment_id))];
-
-        if (uniqueAlimentIds.length > 0) {
-            await Promise.all(uniqueAlimentIds.map(async (id: unknown) => {
-                if (typeof id === 'number') {
-                    try {
-                        const res = await baseGetById('aliments', id);
-                        if (res && res.data) alimentCache[id] = res.data;
-                    } catch (e) { }
-                }
-            }));
-        }
-
-        // --- CÁLCULO DE MACROS ---
-        const currentStats = todayRecords.reduce((acc: any, rec: any) => {
-            const alimentData = alimentCache[rec.aliment_id];
-            if (!alimentData) return acc;
-
-            const ratio = (Number(rec.amount) || 0) / 100;
-            return {
-                calories: acc.calories + (Number(alimentData.calories_100g) * ratio),
-                protein: acc.protein + (Number(alimentData.protein_100g) * ratio),
-                carbs: acc.carbs + (Number(alimentData.carbs_100g) * ratio),
-                fat: acc.fat + (Number(alimentData.fat_100g) * ratio),
-            };
-        }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
-
-        // --- SEMANA ---
-        const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-        const weeklyActivity = [];
-        let loopDate = new Date();
-
-        if (startDate) {
-            const parts = startDate.split('-');
-            loopDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-        } else {
-            const day = loopDate.getDay();
-            const diff = loopDate.getDate() - day;
-            loopDate.setDate(diff);
-        }
-        loopDate.setHours(0, 0, 0, 0);
-
-        for (let i = 0; i < 7; i++) {
-            const d = new Date(loopDate);
-            d.setDate(loopDate.getDate() + i);
-            const isoDate = getIsoDateStr(d);
-
-            const dayRecords = allRecords.filter((rec: any) => getIsoDateStr(rec.meal_date) === isoDate);
-
-            const dayCals = dayRecords.reduce((sum: number, rec: any) => {
-                const alim = alimentCache[rec.aliment_id] || rec.aliment || {};
-                return sum + (Number(alim.calories_100g || 0) * (Number(rec.amount || 0) / 100));
-            }, 0);
-
-            weeklyActivity.push({
-                day: weekDays[d.getDay()],
-                date: isoDate,
-                current: Math.round(dayCals),
-                target: targets.calories
-            });
-        }
-
-        // --- RESUMO DO DIA (DETALHADO) ---
-        const todayMealsSummary = planMeals.map((meal: any) => {
-            const items = todayRecords
-                .filter((r: any) => String(r.meal_id) === String(meal.meal_id))
-                .map((r: any) => {
-                    const alim = alimentCache[r.aliment_id];
-                    const amount = Number(r.amount) || 0;
-                    const ratio = amount / 100;
-
-                    if (!alim) {
-                        return {
-                            name: `Item #${r.aliment_id}`,
-                            amount: amount,
-                            unit: r.unit || 'g',
-                            calories: 0, protein: 0, carbs: 0, fat: 0
-                        };
-                    }
-
-                    return {
-                        name: alim.name,
-                        amount: amount,
-                        unit: r.unit || 'g',
-                        calories: Math.round(Number(alim.calories_100g) * ratio),
-                        protein: Math.round(Number(alim.protein_100g) * ratio),
-                        carbs: Math.round(Number(alim.carbs_100g) * ratio),
-                        fat: Math.round(Number(alim.fat_100g) * ratio),
-                    };
-                });
-
-            return {
-                meal_name: meal.meal_name,
-                foods: items
-            };
+        // 3. FILTRAR REFEIÇÕES PELA DATA SELECIONADA
+        const todaysPlanMeals = allPlanMeals.filter((cat: any) => {
+            const isRecurring = cat.time && String(cat.time).includes('1970');
+            if (isRecurring) return true;
+            return normalizeDate(cat.created_at) === filterDateIso;
         });
 
+        // Ordenar por horário
+        todaysPlanMeals.sort((a: any, b: any) => {
+            const timeA = a.time || "23:59";
+            const timeB = b.time || "23:59";
+            return timeA.localeCompare(timeB);
+        });
+
+        // Variáveis para somar os totais do dia (Para os Cards)
+        let totalStats = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+
+        // 4. PROCESSAR CADA REFEIÇÃO E SEUS ALIMENTOS
+        const todayMealsSummary = await Promise.all(todaysPlanMeals.map(async (meal: any) => {
+            try {
+                // Busca os alimentos configurados (mealAliments)
+                const maRes = await baseFetch(`mealAliments?meal_id=${meal.meal_id}`);
+                let mealAliments = Array.isArray(maRes?.data) ? maRes?.data : [];
+
+                // Filtro de Segurança por ID
+                mealAliments = mealAliments.filter((ma: any) => String(ma.meal_id) === String(meal.meal_id));
+
+                // Hidrata os alimentos com dados nutricionais
+                const foods = await Promise.all(mealAliments.map(async (ma: any) => {
+                    try {
+                        const alimRes = await baseGetById('aliments', ma.aliment_id);
+                        const alim = alimRes?.data || {};
+
+                        const qty = safeNum(ma.quantity);
+                        const ratio = qty / 100;
+
+                        const itemStats = {
+                            calories: Math.round(safeNum(alim.calories_100g) * ratio),
+                            protein: Math.round(safeNum(alim.protein_100g) * ratio),
+                            carbs: Math.round(safeNum(alim.carbs_100g) * ratio),
+                            fat: Math.round(safeNum(alim.fat_100g) * ratio),
+                        };
+
+                        // SOMA NO TOTAL DO DIA (AQUI ESTÁ A MÁGICA DOS CARDS)
+                        totalStats.calories += itemStats.calories;
+                        totalStats.protein += itemStats.protein;
+                        totalStats.carbs += itemStats.carbs;
+                        totalStats.fat += itemStats.fat;
+
+                        return {
+                            name: alim.name || "Carregando...",
+                            amount: qty,
+                            unit: ma.measurement_unit || 'g',
+                            ...itemStats
+                        };
+                    } catch (e) { return null; }
+                }));
+
+                return {
+                    meal_name: meal.meal_name,
+                    foods: foods.filter(f => f !== null)
+                };
+
+            } catch (e) {
+                return { meal_name: meal.meal_name, foods: [] };
+            }
+        }));
+
+        // --- 5. RETORNO ---
+        // Agora 'current' nos stats reflete a soma dos alimentos PLANEJADOS para o dia
         return {
             stats: {
-                calories: { current: Math.round(currentStats.calories), target: targets.calories },
-                water: { current: currentWater / 1000, target: targets.water / 1000 },
+                calories: { current: Math.round(totalStats.calories), target: targets.calories },
+                water: { current: 0, target: targets.water }, // mealAliments não tem água por padrão
                 macros: {
-                    protein: { current: Math.round(currentStats.protein), target: targets.protein },
-                    carbs: { current: Math.round(currentStats.carbs), target: targets.carbs },
-                    fats: { current: Math.round(currentStats.fat), target: targets.fat },
+                    protein: { current: Math.round(totalStats.protein), target: targets.protein },
+                    carbs: { current: Math.round(totalStats.carbs), target: targets.carbs },
+                    fats: { current: Math.round(totalStats.fat), target: targets.fat },
                 }
             },
-            weeklyActivity,
+            weeklyActivity: [], // Gráfico desativado pois requer lógica complexa de histórico vs plano
             todayMealsSummary
         };
 

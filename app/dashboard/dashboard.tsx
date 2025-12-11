@@ -81,15 +81,16 @@ export default function Dashboard() {
   const [viewState, setViewState] = useState<ViewState>('LOADING');
   const [refreshing, setRefreshing] = useState(false);
   const [isCreateModalVisible, setCreateModalVisible] = useState(false);
-  const [isLoadingData, setIsLoadingData] = useState(false); 
+  const [isLoadingData, setIsLoadingData] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
+
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [availablePlans, setAvailablePlans] = useState<MealPlan[]>([]);
   const [activePlanId, setActivePlanId] = useState<number | null>(null);
   const [activePlanName, setActivePlanName] = useState<string>("");
 
   const changeWeek = (weeks: number) => {
-    if (isLoadingData) return; 
+    if (isLoadingData) return;
     const newDate = new Date(selectedDate);
     newDate.setDate(newDate.getDate() + (weeks * 7));
     setSelectedDate(newDate);
@@ -132,7 +133,15 @@ export default function Dashboard() {
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(startOfWeek.getDate() + 6);
 
-        const dashData = await getDashboardData(formatDateISO(startOfWeek), formatDateISO(endOfWeek));
+        // --- FORMATA A DATA SELECIONADA ---
+        const targetDateStr = formatDateISO(selectedDate);
+
+        // --- PASSA A DATA PARA O SERVIÇO ---
+        const dashData = await getDashboardData(
+          formatDateISO(startOfWeek),
+          formatDateISO(endOfWeek),
+          targetDateStr
+        );
 
         if (dashData) {
           const normalizedActivity = normalizeWeeklyData(dashData.weeklyActivity, selectedDate);
@@ -154,13 +163,13 @@ export default function Dashboard() {
       }
 
     } catch (error) {
-      console.error("Erro ao carregar dashboard:", error);
+      console.error("Erro dashboard:", error);
       Alert.alert("Erro", "Falha ao carregar dados.");
     } finally {
       setRefreshing(false);
-      setIsLoadingData(false); 
+      setIsLoadingData(false);
     }
-  }, [selectedDate, refreshing]); 
+  }, [selectedDate, refreshing]);
 
   useFocusEffect(
     useCallback(() => {
@@ -253,20 +262,31 @@ export default function Dashboard() {
 
         {dashboardData && (() => {
           const { stats } = dashboardData;
-          const isCalorieOver = (stats.calories?.current ?? 0) > (stats.calories?.target ?? 0);
-          const isProtOver = (stats.macros?.protein?.current ?? 0) > (stats.macros?.protein?.target ?? 0);
-          const isCarbOver = (stats.macros?.carbs?.current ?? 0) > (stats.macros?.carbs?.target ?? 0);
-          const isFatOver = (stats.macros?.fats?.current ?? 0) > (stats.macros?.fats?.target ?? 0);
+          const curCal = stats?.calories?.current ?? 0;
+          const tgtCal = stats?.calories?.target ?? 0;
+          const isCalorieOver = tgtCal > 0 && curCal > tgtCal;
+
+          const curProt = stats?.macros?.protein?.current ?? 0;
+          const tgtProt = stats?.macros?.protein?.target ?? 0;
+          const isProtOver = tgtProt > 0 && curProt > tgtProt;
+
+          const curCarb = stats?.macros?.carbs?.current ?? 0;
+          const tgtCarb = stats?.macros?.carbs?.target ?? 0;
+          const isCarbOver = tgtCarb > 0 && curCarb > tgtCarb;
+
+          const curFat = stats?.macros?.fats?.current ?? 0;
+          const tgtFat = stats?.macros?.fats?.target ?? 0;
+          const isFatOver = tgtFat > 0 && curFat > tgtFat;
 
           return (
             <View style={{ opacity: isLoadingData ? 0.5 : 1 }}>
               <View style={styles.heroSection}>
                 <StatCard
                   label="CALORIAS DIÁRIAS"
-                  value={stats?.calories?.current ?? 0}
-                  subValue={stats?.calories?.target ?? 2000}
+                  value={curCal}
+                  subValue={tgtCal}
                   unit="kcal"
-                  percentage={(stats?.calories?.target ?? 0) > 0 ? (stats?.calories?.current ?? 0) / (stats?.calories?.target ?? 1) : 0}
+                  percentage={tgtCal > 0 ? curCal / tgtCal : 0}
                   color={COLORS.accentOrange}
                   icon={<FontAwesome5 name="fire" size={18} color={COLORS.accentOrange} />}
                   style={{ width: '100%' }}
@@ -277,30 +297,30 @@ export default function Dashboard() {
               <View style={styles.statsRow}>
                 <StatCard
                   label="PROT"
-                  value={stats?.macros?.protein?.current ?? 0}
-                  subValue={stats?.macros?.protein?.target ?? 0}
+                  value={curProt}
+                  subValue={tgtProt}
                   unit="g"
-                  percentage={(stats?.macros?.protein?.target ?? 0) > 0 ? (stats?.macros?.protein?.current ?? 0) / (stats?.macros?.protein?.target ?? 1) : 0}
+                  percentage={tgtProt > 0 ? curProt / tgtProt : 0}
                   color={COLORS.primary}
                   icon={<MaterialCommunityIcons name="food-drumstick" size={14} color={COLORS.primary} />}
                   valueColor={isProtOver ? '#E57373' : COLORS.textDark}
                 />
                 <StatCard
                   label="CARB"
-                  value={stats?.macros?.carbs?.current ?? 0}
-                  subValue={stats?.macros?.carbs?.target ?? 0}
+                  value={curCarb}
+                  subValue={tgtCarb}
                   unit="g"
-                  percentage={(stats?.macros?.carbs?.target ?? 0) > 0 ? (stats?.macros?.carbs?.current ?? 0) / (stats?.macros?.carbs?.target ?? 1) : 0}
+                  percentage={tgtCarb > 0 ? curCarb / tgtCarb : 0}
                   color={COLORS.accentBlue}
                   icon={<MaterialCommunityIcons name="barley" size={14} color={COLORS.accentBlue} />}
                   valueColor={isCarbOver ? '#E57373' : COLORS.textDark}
                 />
                 <StatCard
                   label="GORD"
-                  value={stats?.macros?.fats?.current ?? 0}
-                  subValue={stats?.macros?.fats?.target ?? 0}
+                  value={curFat}
+                  subValue={tgtFat}
                   unit="g"
-                  percentage={(stats?.macros?.fats?.target ?? 0) > 0 ? (stats?.macros?.fats?.current ?? 0) / (stats?.macros?.fats?.target ?? 1) : 0}
+                  percentage={tgtFat > 0 ? curFat / tgtFat : 0}
                   color="#E6B800"
                   icon={<MaterialCommunityIcons name="oil" size={14} color="#E6B800" />}
                   valueColor={isFatOver ? '#E57373' : COLORS.textDark}
@@ -311,25 +331,13 @@ export default function Dashboard() {
                 <View style={styles.chartHeaderContainer}>
                   <View style={styles.decorativeBar} />
                   <View style={styles.weekNavigation}>
-                    <TouchableOpacity
-                      onPress={() => changeWeek(-1)}
-                      style={styles.navArrow}
-                      disabled={isLoadingData} 
-                    >
+                    <TouchableOpacity onPress={() => changeWeek(-1)} style={styles.navArrow} disabled={isLoadingData}>
                       <Ionicons name="chevron-back" size={20} color={isLoadingData ? '#CCC' : COLORS.textLight} />
                     </TouchableOpacity>
-
                     <TouchableOpacity onPress={resetToCurrentWeek} disabled={isLoadingData}>
-                      <Text style={styles.cardTitle}>
-                        {isLoadingData ? "CARREGANDO..." : getWeekRangeTitle()}
-                      </Text>
+                      <Text style={styles.cardTitle}>{isLoadingData ? "CARREGANDO..." : getWeekRangeTitle()}</Text>
                     </TouchableOpacity>
-
-                    <TouchableOpacity
-                      onPress={() => changeWeek(1)}
-                      style={styles.navArrow}
-                      disabled={isLoadingData}
-                    >
+                    <TouchableOpacity onPress={() => changeWeek(1)} style={styles.navArrow} disabled={isLoadingData}>
                       <Ionicons name="chevron-forward" size={20} color={isLoadingData ? '#CCC' : COLORS.textLight} />
                     </TouchableOpacity>
                   </View>
@@ -344,7 +352,7 @@ export default function Dashboard() {
                 </View>
                 <View style={styles.fullWidthList}>
                   {(!dashboardData.todayMealsSummary || dashboardData.todayMealsSummary.length === 0) ? (
-                    <Text style={{ textAlign: 'center', color: '#999', padding: 10 }}>Nenhuma refeição configurada.</Text>
+                    <Text style={{ textAlign: 'center', color: '#999', padding: 10 }}>Nenhuma refeição planejada para hoje.</Text>
                   ) : (
                     dashboardData.todayMealsSummary.map((mealGroup, index) => (
                       <View key={index} style={styles.mealGroupContainer}>
@@ -354,12 +362,16 @@ export default function Dashboard() {
                         </View>
                         <View style={styles.foodListContainer}>
                           {mealGroup.foods.length === 0 ? (
-                            <Text style={styles.emptyFoodText}>— Nada registrado —</Text>
+                            <Text style={styles.emptyFoodText}>— Vazio —</Text>
                           ) : (
                             mealGroup.foods.map((food, fIndex) => (
                               <View key={fIndex} style={styles.foodRow}>
-                                <Text style={styles.foodName}>• {food.name} <Text style={styles.foodAmount}>- {food.amount}{food.unit || 'g'}</Text></Text>
-                                <Text style={styles.foodMacros}>({food.protein}P / {food.carbs}C / {food.fat}G)</Text>
+                                <Text style={styles.foodName}>
+                                  • {food.name} <Text style={styles.foodAmount}>- {food.amount}{food.unit || 'g'}</Text>
+                                </Text>
+                                <Text style={styles.foodMacros}>
+                                  ({food.protein}P / {food.carbs}C / {food.fat}G) - {food.calories}kcal
+                                </Text>
                               </View>
                             ))
                           )}
@@ -404,7 +416,6 @@ const styles = StyleSheet.create({
   listTextWrapper: { flex: 1 },
   listLabel: { fontSize: 10, color: COLORS.textLight, marginBottom: 2, textTransform: 'uppercase' },
   listValue: { fontSize: 14, fontWeight: '700', color: COLORS.textDark },
-  // Novos Estilos
   mealGroupContainer: { marginBottom: 16, borderBottomWidth: 1, borderBottomColor: '#F0F0F0', paddingBottom: 12 },
   mealHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 8 },
   foodListContainer: { paddingLeft: 34 },
