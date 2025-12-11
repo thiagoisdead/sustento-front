@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.background },
   scrollView: { flex: 1 },
   scrollViewDesktop: { maxWidth: 800, alignSelf: "center", width: "100%" },
-  container: { padding: 16 },
+  container: { padding: 16, paddingTop: 40 },
   headerTitle: { fontSize: 22, fontWeight: '800', color: COLORS.textDark, textAlign: 'center', marginBottom: 15 },
   calendarCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 10, marginBottom: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   dateLabel: { fontSize: 18, fontWeight: '600', color: COLORS.textDark, marginBottom: 15, textTransform: 'capitalize', marginLeft: 4 },
