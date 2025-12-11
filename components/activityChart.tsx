@@ -22,45 +22,45 @@ export const ActivityChart = ({ data }: ActivityChartProps) => {
     return (
         <View style={styles.container}>
             {data.map((item, index) => {
-                // Garante valores numéricos seguros
                 const safeTarget = item.target || 0;
                 const safeCurrent = item.current || 0;
 
                 const isPast = item.date < todayStr;
                 const isFuture = item.date > todayStr;
 
-                // LÓGICA DE VISIBILIDADE:
-                // O Service manda target=0 se o plano não existia no dia.
-                // Então, só escondemos se for Futuro OU se não tinha meta (target=0).
-                // Se target > 0 e current == 0, a barra PRECISA aparecer (como falha).
-                if (isFuture || safeTarget === 0) {
+                // 1. FUTURO: Mostra o placeholder (trilho cinza vazio)
+                if (isFuture) {
                     return (
                         <View key={index} style={styles.column}>
-                            {/* Barra invisível apenas para manter o espaçamento */}
+                            <View style={[styles.barTrack, { backgroundColor: '#F0F0F0' }]} />
+                            <Text style={styles.dayLabel}>{item.day}</Text>
+                        </View>
+                    );
+                }
+
+                // 2. SEM META (Dias Fantasmas no Passado): Invisível
+                // Se não tinha plano nesse dia passado, não mostra nem o trilho.
+                if (safeTarget === 0) {
+                    return (
+                        <View key={index} style={styles.column}>
                             <View style={[styles.barTrack, { backgroundColor: 'transparent' }]} />
                             <Text style={styles.dayLabel}>{item.day}</Text>
                         </View>
                     );
                 }
 
-                // Cálculo de porcentagem seguro
-                const percentValue = safeTarget > 0 ? (safeCurrent / safeTarget) * 100 : 0;
+                // 3. LÓGICA NORMAL (Passado com Meta ou Hoje)
+                const percentValue = (safeCurrent / safeTarget) * 100;
                 const visualPercent = Math.min(percentValue, 100);
 
-                // LÓGICA DE FALHA (VERMELHO):
-                // Se é dia passado E a porcentagem é menor que 99% (isso inclui 0%).
                 const isMissed = isPast && percentValue < 99;
 
-                // CORES:
-                // O preenchimento (o que comeu) é sempre a cor padrão (Verde/Azul).
                 const activeColor = COLORS.primary;
-                // O fundo (o que faltou) fica vermelho transparente se falhou.
+                // Vermelho transparente se perdeu, Cinza se ok
                 const trackColor = isMissed ? 'rgba(255, 0, 0, 0.15)' : '#F0F0F0';
 
                 return (
                     <View key={index} style={styles.column}>
-
-                        {/* Ícone de Alerta se falhou */}
                         {isMissed && (
                             <View style={styles.alertIcon}>
                                 <Ionicons name="alert-circle" size={14} color="#E57373" />
@@ -79,7 +79,6 @@ export const ActivityChart = ({ data }: ActivityChartProps) => {
                             />
                         </View>
 
-                        {/* Texto vermelho se falhou */}
                         <Text style={[styles.dayLabel, isMissed && { color: '#E57373' }]}>
                             {item.day}
                         </Text>
@@ -107,7 +106,7 @@ const styles = StyleSheet.create({
     },
     alertIcon: {
         position: 'absolute',
-        top: -18, // Posição acima da barra
+        top: -18,
         zIndex: 10,
     },
     barTrack: {
