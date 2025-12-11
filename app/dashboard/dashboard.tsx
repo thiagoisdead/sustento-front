@@ -82,6 +82,7 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [isCreateModalVisible, setCreateModalVisible] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
+
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
@@ -133,14 +134,13 @@ export default function Dashboard() {
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(startOfWeek.getDate() + 6);
 
-        // --- FORMATA A DATA SELECIONADA ---
+        // --- PONTO CRÍTICO ---
         const targetDateStr = formatDateISO(selectedDate);
 
-        // --- PASSA A DATA PARA O SERVIÇO ---
         const dashData = await getDashboardData(
           formatDateISO(startOfWeek),
           formatDateISO(endOfWeek),
-          targetDateStr
+          targetDateStr // Passa a data selecionada
         );
 
         if (dashData) {

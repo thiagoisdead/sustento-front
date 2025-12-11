@@ -8,48 +8,81 @@ interface ActivityChartProps {
     data: ActivityData[];
 }
 
-const isPastDate = (dateString: string) => {
-    if (!dateString) return false;
-    const date = new Date(dateString);
-    const today = new Date();
-    // Comparação simples de data (UTC x UTC ou Local x Local, assumindo string ISO YYYY-MM-DD)
-    return dateString < today.toISOString().split('T')[0];
+const getLocalTodayStr = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 };
 
 export const ActivityChart = ({ data }: ActivityChartProps) => {
+    const todayStr = getLocalTodayStr();
+
     return (
         <View style={styles.container}>
             {data.map((item, index) => {
-                const safeTarget = item.target || 1;
-                const percent = Math.min((item.current / safeTarget) * 100, 100);
+                // Garante valores numéricos seguros
+                const safeTarget = item.target || 0;
+                const safeCurrent = item.current || 0;
 
-                const isPast = isPastDate(item.date);
-                const isCompleted = percent >= 100;
-                // Excedeu 5% da meta
-                const isExceeded = item.current > item.target * 1.05;
+                const isPast = item.date < todayStr;
+                const isFuture = item.date > todayStr;
 
-                const trackColor = (isPast && !isCompleted) ? '#FFCDD2' : '#F0F0F0';
-                const alertVisible = isPast && isExceeded;
+                // LÓGICA DE VISIBILIDADE:
+                // O Service manda target=0 se o plano não existia no dia.
+                // Então, só escondemos se for Futuro OU se não tinha meta (target=0).
+                // Se target > 0 e current == 0, a barra PRECISA aparecer (como falha).
+                if (isFuture || safeTarget === 0) {
+                    return (
+                        <View key={index} style={styles.column}>
+                            {/* Barra invisível apenas para manter o espaçamento */}
+                            <View style={[styles.barTrack, { backgroundColor: 'transparent' }]} />
+                            <Text style={styles.dayLabel}>{item.day}</Text>
+                        </View>
+                    );
+                }
+
+                // Cálculo de porcentagem seguro
+                const percentValue = safeTarget > 0 ? (safeCurrent / safeTarget) * 100 : 0;
+                const visualPercent = Math.min(percentValue, 100);
+
+                // LÓGICA DE FALHA (VERMELHO):
+                // Se é dia passado E a porcentagem é menor que 99% (isso inclui 0%).
+                const isMissed = isPast && percentValue < 99;
+
+                // CORES:
+                // O preenchimento (o que comeu) é sempre a cor padrão (Verde/Azul).
+                const activeColor = COLORS.primary;
+                // O fundo (o que faltou) fica vermelho transparente se falhou.
+                const trackColor = isMissed ? 'rgba(255, 0, 0, 0.15)' : '#F0F0F0';
 
                 return (
                     <View key={index} style={styles.column}>
-                        {alertVisible && (
+
+                        {/* Ícone de Alerta se falhou */}
+                        {isMissed && (
                             <View style={styles.alertIcon}>
-                                <Ionicons name="alert-circle" size={16} color="#E57373" />
+                                <Ionicons name="alert-circle" size={14} color="#E57373" />
                             </View>
                         )}
+
                         <View style={[styles.barTrack, { backgroundColor: trackColor }]}>
                             <View
                                 style={[
                                     styles.barFill,
                                     {
-                                        height: `${percent}%`,
-                                        backgroundColor: COLORS.primary
+                                        height: `${visualPercent}%`,
+                                        backgroundColor: activeColor
                                     }
                                 ]}
                             />
                         </View>
-                        <Text style={styles.dayLabel}>{item.day}</Text>
+
+                        {/* Texto vermelho se falhou */}
+                        <Text style={[styles.dayLabel, isMissed && { color: '#E57373' }]}>
+                            {item.day}
+                        </Text>
                     </View>
                 );
             })}
@@ -74,14 +107,13 @@ const styles = StyleSheet.create({
     },
     alertIcon: {
         position: 'absolute',
-        top: -18,
+        top: -18, // Posição acima da barra
         zIndex: 10,
     },
     barTrack: {
         width: 12,
         height: '80%',
         borderRadius: 6,
-        backgroundColor: '#F0F0F0',
         overflow: 'hidden',
         justifyContent: 'flex-end',
     },
