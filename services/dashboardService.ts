@@ -75,7 +75,6 @@ const fetchAndEnrichMeals = async (planId: number) => {
         return {
             ...meal,
             created_at_normalized: normalizeDate(meal.created_at),
-            is_recurring: meal.time && String(meal.time).includes('1970'),
             stats,
             foods: foodsList
         };

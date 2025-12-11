@@ -104,10 +104,6 @@ export default function SeeCalendar() {
       // B. Filtra quais refeições aparecem na data selecionada
       const filteredMeals = allMeals.filter((meal: any) => {
         const createdYmd = formatIsoToLocalDate(meal.created_at);
-        const isRecurring = meal.time && String(meal.time).includes('1970');
-
-        // Regra 1: Recorrente (1970) -> Aparece sempre
-        if (isRecurring) return true;
 
         // Regra 2: Data Específica -> Compara created_at com selectedDate
         return createdYmd === selectedDate;
