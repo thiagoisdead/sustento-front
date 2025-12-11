@@ -45,7 +45,7 @@ export default function MealPlanModal({ onDismiss, planToEdit }: MealPlanModalPr
         target_water: planToEdit.target_water ? String(planToEdit.target_water) : '',
         target_protein: planToEdit.target_protein ? String(planToEdit.target_protein) : '',
         target_carbs: planToEdit.target_carbs ? String(planToEdit.target_carbs) : '',
-        target_fats: planToEdit.target_fats ? String(planToEdit.target_fats) : '', 
+        target_fats: planToEdit.target_fat ? String(planToEdit.target_fat) : '', 
         active: !!planToEdit.active,
       });
     }

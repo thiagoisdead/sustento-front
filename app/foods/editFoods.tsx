@@ -107,7 +107,7 @@ export default function MealsHome() {
     }
   };
 
-  const handleCreateMeal = async () => {
+  const handleAddFood = async () => {
     const quantity = Number(selectedMeal?.quantity?.toString().replace(/\D/g, ''));
 
     if (!selectedMeal) return Alert.alert('Erro', 'Selecione um alimento.');
@@ -127,12 +127,7 @@ export default function MealsHome() {
       // aliment_id: Number(selectedMeal?.id)
       aliment_id: random2 // USANDO ID ALEATÓRIO POR ENQUANTO
     }
-
     console.log('Payload para criar mealAliments:', payload);
-
-    const token = await getItem('token');
-
-    console.log(token)
 
     try {
       const req = await basePost('mealAliments', payload)
@@ -322,7 +317,7 @@ export default function MealsHome() {
             <Button
               mode="contained"
               buttonColor={COLORS.primary}
-              onPress={() => handleCreateMeal()}
+              onPress={() => handleAddFood()}
               style={{ paddingHorizontal: 10, borderRadius: 8, marginTop: 10 }}
             >
               Confirmar

@@ -100,6 +100,11 @@ export default function SeeCalendar() {
     try {
       // A. Busca todas as refeições (Meals) do plano ativo
       const mealsRes = await baseFetch(`meals?plan_id=${activePlanId}`);
+      const allMeals = Array.isArray(mealsRes?.data) ? mealsRes?.data : [];
+
+      // B. Filtra quais refeições aparecem na data selecionada
+      const filteredMeals = allMeals.filter((meal: any) => {
+        const createdYmd = formatIsoToLocalDate(meal.created_at);
 
       // PEGA TUDO O QUE VIER (Sem filtrar por data)
       const allMeals = Array.isArray(mealsRes?.data) ? mealsRes?.data : [];
