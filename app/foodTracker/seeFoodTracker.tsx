@@ -58,8 +58,9 @@ export default function SeeFoodTracker() {
 
     console.log('Deleting meal with id:', id, typeof (id));
     const req = await baseDeleteById(`meals/${Number(id)}`);
-    console.log('req de delete de meal', req?.data)
-    // setMeals(prev => prev.filter((meal) => meal.id !== id));
+
+    console.log('Delete meal response:', req.status);
+    setMeals(prev => prev.filter((meal) => meal.id !== id));
   };
 
   const fetchMealPlan = useCallback(async () => {
@@ -144,25 +145,21 @@ export default function SeeFoodTracker() {
         const totalCarbs = foods.reduce((acc, f) => acc + (f.carbs || 0), 0);
         const totalProteins = foods.reduce((acc, f) => acc + (f.proteins || 0), 0);
 
-        console.log(foods, 'foods da meal');
-
-        console.log(totalCals, 'total cals da measl');
 
 
         return {
           ...meal,
           foods,
-          calories: Number(totalCals.toFixed(2)),
-          fats: Number(totalFats.toFixed(2)),
-          carbs: Number(totalCarbs.toFixed(2)),
-          proteins: Number(totalProteins.toFixed(2)),
+          calories: totalCals,
+          fats: totalFats,
+          carbs: totalCarbs,
+          proteins: totalProteins,
         };
       } catch (error) {
         console.log(`Erro ao buscar alimentos para refeição ${meal.id}`, error);
         return meal;
       }
     }));
-    console.log('mealsWithFoods', mealsWithFoods);
 
 
     setMeals(mealsWithFoods);
@@ -213,7 +210,7 @@ export default function SeeFoodTracker() {
 
         {/* Somando calorias totais reais */}
         <ProgressCard
-          data={{ ...mealPlanData, current_calories: meals.reduce((acc, m) => acc + (m.calories || 0), 0), current_fats: meals.reduce((acc, m) => acc + (m?.fat || 0), 0), current_carbs: meals.reduce((acc, m) => acc + (m?.carbs || 0), 0), current_protein: meals.reduce((acc, m) => acc + (m?.proteins || 0), 0) }}
+          data={{ ...mealPlanData, current_calories: meals.reduce((acc, m) => acc + (m.calories || 0), 0), current_fats: meals.reduce((acc, m) => acc + (m?.fats || 0), 0), current_carbs: meals.reduce((acc, m) => acc + (m?.carbs || 0), 0), current_protein: meals.reduce((acc, m) => acc + (m?.proteins || 0), 0) }}
         />
 
         <View style={styles.mealGrid}>

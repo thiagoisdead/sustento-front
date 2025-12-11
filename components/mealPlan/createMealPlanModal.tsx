@@ -10,10 +10,9 @@ import { basePost, baseUniqueGet, basePutById } from "../../services/baseCall";
 import { getItem } from "../../services/secureStore";
 import { BaseButton } from "../baseButton";
 
-// Props atualizadas para aceitar um plano para edição
 interface MealPlanModalProps {
   onDismiss: () => void;
-  planToEdit?: MealPlan | null; // Se vier preenchido, é EDIÇÃO. Se null, é CRIAÇÃO.
+  planToEdit?: MealPlan | null; 
 }
 
 export default function MealPlanModal({ onDismiss, planToEdit }: MealPlanModalProps) {
@@ -21,13 +20,12 @@ export default function MealPlanModal({ onDismiss, planToEdit }: MealPlanModalPr
   const [conflictVisible, setConflictVisible] = useState(false);
   const [activePlanInfo, setActivePlanInfo] = useState<any>(null);
 
-  console.log('entrei no filho')
-
-  // Se for edição, desabilita a IA por padrão (já que o usuário vai mexer nos valores)
   const [useAI, setUseAI] = useState(false);
 
   const router = useRouter();
-  const isEditing = !!planToEdit; // Booleano auxiliar
+  const isEditing = !!planToEdit; 
+
+  console.log('planToEdit recebido no modal:', planToEdit);
 
   const [planForm, setPlanForm] = useState({
     plan_name: '',
@@ -39,7 +37,6 @@ export default function MealPlanModal({ onDismiss, planToEdit }: MealPlanModalPr
     active: false,
   });
 
-  // --- EFEITO PARA CARREGAR DADOS NA EDIÇÃO ---
   useEffect(() => {
     if (planToEdit) {
       setPlanForm({
@@ -48,7 +45,7 @@ export default function MealPlanModal({ onDismiss, planToEdit }: MealPlanModalPr
         target_water: planToEdit.target_water ? String(planToEdit.target_water) : '',
         target_protein: planToEdit.target_protein ? String(planToEdit.target_protein) : '',
         target_carbs: planToEdit.target_carbs ? String(planToEdit.target_carbs) : '',
-        target_fats: planToEdit.target_fat ? String(planToEdit.target_fat) : '', // Atenção: backend as vezes manda 'target_fat' ou 'target_fats'
+        target_fats: planToEdit.target_fats ? String(planToEdit.target_fats) : '', 
         active: !!planToEdit.active,
       });
     }
@@ -146,10 +143,11 @@ export default function MealPlanModal({ onDismiss, planToEdit }: MealPlanModalPr
     executeSave(planForm?.active);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (useAI && !isEditing) {
-      // Lógica de criação com IA (geralmente só na criação)
-      console.log("IA logic...");
+      const userId = await getItem('id');
+      const payload = { user_id: Number(userId)}
+      const req = await basePost('mealPlans/suggestMealPlan', payload)
     } else {
       handleValidationAndCheck();
     }
