@@ -31,6 +31,8 @@ const safeNum = (val: any) => {
 // ====================================================================
 const fetchAndEnrichMeals = async (planId: number) => {
     const mealsConfigRes = await baseFetch(`meals?plan_id=${planId}`);
+
+    // Pega todas as refeições do plano, sem exceção
     const allPlanMeals = Array.isArray(mealsConfigRes?.data) ? mealsConfigRes?.data : [];
 
     return await Promise.all(allPlanMeals.map(async (meal: any) => {
@@ -85,6 +87,7 @@ const fetchAndEnrichMeals = async (planId: number) => {
 // ====================================================================
 // 2. LÓGICA DO GRÁFICO SEMANAL
 // ====================================================================
+// Mantivemos a lógica de data AQUI, pois um gráfico precisa de eixo temporal (passado/futuro)
 const calculateWeeklyActivity = (enrichedMeals: any[], startDateStr: string, todayIso: string, targetCalories: number) => {
     const weeklyActivity = [];
     let loopDate = new Date();
@@ -108,25 +111,19 @@ const calculateWeeklyActivity = (enrichedMeals: any[], startDateStr: string, tod
 
         let dayTotalCals = 0;
 
-        // REGRA: Se a data do gráfico é futura (> hoje), valor é 0.
+        // Se quiser que o gráfico mostre o plano ideal no futuro, remova este IF.
+        // Por enquanto, mantive comportamento padrão: Futuro = 0.
         if (isoDate > todayIso) {
             dayTotalCals = 0;
         } else {
-            // REGRA: Passado ou Hoje
+            // Aqui mantemos a lógica de histórico para o GRÁFICO ser realista
             const mealsOfDay = enrichedMeals.filter(meal => {
-
-                // --- CORREÇÃO CRÍTICA ---
-                // Se a data do gráfico é HOJE, ignoramos a checagem rigorosa de criação.
-                // Isso resolve o problema de fuso horário onde 'created_at' (UTC) > 'todayIso' (Local).
-                // Para dias PASSADOS, mantemos a checagem para evitar dados fantasmas.
                 if (isoDate !== todayIso) {
                     if (isoDate < meal.created_at_normalized) return false;
                 }
-
                 if (meal.is_recurring) return true;
                 return meal.created_at_normalized === isoDate;
             });
-
             dayTotalCals = mealsOfDay.reduce((acc, meal) => acc + meal.stats.calories, 0);
         }
 
@@ -141,16 +138,18 @@ const calculateWeeklyActivity = (enrichedMeals: any[], startDateStr: string, tod
 };
 
 // ====================================================================
-// 3. LÓGICA DO DIA SELECIONADO (Cards + Lista)
+// 3. LÓGICA DO DIA (Cards + Lista) - ALTERADO
 // ====================================================================
-const calculateDailyData = (enrichedMeals: any[], targetDateIso: string) => {
-    const selectedMeals = enrichedMeals.filter(meal => {
-        // Para os cards, somos permissivos com recorrentes para garantir
-        // que apareçam sempre, independente de hora de criação.
-        if (meal.is_recurring) return true;
-        return meal.created_at_normalized === targetDateIso;
-    });
+const calculateDailyData = (enrichedMeals: any[]) => {
 
+    // --- MUDANÇA PRINCIPAL ---
+    // Não filtramos mais por data. Pegamos TUDO que veio do plano enriquecido.
+    // Isso garante que a lista mostre o plano completo (Café, Almoço, Janta) 
+    // independente do dia que foi criado.
+
+    const selectedMeals = [...enrichedMeals];
+
+    // Apenas ordenamos por horário
     selectedMeals.sort((a: any, b: any) => {
         const tA = a.time || "23:59";
         const tB = b.time || "23:59";
@@ -168,7 +167,9 @@ const calculateDailyData = (enrichedMeals: any[], targetDateIso: string) => {
 
     const todayMealsSummary = selectedMeals.map((meal: any) => ({
         meal_name: meal.meal_name,
-        foods: meal.foods
+        foods: meal.foods,
+        // Adicionei stats aqui caso precise exibir calorias por refeição na lista
+        stats: meal.stats
     }));
 
     return { dayTotalStats, todayMealsSummary };
@@ -184,15 +185,12 @@ export const getDashboardData = async (startDate?: string, endDate?: string, tar
         if (!userIdStr) return null;
         const userId = Number(userIdStr);
 
-        const filterDateIso = targetDateStr || getLocalTodayStr();
         const realTodayIso = getLocalTodayStr();
 
         // 1. BUSCAR PLANO
         const plansRes = await baseFetch(`mealPlans?user_id=${userId}`);
         const userPlans = Array.isArray(plansRes?.data) ? plansRes?.data : [];
-        const activePlan = userPlans.filter((p: any) => p.active)
-            .sort((a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())[0]
-            || userPlans[0];
+        const activePlan = userPlans.find((p: any) => p.active) || userPlans[0];
 
         if (!activePlan) return null;
 
@@ -204,10 +202,10 @@ export const getDashboardData = async (startDate?: string, endDate?: string, tar
             water: safeNum(activePlan.target_water) || 2500,
         };
 
-        // 2. BUSCA DADOS E PREPARA
+        // 2. BUSCA DADOS E PREPARA (Traz tudo do plano)
         const enrichedMeals = await fetchAndEnrichMeals(activePlan.plan_id);
 
-        // 3. CALCULA GRÁFICO (Sem futuros, sem fantasmas, COM HOJE)
+        // 3. CALCULA GRÁFICO (Mantém lógica temporal para histórico)
         const weeklyActivity = calculateWeeklyActivity(
             enrichedMeals,
             startDate || realTodayIso,
@@ -215,8 +213,9 @@ export const getDashboardData = async (startDate?: string, endDate?: string, tar
             targets.calories
         );
 
-        // 4. CALCULA DADOS DO DIA SELECIONADO
-        const { dayTotalStats, todayMealsSummary } = calculateDailyData(enrichedMeals, filterDateIso);
+        // 4. CALCULA DADOS GERAIS (Cards e Lista)
+        // Removemos o segundo argumento (data) pois agora calculamos o plano inteiro
+        const { dayTotalStats, todayMealsSummary } = calculateDailyData(enrichedMeals);
 
         return {
             stats: {
