@@ -219,7 +219,7 @@ export default function Dashboard() {
           <MaterialCommunityIcons name="food-variant" size={80} color={COLORS.primary} style={{ opacity: 0.5, marginBottom: 20 }} />
           <Text style={styles.headerTitle}>Bem-vindo!</Text>
           <Text style={styles.emptyText}>Você ainda não possui nenhum plano alimentar.</Text>
-          <AnimatedButton style={[styles.createButton, { marginTop: 30 }]} onPress={() => handlePath('/foodTracker/seeAllMealPlans')}><Text style={styles.btnText}>Criar Primeiro Plano</Text></AnimatedButton>
+          <AnimatedButton style={[styles.createButton, { marginTop: 30 }]} onPress={() => handlePath('/foodTracker/seeFoodTracker')}><Text style={styles.btnText}>Criar Primeiro Plano</Text></AnimatedButton>
         </ScrollView>
         <CreatePlanModal visible={isCreateModalVisible} onClose={() => setCreateModalVisible(false)} onSubmit={handleCreatePlanSubmit} />
       </SafeAreaView>
