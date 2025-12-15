@@ -1,9 +1,28 @@
 import { useState, useEffect, useCallback } from "react";
-import { getItem } from "../services/secureStore"; // Ajuste o caminho se necessário
-import { baseFetch, baseGetById } from "../services/baseCall"; // Ajuste o caminho se necessário
-import { getTodaysDate } from "../utils/dateHelpers";
-import { FoodItem, MealGroup } from "../types/calendar";
+import { getItem } from "../services/secureStore";
+import { baseFetch, baseGetById } from "../services/baseCall";
+import { getTodaysDate } from "../utils/dateHelpers"; // Verifique se o nome do arquivo é dateHelper ou dateHelpers
 
+// --- Tipos Locais ---
+export interface FoodItem {
+    id: number;
+    name: string;
+    calories: number;
+    quantity: number;
+    unit: string;
+    mealRecordId: number; // Alterado de mealAlimentId para mealRecordId para clareza
+}
+
+export interface MealGroup {
+    meal_id: number;
+    meal_name: string;
+    timeRaw: string;
+    displayTime: string;
+    foods: FoodItem[];
+    totalCalories: number;
+}
+
+// --- Helpers Internos ---
 const normalizeDate = (dateInput: any): string => {
     if (!dateInput) return "";
     const s = String(dateInput);
@@ -30,6 +49,7 @@ const safeNum = (val: any) => {
     return isNaN(n) ? 0 : Math.abs(n);
 };
 
+// --- HOOK PRINCIPAL ---
 export const useSeeCalendar = () => {
     const [selectedDate, setSelectedDate] = useState(getTodaysDate());
 
@@ -38,6 +58,7 @@ export const useSeeCalendar = () => {
     const [activePlanId, setActivePlanId] = useState<number | null>(null);
     const [groupedMeals, setGroupedMeals] = useState<MealGroup[]>([]);
 
+    // 1. Carrega dados iniciais do usuário
     const fetchInitialData = async () => {
         const idStr = await getItem('id');
         if (!idStr) return;
@@ -53,42 +74,48 @@ export const useSeeCalendar = () => {
         }
     };
 
+    // 2. Busca o plano do dia
     const fetchDailyPlan = useCallback(async () => {
         if (!activePlanId || !selectedDate || !userId) return;
 
         setIsLoading(true);
         try {
+            // A. Busca as definições de refeição (Café, Almoço, Janta...) do plano
             const mealsRes = await baseFetch(`meals?plan_id=${activePlanId}`);
             let allPlanMeals = Array.isArray(mealsRes?.data) ? mealsRes?.data : [];
 
             allPlanMeals = allPlanMeals?.filter((m: any) => String(m?.plan_id) === String(activePlanId));
 
+            // B. Para cada refeição, busca os REGISTROS DE COMIDA (mealRecords) naquela data
             const mealsWithFoods = await Promise.all(allPlanMeals?.map(async (meal: any) => {
                 try {
-                    const maRes = await baseFetch(`mealAliments?user_id=${userId}&meal_id=${meal?.meal_id}`);
-                    let allMa = Array.isArray(maRes?.data) ? maRes?.data : [];
+                    // AQUI: Mudança para endpoint mealRecords
+                    const recordsRes = await baseFetch(`mealRecords?user_id=${userId}&meal_id=${meal?.meal_id}`);
+                    let allRecords = Array.isArray(recordsRes?.data) ? recordsRes?.data : [];
 
-                    const mealAliments = allMa?.filter((ma: any) =>
-                        String(ma?.user_id) === String(userId) &&
-                        String(ma?.meal_id) === String(meal?.meal_id) &&
-                        normalizeDate(ma?.meal_date) === selectedDate
+                    // Filtra: É deste usuário? É desta refeição? É DESTA DATA?
+                    const dailyRecords = allRecords?.filter((rec: any) =>
+                        String(rec?.user_id) === String(userId) &&
+                        String(rec?.meal_id) === String(meal?.meal_id) &&
+                        normalizeDate(rec?.meal_date) === selectedDate
                     );
 
-                    const foodsDetails = await Promise.all(mealAliments?.map(async (ma: any) => {
+                    // C. Hidrata com detalhes do Alimento (Nome, Calorias)
+                    const foodsDetails = await Promise.all(dailyRecords?.map(async (rec: any) => {
                         try {
-                            const alimRes = await baseGetById('aliments', ma?.aliment_id);
+                            const alimRes = await baseGetById('aliments', rec?.aliment_id);
                             const alim = alimRes?.data || {};
 
-                            const qty = safeNum(ma?.amount);
+                            const qty = safeNum(rec?.amount);
                             const ratio = qty / 100;
                             const cals = safeNum(alim?.calories_100g) * ratio;
 
                             return {
-                                id: ma?.aliment_id,
-                                mealAlimentId: ma?.record_id,
+                                id: rec?.aliment_id,
+                                mealRecordId: rec?.record_id, // ID único do registro
                                 name: alim?.name || "Carregando...",
                                 quantity: qty,
-                                unit: ma?.unit || 'g',
+                                unit: rec?.unit || 'g',
                                 calories: Math.round(cals)
                             } as FoodItem;
                         } catch (e) { return null; }
@@ -112,6 +139,7 @@ export const useSeeCalendar = () => {
 
             const finalGroups = mealsWithFoods?.filter(g => g !== null) as MealGroup[];
 
+            // Ordena refeições por horário
             finalGroups?.sort((a, b) => {
                 if (a?.timeRaw < b?.timeRaw) return -1;
                 if (a?.timeRaw > b?.timeRaw) return 1;
