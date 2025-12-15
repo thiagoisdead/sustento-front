@@ -1,15 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-  SafeAreaView,
-  StatusBar,
-  ActivityIndicator,
-  RefreshControl,
-  Alert,
-  TouchableOpacity
+  StyleSheet, Text, View, ScrollView, SafeAreaView, StatusBar,
+  ActivityIndicator, RefreshControl, Alert, TouchableOpacity
 } from 'react-native';
 import { Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -18,13 +10,8 @@ import { FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-ico
 import { DashboardData, ViewState } from '../../types/dashboard';
 import { MealPlan } from '../../types/meals';
 import { COLORS } from '../../constants/theme';
-
 import { getDashboardData } from '../../services/dashboardService';
-import {
-  getUserMealPlans,
-  switchActivePlan,
-  createNewMealPlan,
-} from '../../services/mealPlanService';
+import { getUserMealPlans, switchActivePlan, createNewMealPlan } from '../../services/mealPlanService';
 
 import { StatCard } from '../../components/statCard';
 import { ActivityChart } from '../../components/activityChart';
@@ -36,43 +23,38 @@ import { usePath } from '../../hooks/usePath';
 
 const getSundayOfWeek = (d: Date) => {
   const date = new Date(d);
-  const day = date.getDay();
-  const diff = date.getDate() - day;
-  return new Date(date.setDate(diff));
+  const day = date?.getDay();
+  const diff = date?.getDate() - day;
+  return new Date(date?.setDate(diff));
 };
 
 const formatDateISO = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const year = date?.getFullYear();
+  const month = String(date?.getMonth() + 1).padStart(2, '0');
+  const day = String(date?.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
 
 export const normalizeWeeklyData = (backendData: any[], referenceDate: Date): DashboardData['weeklyActivity'] => {
   if (!Array.isArray(backendData)) return [];
-
   const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
   const startOfWeek = getSundayOfWeek(referenceDate);
   startOfWeek.setHours(0, 0, 0, 0);
 
-  const fullWeek = Array.from({ length: 7 }).map((_, index) => {
+  return Array.from({ length: 7 }).map((_, index) => {
     const currentDay = new Date(startOfWeek);
-    currentDay.setDate(startOfWeek.getDate() + index);
+    currentDay?.setDate(startOfWeek?.getDate() + index);
     const dateStr = formatDateISO(currentDay);
 
-    const found = backendData.find(d => {
-      return d && typeof d.date === 'string' && d.date.startsWith(dateStr);
-    });
+    const found = backendData?.find(d => d && typeof d?.date === 'string' && d?.date?.startsWith(dateStr));
 
     return {
-      day: daysOfWeek[index],
+      day: daysOfWeek?.[index],
       date: dateStr,
-      current: found ? Number(found.current) || 0 : 0,
-      target: found ? Number(found.target) || 0 : 0,
+      current: found ? Number(found?.current) || 0 : 0,
+      target: found ? Number(found?.target) || 0 : 0,
     };
   });
-
-  return fullWeek as DashboardData['weeklyActivity'];
 };
 
 export default function Dashboard() {
@@ -84,6 +66,7 @@ export default function Dashboard() {
   const [isLoadingData, setIsLoadingData] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [chartDate, setChartDate] = useState(new Date());
 
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [availablePlans, setAvailablePlans] = useState<MealPlan[]>([]);
@@ -92,64 +75,62 @@ export default function Dashboard() {
 
   const changeWeek = (weeks: number) => {
     if (isLoadingData) return;
-    const newDate = new Date(selectedDate);
-    newDate.setDate(newDate.getDate() + (weeks * 7));
-    setSelectedDate(newDate);
+    const newDate = new Date(chartDate);
+    newDate?.setDate(newDate?.getDate() + (weeks * 7));
+    setChartDate(newDate);
   };
 
   const resetToCurrentWeek = () => {
     if (isLoadingData) return;
+    setChartDate(new Date());
     setSelectedDate(new Date());
   };
 
   const getWeekRangeTitle = () => {
-    const start = getSundayOfWeek(selectedDate);
+    const start = getSundayOfWeek(chartDate);
     const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    const fmt = (d: Date) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+    end?.setDate(start?.getDate() + 6);
+    const fmt = (d: Date) => `${String(d?.getDate()).padStart(2, '0')}/${String(d?.getMonth() + 1).padStart(2, '0')}`;
     return `SEMANA DE ${fmt(start)} À ${fmt(end)}`;
   };
 
   const loadInitialData = useCallback(async () => {
     try {
-      if (!refreshing) {
-        setIsLoadingData(true);
-      }
+      if (!refreshing) setIsLoadingData(true);
 
       const plans = await getUserMealPlans();
       setAvailablePlans(plans);
 
-      if (!plans || plans.length === 0) {
+      if (!plans || plans?.length === 0) {
         setViewState('EMPTY');
         return;
       }
 
-      const active = plans.find(p => p.active);
+      const active = plans?.find(p => p?.active);
 
       if (active) {
-        setActivePlanId(active.plan_id);
-        setActivePlanName(active.plan_name);
+        setActivePlanId(active?.plan_id);
+        setActivePlanName(active?.plan_name);
 
-        const startOfWeek = getSundayOfWeek(selectedDate);
+        const startOfWeek = getSundayOfWeek(chartDate);
         const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek?.setDate(startOfWeek?.getDate() + 6);
 
-        // --- PONTO CRÍTICO ---
         const targetDateStr = formatDateISO(selectedDate);
 
         const dashData = await getDashboardData(
           formatDateISO(startOfWeek),
           formatDateISO(endOfWeek),
-          targetDateStr // Passa a data selecionada
+          targetDateStr
         );
 
         if (dashData) {
-          const normalizedActivity = normalizeWeeklyData(dashData.weeklyActivity, selectedDate);
+          const normalizedActivity = normalizeWeeklyData(dashData?.weeklyActivity, chartDate);
 
           const finalData: DashboardData = {
-            stats: dashData.stats as DashboardData['stats'],
+            stats: dashData?.stats as DashboardData['stats'],
             weeklyActivity: normalizedActivity,
-            todayMealsSummary: dashData.todayMealsSummary as DashboardData['todayMealsSummary']
+            todayMealsSummary: dashData?.todayMealsSummary as DashboardData['todayMealsSummary']
           };
 
           setDashboardData(finalData);
@@ -169,7 +150,7 @@ export default function Dashboard() {
       setRefreshing(false);
       setIsLoadingData(false);
     }
-  }, [selectedDate, refreshing]);
+  }, [selectedDate, chartDate, refreshing]);
 
   useFocusEffect(
     useCallback(() => {
@@ -179,18 +160,22 @@ export default function Dashboard() {
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadInitialData();
+    setChartDate(new Date());
+    setSelectedDate(new Date());
+    if (formatDateISO(chartDate) === formatDateISO(new Date())) {
+      loadInitialData();
+    }
   };
 
   const handleSelectPlan = async (plan: MealPlan) => {
-    if (plan.active || plan.plan_id === activePlanId) {
+    if (plan?.active || plan?.plan_id === activePlanId) {
       setViewState('LOADING');
       await loadInitialData();
       return;
     }
     try {
       setViewState('LOADING');
-      await switchActivePlan(plan.plan_id, activePlanId || undefined);
+      await switchActivePlan(plan?.plan_id, activePlanId || undefined);
       await loadInitialData();
     } catch {
       Alert.alert("Erro", "Erro ao ativar plano.");
@@ -234,14 +219,31 @@ export default function Dashboard() {
           <Text style={styles.headerTitle}>Ativar Plano</Text>
           <Text style={styles.subTitle}>Selecione um plano para começar:</Text>
           <View style={{ gap: 10 }}>
-            {availablePlans.map((plan) => (
-              <MealPlanItem key={plan.plan_id} plan={plan} onPress={() => handleSelectPlan(plan)} />
+            {availablePlans?.map((plan) => (
+              <MealPlanItem key={plan?.plan_id} plan={plan} onPress={() => handleSelectPlan(plan)} />
             ))}
           </View>
         </ScrollView>
       </SafeAreaView>
     );
   }
+
+  const { stats } = dashboardData!;
+  const curCal = stats?.calories?.current ?? 0;
+  const tgtCal = stats?.calories?.target ?? 0;
+  const isCalorieOver = tgtCal > 0 && curCal > tgtCal;
+
+  const curProt = stats?.macros?.protein?.current ?? 0;
+  const tgtProt = stats?.macros?.protein?.target ?? 0;
+  const isProtOver = tgtProt > 0 && curProt > tgtProt;
+
+  const curCarb = stats?.macros?.carbs?.current ?? 0;
+  const tgtCarb = stats?.macros?.carbs?.target ?? 0;
+  const isCarbOver = tgtCarb > 0 && curCarb > tgtCarb;
+
+  const curFat = stats?.macros?.fats?.current ?? 0;
+  const tgtFat = stats?.macros?.fats?.target ?? 0;
+  const isFatOver = tgtFat > 0 && curFat > tgtFat;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -260,130 +262,81 @@ export default function Dashboard() {
           </View>
         </View>
 
-        {dashboardData && (() => {
-          const { stats } = dashboardData;
-          const curCal = stats?.calories?.current ?? 0;
-          const tgtCal = stats?.calories?.target ?? 0;
-          const isCalorieOver = tgtCal > 0 && curCal > tgtCal;
+        <View style={{ opacity: isLoadingData ? 0.5 : 1 }}>
 
-          const curProt = stats?.macros?.protein?.current ?? 0;
-          const tgtProt = stats?.macros?.protein?.target ?? 0;
-          const isProtOver = tgtProt > 0 && curProt > tgtProt;
+          <View style={styles.heroSection}>
+            <StatCard
+              label="CALORIAS DIÁRIAS"
+              value={curCal} subValue={tgtCal} unit="kcal"
+              percentage={tgtCal > 0 ? curCal / tgtCal : 0}
+              color={COLORS.accentOrange}
+              icon={<FontAwesome5 name="fire" size={18} color={COLORS.accentOrange} />}
+              style={{ width: '100%' }}
+              valueColor={isCalorieOver ? '#E57373' : COLORS.textDark}
+            />
+          </View>
 
-          const curCarb = stats?.macros?.carbs?.current ?? 0;
-          const tgtCarb = stats?.macros?.carbs?.target ?? 0;
-          const isCarbOver = tgtCarb > 0 && curCarb > tgtCarb;
+          <View style={styles.statsRow}>
+            <StatCard label="PROT" value={curProt} subValue={tgtProt} unit="g" percentage={tgtProt > 0 ? curProt / tgtProt : 0} color={COLORS.primary} icon={<MaterialCommunityIcons name="food-drumstick" size={14} color={COLORS.primary} />} valueColor={isProtOver ? '#E57373' : COLORS.textDark} />
+            <StatCard label="CARB" value={curCarb} subValue={tgtCarb} unit="g" percentage={tgtCarb > 0 ? curCarb / tgtCarb : 0} color={COLORS.accentBlue} icon={<MaterialCommunityIcons name="barley" size={14} color={COLORS.accentBlue} />} valueColor={isCarbOver ? '#E57373' : COLORS.textDark} />
+            <StatCard label="GORD" value={curFat} subValue={tgtFat} unit="g" percentage={tgtFat > 0 ? curFat / tgtFat : 0} color="#E6B800" icon={<MaterialCommunityIcons name="oil" size={14} color="#E6B800" />} valueColor={isFatOver ? '#E57373' : COLORS.textDark} />
+          </View>
 
-          const curFat = stats?.macros?.fats?.current ?? 0;
-          const tgtFat = stats?.macros?.fats?.target ?? 0;
-          const isFatOver = tgtFat > 0 && curFat > tgtFat;
-
-          return (
-            <View style={{ opacity: isLoadingData ? 0.5 : 1 }}>
-              <View style={styles.heroSection}>
-                <StatCard
-                  label="CALORIAS DIÁRIAS"
-                  value={curCal}
-                  subValue={tgtCal}
-                  unit="kcal"
-                  percentage={tgtCal > 0 ? curCal / tgtCal : 0}
-                  color={COLORS.accentOrange}
-                  icon={<FontAwesome5 name="fire" size={18} color={COLORS.accentOrange} />}
-                  style={{ width: '100%' }}
-                  valueColor={isCalorieOver ? '#E57373' : COLORS.textDark}
-                />
-              </View>
-
-              <View style={styles.statsRow}>
-                <StatCard
-                  label="PROT"
-                  value={curProt}
-                  subValue={tgtProt}
-                  unit="g"
-                  percentage={tgtProt > 0 ? curProt / tgtProt : 0}
-                  color={COLORS.primary}
-                  icon={<MaterialCommunityIcons name="food-drumstick" size={14} color={COLORS.primary} />}
-                  valueColor={isProtOver ? '#E57373' : COLORS.textDark}
-                />
-                <StatCard
-                  label="CARB"
-                  value={curCarb}
-                  subValue={tgtCarb}
-                  unit="g"
-                  percentage={tgtCarb > 0 ? curCarb / tgtCarb : 0}
-                  color={COLORS.accentBlue}
-                  icon={<MaterialCommunityIcons name="barley" size={14} color={COLORS.accentBlue} />}
-                  valueColor={isCarbOver ? '#E57373' : COLORS.textDark}
-                />
-                <StatCard
-                  label="GORD"
-                  value={curFat}
-                  subValue={tgtFat}
-                  unit="g"
-                  percentage={tgtFat > 0 ? curFat / tgtFat : 0}
-                  color="#E6B800"
-                  icon={<MaterialCommunityIcons name="oil" size={14} color="#E6B800" />}
-                  valueColor={isFatOver ? '#E57373' : COLORS.textDark}
-                />
-              </View>
-
-              <View style={styles.card}>
-                <View style={styles.chartHeaderContainer}>
-                  <View style={styles.decorativeBar} />
-                  <View style={styles.weekNavigation}>
-                    <TouchableOpacity onPress={() => changeWeek(-1)} style={styles.navArrow} disabled={isLoadingData}>
-                      <Ionicons name="chevron-back" size={20} color={isLoadingData ? '#CCC' : COLORS.textLight} />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={resetToCurrentWeek} disabled={isLoadingData}>
-                      <Text style={styles.cardTitle}>{isLoadingData ? "CARREGANDO..." : getWeekRangeTitle()}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => changeWeek(1)} style={styles.navArrow} disabled={isLoadingData}>
-                      <Ionicons name="chevron-forward" size={20} color={isLoadingData ? '#CCC' : COLORS.textLight} />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-                <ActivityChart data={dashboardData.weeklyActivity || []} />
-              </View>
-
-              <View style={styles.card}>
-                <View style={styles.cardHeader}>
-                  <View style={styles.decorativeBar} />
-                  <Text style={styles.cardTitle}>RESUMO DO DIA</Text>
-                </View>
-                <View style={styles.fullWidthList}>
-                  {(!dashboardData.todayMealsSummary || dashboardData.todayMealsSummary.length === 0) ? (
-                    <Text style={{ textAlign: 'center', color: '#999', padding: 10 }}>Nenhuma refeição planejada para hoje.</Text>
-                  ) : (
-                    dashboardData.todayMealsSummary.map((mealGroup, index) => (
-                      <View key={index} style={styles.mealGroupContainer}>
-                        <View style={styles.mealHeader}>
-                          <IconPill icon={<MaterialCommunityIcons name="silverware-variant" size={14} color={COLORS.primary} />} />
-                          <Text style={styles.listLabel}>{mealGroup.meal_name}</Text>
-                        </View>
-                        <View style={styles.foodListContainer}>
-                          {mealGroup.foods.length === 0 ? (
-                            <Text style={styles.emptyFoodText}>— Vazio —</Text>
-                          ) : (
-                            mealGroup.foods.map((food, fIndex) => (
-                              <View key={fIndex} style={styles.foodRow}>
-                                <Text style={styles.foodName}>
-                                  • {food.name} <Text style={styles.foodAmount}>- {food.amount}{food.unit || 'g'}</Text>
-                                </Text>
-                                <Text style={styles.foodMacros}>
-                                  ({food.protein}P / {food.carbs}C / {food.fat}G) - {food.calories}kcal
-                                </Text>
-                              </View>
-                            ))
-                          )}
-                        </View>
-                      </View>
-                    ))
-                  )}
-                </View>
+          <View style={styles.card}>
+            <View style={styles.chartHeaderContainer}>
+              <View style={styles.decorativeBar} />
+              <View style={styles.weekNavigation}>
+                <TouchableOpacity onPress={() => changeWeek(-1)} style={styles.navArrow} disabled={isLoadingData}>
+                  <Ionicons name="chevron-back" size={20} color={isLoadingData ? '#CCC' : COLORS.textLight} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={resetToCurrentWeek} disabled={isLoadingData}>
+                  <Text style={styles.cardTitle}>{isLoadingData ? "CARREGANDO..." : getWeekRangeTitle()}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => changeWeek(1)} style={styles.navArrow} disabled={isLoadingData}>
+                  <Ionicons name="chevron-forward" size={20} color={isLoadingData ? '#CCC' : COLORS.textLight} />
+                </TouchableOpacity>
               </View>
             </View>
-          );
-        })()}
+            <ActivityChart data={dashboardData?.weeklyActivity || []} />
+          </View>
+
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <View style={styles.decorativeBar} />
+              <Text style={styles.cardTitle}>RESUMO DE HOJE</Text>
+            </View>
+            <View style={styles.fullWidthList}>
+              {(!dashboardData?.todayMealsSummary || dashboardData?.todayMealsSummary?.length === 0) ? (
+                <Text style={{ textAlign: 'center', color: '#999', padding: 10 }}>Nenhuma refeição planejada para hoje.</Text>
+              ) : (
+                dashboardData?.todayMealsSummary?.map((mealGroup, index) => (
+                  <View key={index} style={styles.mealGroupContainer}>
+                    <View style={styles.mealHeader}>
+                      <IconPill icon={<MaterialCommunityIcons name="silverware-variant" size={14} color={COLORS.primary} />} />
+                      <Text style={styles.listLabel}>{mealGroup?.meal_name}</Text>
+                    </View>
+                    <View style={styles.foodListContainer}>
+                      {mealGroup?.foods?.length === 0 ? (
+                        <Text style={styles.emptyFoodText}>— Vazio —</Text>
+                      ) : (
+                        mealGroup?.foods?.map((food, fIndex) => (
+                          <View key={fIndex} style={styles.foodRow}>
+                            <Text style={styles.foodName}>
+                              • {food?.name} <Text style={styles.foodAmount}>- {food?.amount}{food?.unit || 'g'}</Text>
+                            </Text>
+                            <Text style={styles.foodMacros}>
+                              ({food?.protein}P / {food?.carbs}C / {food?.fat}G) - {food?.calories}kcal
+                            </Text>
+                          </View>
+                        ))
+                      )}
+                    </View>
+                  </View>
+                ))
+              )}
+            </View>
+          </View>
+        </View>
       </ScrollView>
       <CreatePlanModal visible={isCreateModalVisible} onClose={() => setCreateModalVisible(false)} onSubmit={handleCreatePlanSubmit} />
     </SafeAreaView>
@@ -412,12 +365,9 @@ const styles = StyleSheet.create({
   decorativeBar: { width: 4, height: 18, backgroundColor: COLORS.primary, borderRadius: 2, marginRight: 10 },
   cardTitle: { fontSize: 13, fontWeight: '800', color: COLORS.textDark, textTransform: 'uppercase' },
   fullWidthList: { width: '100%' },
-  listItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, borderBottomWidth: 1, borderBottomColor: '#F5F5F5', paddingBottom: 10 },
-  listTextWrapper: { flex: 1 },
-  listLabel: { fontSize: 10, color: COLORS.textLight, marginBottom: 2, textTransform: 'uppercase' },
-  listValue: { fontSize: 14, fontWeight: '700', color: COLORS.textDark },
   mealGroupContainer: { marginBottom: 16, borderBottomWidth: 1, borderBottomColor: '#F0F0F0', paddingBottom: 12 },
   mealHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 8 },
+  listLabel: { fontSize: 10, color: COLORS.textLight, marginBottom: 2, textTransform: 'uppercase' },
   foodListContainer: { paddingLeft: 34 },
   foodRow: { marginBottom: 4 },
   foodName: { fontSize: 14, fontWeight: '600', color: COLORS.textDark },
