@@ -1,7 +1,7 @@
 import { z } from "zod";
 import React from "react";
 
-// --- Schema Definitions ---
+// --- Event Schema (Existente) ---
 export const eventSchema = z.object({
     id: z.number(),
     calendarDate: z.string(),
@@ -9,13 +9,32 @@ export const eventSchema = z.object({
     description: z.string(),
 });
 
-// Since RemoveButtonProps contains React specific types (React.Dispatch), 
-// it's usually better to keep it as a TS type or interface, as Zod doesn't validate functions/React types at runtime well.
-// However, if you really want to zod-ify the 'id', you can mix them.
+// --- FoodItem Schema ---
+export const foodItemSchema = z.object({
+    id: z.number(),
+    name: z.string(),
+    calories: z.number(), // Se puder vir string da API, use z.coerce.number()
+    quantity: z.number(),
+    unit: z.string(),
+    mealAlimentId: z.number(),
+});
 
-// --- Type Inferences ---
+// --- MealGroup Schema ---
+export const mealGroupSchema = z.object({
+    meal_id: z.number(),
+    meal_name: z.string(),
+    timeRaw: z.string(),
+    displayTime: z.string(),
+    foods: z.array(foodItemSchema), // Array de FoodItem
+    totalCalories: z.number(),
+});
+
+// --- Inferred Types (Gera os types automaticamente) ---
 export type Event = z.infer<typeof eventSchema>;
+export type FoodItem = z.infer<typeof foodItemSchema>;
+export type MealGroup = z.infer<typeof mealGroupSchema>;
 
+// --- React Specific Types ---
 export type RemoveButtonProps = {
     id: number;
     setEvents: React.Dispatch<React.SetStateAction<Event[]>>;
