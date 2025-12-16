@@ -108,33 +108,37 @@ export default function MealsHome() {
   };
 
   const handleAddFood = async () => {
-    const quantity = Number(selectedMeal?.quantity?.toString().replace(/\D/g, ''));
+    const quantityFood = Number(selectedMeal?.quantity?.toString().replace(/\D/g, ''));
 
     if (!selectedMeal) return Alert.alert('Erro', 'Selecione um alimento.');
-    if (!quantity || quantity <= 0) return Alert.alert('Erro', 'Insira uma quantidade válida.');
+    if (!quantityFood || quantityFood <= 0) return Alert.alert('Erro', 'Insira uma quantidade válida.');
     if (!planId) return Alert.alert('Erro', 'Plano alimentar não encontrado.');
     if (!selectedMealId) return Alert.alert('Erro', 'Selecione uma refeição.');
 
     setDialogVisible(false);
     setSelectedMeal(null);
 
-    const random2 = Math.floor(Math.random() * 100);
-
-    const payload = {
-      quantity: quantity,
+    const innerPayload = {
+      quantity: quantityFood,
       measurement_unit: selectedUnit?.toString().toUpperCase(),
       meal_id: Number(selectedMealId),
-      // aliment_id: Number(selectedMeal?.id)
-      aliment_id: random2 // USANDO ID ALEATÓRIO POR ENQUANTO
+      aliment_id: Number(selectedMeal?.id)
     }
-    console.log('Payload para criar mealAliments:', payload);
 
+    const { nova_group, quantity, ...rest } = selectedMeal;
+
+    const superPayload = {
+      alimentData: { nova_group: 1, ...rest },
+      ...innerPayload
+
+    }
     try {
-      const req = await basePost('mealAliments', payload)
+      const req = await basePost('mealAliments', superPayload)
       console.log('Sucesso no post de alimentos pra uma refeição:', req?.data);
       await addToRecents({ ...selectedMeal, quantity: null });
     } catch (error) {
-      Alert.alert("Erro", "Falha ao registrar refeição");
+      console.log('error', error, error?.message)
+      Alert.alert("Erro", "Falha ao registrar refeição", error?.message);
     }
   }
 

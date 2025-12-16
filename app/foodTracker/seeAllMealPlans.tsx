@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react"
-import { ScrollView, StyleSheet, View, Alert } from "react-native"
+import { ScrollView, StyleSheet, View, Alert, ActivityIndicator } from "react-native" // Adicionado ActivityIndicator
 import { Text, Dialog, Portal, Button } from "react-native-paper"
 import { useRouter } from "expo-router"
 
 // Services & Components
-import { baseUniqueGet, baseDelete } from "../../services/baseCall" // Certifique-se de importar ou criar baseDelete
+import { baseUniqueGet, baseDelete } from "../../services/baseCall"
 import { COLORS } from "../../constants/theme"
 import { MealPlanCard } from "../../components/mealPlan/mealPlan"
 import { MealPlan } from "../../types/meal"
@@ -14,6 +14,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons"
 
 export default function SeeAllMealPlans() {
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([])
+  const [isLoading, setIsLoading] = useState(true); // Começa true para evitar o susto
 
   // States para Criar Plano
   const [createDialogVisible, setCreateDialogVisible] = useState(false);
@@ -25,10 +26,16 @@ export default function SeeAllMealPlans() {
   const router = useRouter()
 
   const fetchMealPlans = async () => {
-    const req = await baseUniqueGet('users/mealplans')
-
-    console.log('mealplansqweq', req?.data)
-    setMealPlans(req?.data || [])
+    try {
+      setIsLoading(true); // Garante que carrega ao atualizar
+      const req = await baseUniqueGet('users/mealplans');
+      console.log('mealplansqweq', req?.data);
+      setMealPlans(req?.data || []);
+    } catch (error) {
+      console.error("Erro ao buscar planos", error);
+    } finally {
+      setIsLoading(false); // Para o loading independente de erro ou sucesso
+    }
   }
 
   useEffect(() => {
@@ -67,13 +74,17 @@ export default function SeeAllMealPlans() {
     <View style={styles.mainView}>
       <View style={styles.mainTitle}>
         <Text style={styles.mainText}>
-
           Todos os planos alimentares
         </Text>
       </View>
 
-      {mealPlans.length > 0 ? (
-
+      {/* LÓGICA DE RENDERIZAÇÃO: Carregando -> Lista -> Vazio */}
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={{ marginTop: 10, color: COLORS.textLight }}>Buscando planos...</Text>
+        </View>
+      ) : mealPlans.length > 0 ? (
         <View style={{ flex: 1 }}>
           <ScrollView style={styles.cardsContainer} contentContainerStyle={styles.contentContainer}>
             {mealPlans?.map((plan: MealPlan) => (
@@ -94,8 +105,8 @@ export default function SeeAllMealPlans() {
           <Text style={styles.emptyText}>
             Você ainda não possui nenhum plano alimentar. Crie um agora para começar a acompanhar sua dieta.
           </Text>
-        </View>)}
-
+        </View>
+      )}
 
       <View style={styles.createMealPlan}>
         <BaseButton onPress={() => setCreateDialogVisible(true)} text="Criar novo plano alimentar" />
@@ -154,6 +165,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   mainText: { fontSize: 26, fontWeight: '800', color: COLORS.textDark, textAlign: 'center', marginBottom: 5, marginTop: 10 },
+  
+  // Novo estilo para o container de loading
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
   cardsContainer: {
     paddingHorizontal: 16,
     width: '100%',

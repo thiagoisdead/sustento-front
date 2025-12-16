@@ -46,13 +46,13 @@ export default function NewPasswordScreen() {
   };
 
   // Bloqueia se não tiver token (segurança extra visual)
-  useEffect(() => {
-    if (!token) {
-      Alert.alert("Erro", "Link inválido ou expirado.", [
-        { text: "Voltar ao Login", onPress: () => handlePath('/auth/login') }
-      ]);
-    }
-  }, [token]);
+  // useEffect(() => {
+  //   if (!token) {
+  //     Alert.alert("Erro", "Link inválido ou expirado.", [
+  //       { text: "Voltar ao Login", onPress: () => handlePath('/auth/login') }
+  //     ]);
+  //   }
+  // }, [token]);
 
   if (!fontsLoaded) return null;
 

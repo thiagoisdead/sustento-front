@@ -150,16 +150,16 @@ export default function EditProfile() {
                 }
             });
 
-            console.log("➡️ Payload final:", changedData);
 
             if (Object.keys(changedData).length > 0) {
-                console.log('changedData', changedData);
 
                 if ((changedData.height && !changedData.weight) || changedData.weight && !changedData.height) {
                     return Alert.alert("Atenção", "Para calcular o IMC, altura e peso devem ser preenchidos juntos.");
                 }
                 const res = await basePutUnique(`/users`, changedData);
-                console.log("update:", res?.data);
+                if (res?.status !== 200 && res?.status !== 201) {
+                    return Alert.alert("Erro", "Não foi possível salvar as alterações.");
+                }
             }
             if (restrictionsChanged) {
                 await syncUserRestrictions(

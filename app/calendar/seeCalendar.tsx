@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   scrollViewDesktop: { maxWidth: 800, alignSelf: "center", width: "100%" },
   container: { padding: 16, paddingTop: 40 },
   headerTitle: { fontSize: 22, fontWeight: '800', color: COLORS.textDark, textAlign: 'center', marginBottom: 15 },
-  calendarCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 10, marginBottom: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  calendarCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 10, marginBottom: 20, marginTop: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   dateLabel: { fontSize: 18, fontWeight: '600', color: COLORS.textDark, marginBottom: 15, textTransform: 'capitalize', marginLeft: 4 },
 
   mealSection: { backgroundColor: '#FFF', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#F5F5F5' },

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, useWindowDimensions } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, useWindowDimensions, Alert } from "react-native";
 
 import { COLORS } from "../../constants/theme";
 import { BREAKPOINTS } from "../../constants/breakpoints";
@@ -13,6 +13,7 @@ import { usePath } from "../../hooks/usePath";
 import { useLocalSearchParams } from "expo-router";
 import { Header } from "../../components/profile/profileHeader";
 import MealPlanModal from "../../components/mealPlan/createMealPlanModal";
+import { getItem } from "../../services/secureStore";
 
 // Interface para Alimento dentro da Refeição (ajuste conforme API)
 interface FoodItem {
@@ -37,20 +38,27 @@ export default function SeeFoodTracker() {
   const { planId } = useLocalSearchParams();
   const isMobile = width < BREAKPOINTS.MOBILE;
 
+  interface CheckedFoodRecord {
+    mealId: number;
+    foodId: number;        // meal_aliment_id
+    recordId: number;      // vindo do backend
+  }
+
   const [modalAddMealVisible, setModalAddMealVisible] = useState(false);
   const [createDialogVisible, setCreateDialogVisible] = useState(false);
   const [editDialogVisible, setEditDialogVisible] = useState(false);
+  const [checkedFoodRecords, setCheckedFoodRecords] = useState<CheckedFoodRecord[]>([]);
 
   const handlePath = usePath();
 
   const [haveMealPlans, setHaveMealPlans] = useState(false);
   const [mealPlanData, setMealPlanData] = useState<MealPlan>();
-  const [meals, setMeals] = useState<MealWithFoods[]>([]); 
+  const [meals, setMeals] = useState<MealWithFoods[]>([]);
 
   const handleAddMeal = async (meal: any) => {
     try {
       const req = await basePost('meals', meal);
-      console.log('Meal created:', req?.data);
+      if (req?.status !== 200 && req?.status !== 201) return Alert.alert("Erro", "Não foi possível criar a refeição.");
       fetchMealsFromMealPlan();
     } catch (error) {
       console.error("Erro ao criar refeição", error);
@@ -58,12 +66,9 @@ export default function SeeFoodTracker() {
   };
 
   const handleDeleteMeal = async (id: number) => {
-
-
-    console.log('Deleting meal with id:', id, typeof (id));
     const req = await baseDeleteById(`meals/${Number(id)}`);
 
-    console.log('Delete meal response:', req.status);
+
     setMeals(prev => prev.filter((meal) => meal.id !== id));
   };
 
@@ -82,9 +87,8 @@ export default function SeeFoodTracker() {
 
   const handleDeleteFood = async (mealId: number, mealAlimentId: number) => {
     try {
-      console.log(`Deletando alimento ${mealAlimentId} da refeição ${mealId}`);
+      const res = await baseDeleteById(`mealAliments/${mealAlimentId}`);
 
-      await baseDeleteById(`mealAliments/${mealAlimentId}`);
 
       setMeals((prevMeals) =>
         prevMeals.map((meal) => {
@@ -114,6 +118,77 @@ export default function SeeFoodTracker() {
     }
   };
 
+  const handleToggleFood = async (
+    mealId: number,
+    foodId: number,
+    food: any
+  ) => {
+    const userId = await getItem('id');
+
+    const existing = checkedFoodRecords.find(
+      r => r.mealId === mealId && r.foodId === foodId
+    );
+
+    if (existing) {
+      try {
+        const res = await baseDeleteById(`mealRecords/${existing.recordId}`);
+        if (res?.status !== 200 && res?.status !== 201) return Alert.alert("Erro", "Não foi possível remover o registro.");
+        setCheckedFoodRecords(prev =>
+          prev.filter(r => r.recordId !== existing.recordId)
+        );
+      } catch (err) {
+        Alert.alert("Erro", "Não foi possível remover o registro.");
+      }
+      return;
+    }
+
+    const now = new Date();
+
+    const formatMealDate = (date: Date) => {
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    };
+
+    const formatMealMoment = (date: Date) => {
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+      return `${hours}:${minutes}:${seconds}`;
+    };
+
+    try {
+      const payload = {
+        user_id: Number(userId),
+        meal_id: mealId,
+        aliment_id: food.id,
+        amount: food.quantity,
+        unit: food.unit,
+        meal_date: formatMealDate(now),
+        meal_moment: formatMealMoment(now),
+      };
+
+      const req = await basePost('mealRecords', payload);
+
+      if (!req?.data?.record_id) {
+        throw new Error("record_id não retornado");
+      }
+
+      setCheckedFoodRecords(prev => [
+        ...prev,
+        {
+          mealId,
+          foodId,
+          recordId: req.data.record_id,
+        },
+      ]);
+    } catch (err) {
+      Alert.alert("Erro", "Não foi possível registrar o alimento.");
+    }
+  };
+
+
   const fetchMealsFromMealPlan = useCallback(async () => {
     if (!planId) return;
 
@@ -125,7 +200,6 @@ export default function SeeFoodTracker() {
     }
 
     const rawMeals = Array.isArray(response.data) ? response.data : [response.data];
-
     const mappedMeals: MealWithFoods[] = rawMeals.map((item: any) => ({
       id: item.meal_id,
       name: item.meal_name,
@@ -136,9 +210,8 @@ export default function SeeFoodTracker() {
 
     let allRelations: any[] = [];
     try {
-      const rq = await baseFetch(`mealAliments`);
-      allRelations = rq?.data || [];
-      console.log('Lista de Relações (IDs) carregada:', allRelations.length);
+      const req = await baseFetch(`mealAliments`);
+      allRelations = req?.data || [];
     } catch (err) {
       console.log('Erro ao buscar relações', err);
     }
@@ -160,8 +233,7 @@ export default function SeeFoodTracker() {
 
           const finalMealAlimentId = match ? match.meal_aliment_id : (item.meal_aliment_id || 0);
 
-          if (!match) console.log(`AVISO: Não achei ID para apagar o alimento ${alimentData.name} na ref ${meal.id}`);
-
+          if (!match)
           return {
             id: alimentId,
             meal_aliment_id: finalMealAlimentId,
@@ -197,7 +269,6 @@ export default function SeeFoodTracker() {
           proteins: totalProteins,
         };
       } catch (error) {
-        console.log(`Erro ao buscar alimentos para refeição ${meal.id}`, error);
         return meal;
       }
     }));
@@ -205,10 +276,47 @@ export default function SeeFoodTracker() {
     setMeals(mealsWithFoods);
   }, [planId]);
 
+  const fetchRecordsForMeals = useCallback(async (currentMeals: MealWithFoods[]) => {
+    if (!currentMeals || currentMeals.length === 0) return;
+
+    // 1. Pega apenas os IDs únicos das refeições para não repetir requisição
+    const uniqueMealIds = Array.from(new Set(currentMeals.map(m => m.id)));
+
+    try {
+      const responses = await Promise.all(
+        uniqueMealIds.map(id => baseFetch(`mealRecords/meal/${id}`))
+      );
+
+      const allRecords: CheckedFoodRecord[] = [];
+
+      responses.forEach((res) => {
+        if (res && Array.isArray(res.data)) {
+          const mapped = res.data.map((rec: any) => ({
+            mealId: rec.meal_id,
+            foodId: rec.aliment_id,
+            recordId: rec.record_id
+          }));
+          allRecords.push(...mapped);
+        }
+      });
+
+      setCheckedFoodRecords(allRecords);
+
+    } catch (error) {
+      console.error("Erro ao buscar registros das refeições:", error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchMealPlan();
     fetchMealsFromMealPlan();
   }, [fetchMealPlan, fetchMealsFromMealPlan]);
+
+  useEffect(() => {
+    if (meals.length > 0) {
+      fetchRecordsForMeals(meals);
+    }
+  }, [meals, fetchRecordsForMeals]);
 
   const groupedMeals = meals.reduce((acc: Record<string, MealWithFoods[]>, meal) => {
     const cat = meal?.category || "Outros";
@@ -253,6 +361,8 @@ export default function SeeFoodTracker() {
                   meal={meal}
                   onDelete={handleDeleteMeal}
                   onDeleteFood={handleDeleteFood}
+                  checkedFoodRecords={checkedFoodRecords}
+                  onToggleFood={handleToggleFood}
                 />
               ))}
             </View>

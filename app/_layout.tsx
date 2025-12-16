@@ -2,7 +2,7 @@ import { Stack, usePathname, useRouter } from "expo-router";
 import { PaperProvider, DefaultTheme } from "react-native-paper";
 import NavBar from "../components/navbar";
 import { View } from "react-native";
-import { use, useEffect } from "react";
+import { useEffect } from "react";
 import { baseValidate } from "../services/baseCall";
 import { getItem } from "../services/secureStore";
 import { usePath } from "../hooks/usePath";
@@ -24,17 +24,17 @@ export default function RootLayout() {
       if (!token) return;
       try {
         const verifyToken = await baseValidate(handlePath)
-        if (!verifyToken.valid && !hideNavBar.includes(pathname)){
+        if (!verifyToken.valid && !hideNavBar.includes(pathname)) {
           console.log('token inválido, redirecionando para auth')
           return router.replace('/auth')
-        } 
+        }
       }
       catch (err) {
         console.log('qual erro:', err)
       }
     }
     fetchData()
-  }, [pathname])
+  }, [])
 
 
   const theme = {
