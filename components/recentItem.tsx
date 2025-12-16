@@ -1,9 +1,7 @@
-import React from 'react';
 import { Pressable, View, Text, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 import { Foods } from '../types/data';
-import { SERVING_LABELS } from '../constants/food';
 
 interface RecentItemProps {
     item: Foods;

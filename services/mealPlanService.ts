@@ -54,7 +54,6 @@ export const switchActivePlan = async (newPlanId: number, currentActiveId?: numb
     }
 };
 
-// --- Criar Plano ---
 export const createNewMealPlan = async (name: string, source: 'AUTOMATIC' | 'MANUAL' = 'AUTOMATIC') => {
     const userIdStr = await getItem('id');
     if (!userIdStr) throw new Error("Usuário não logado");
@@ -66,12 +65,9 @@ export const createNewMealPlan = async (name: string, source: 'AUTOMATIC' | 'MAN
         user_id: Number(userIdStr)
     };
 
-    console.log("Criando Plano:", payload);
     return await basePost(ROUTE, payload);
 };
 
-// Deletar Plano
 export const deleteMealPlan = async (planId: number) => {
-    // Concatena o ID na rota: "mealPlans/1"
     return await baseDelete(`${ROUTE}/${planId}`);
 };

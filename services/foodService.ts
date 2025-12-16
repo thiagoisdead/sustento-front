@@ -115,25 +115,15 @@ export const deleteMealCategory = async (mealId: number) => {
 // Força o Delete da Categoria (Lógica Faxineira)
 export const forceDeleteMealCategory = async (mealId: number) => {
     try {
-        console.log(`🧹 Iniciando faxina da categoria ${mealId}...`);
 
-        // 1. Busca TODOS os registros do sistema (sem filtro de user/data)
         const response = await baseFetch('mealRecords');
         const allRecords = Array.isArray(response?.data) ? response.data : [];
-
-        // 2. Acha os culpados (registros com este mealId)
         const recordsToDelete = allRecords.filter((r: any) => r.meal_id == mealId);
-
-        console.log(`🗑️ Encontrados ${recordsToDelete.length} registros filhos para apagar.`);
-
-        // 3. Apaga filhos (usando a função que já temos)
         const deletePromises = recordsToDelete.map((r: any) =>
             deleteMealRecord(r.record_id)
         );
         await Promise.all(deletePromises);
 
-        // 4. Apaga o Pai
-        console.log("✅ Filhos apagados. Deletando categoria...");
         return await deleteMealCategory(mealId);
 
     } catch (error: any) {

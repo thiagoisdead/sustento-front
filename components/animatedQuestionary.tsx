@@ -15,13 +15,14 @@ import { usePath } from "../hooks/usePath";
 import { ActivityLvlLabels, GenderLabels, ObjectiveLabels } from "../enum/profileEnum";
 import { restrictionOptions } from "../constants/editProfileConfig";
 import { syncUserRestrictions } from "../utils/profileHelper";
+import { removeItem } from "../services/secureStore";
 
 const { width } = Dimensions.get("window");
 
 export default function QuestionaryScreen() {
   const [step, setStep] = useState(0);
-  const [isProcessing, setIsProcessing] = useState(false); 
-  
+  const [isProcessing, setIsProcessing] = useState(false);
+
   const [data, setData] = useState({
     gender: "",
     objective: "",
@@ -38,7 +39,7 @@ export default function QuestionaryScreen() {
   const runAnimation = () => {
     opacity.setValue(0);
     translateY.setValue(-20);
-    
+
     Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
@@ -72,7 +73,16 @@ export default function QuestionaryScreen() {
         console.error("Erro ao popular restrições", error);
       }
     };
+    const fetchInitialData = async () => {
+      const res = await baseFetch("aliments");
+
+      if (res!.data.length === 0) {
+        await removeItem('token')
+        return handlePath('/auth')
+      }
+    };
     fetchRestrictions();
+    fetchInitialData()
   }, []);
 
   const questions = [
@@ -120,7 +130,7 @@ export default function QuestionaryScreen() {
   };
 
   const handleNext = async () => {
-    if (loading || isProcessing) return; 
+    if (loading || isProcessing) return;
 
     if (!canProceed()) {
       Alert.alert("Ops!", "Por favor, selecione uma opção antes de continuar.");
@@ -130,55 +140,55 @@ export default function QuestionaryScreen() {
     setIsProcessing(true); // Trava UI
 
     try {
-        if (step < questions.length - 1) {
-            setStep(step + 1);
-            setTimeout(() => setIsProcessing(false), 300); 
-        } else {
-            // LÓGICA FINAL
-            if (!data.gender || !data.objective || !data.activity_lvl) {
-                Alert.alert("Atenção", "Responda todas as perguntas obrigatórias.");
-                setIsProcessing(false);
-                return;
-            }
-
-            const mergedData = { ...(userData || {}), ...data };
-            const { user_id, restrictions, ...payload } = mergedData;
-
-            const response = await basePutUnique("users", payload);
-
-            if (response && response.status === 200) {
-                if (restrictions && restrictions.length > 0) {
-                    await syncUserRestrictions(
-                        Number(user_id),
-                        restrictions,
-                        userData?.restrictions || []
-                    );
-                }
-                
-                Alert.alert("Sucesso", "Dados salvos!");
-                
-                handlePath('/profile/seeProfile'); 
-            } else {
-                Alert.alert("Erro", "Falha ao salvar dados.");
-                setIsProcessing(false);
-            }
+      if (step < questions.length - 1) {
+        setStep(step + 1);
+        setTimeout(() => setIsProcessing(false), 300);
+      } else {
+        // LÓGICA FINAL
+        if (!data.gender || !data.objective || !data.activity_lvl) {
+          Alert.alert("Atenção", "Responda todas as perguntas obrigatórias.");
+          setIsProcessing(false);
+          return;
         }
+
+        const mergedData = { ...(userData || {}), ...data };
+        const { user_id, restrictions, ...payload } = mergedData;
+
+        const response = await basePutUnique("users", payload);
+
+        if (response && response.status === 200) {
+          if (restrictions && restrictions.length > 0) {
+            await syncUserRestrictions(
+              Number(user_id),
+              restrictions,
+              userData?.restrictions || []
+            );
+          }
+
+          Alert.alert("Sucesso", "Dados salvos!");
+
+          handlePath('/profile/seeProfile');
+        } else {
+          Alert.alert("Erro", "Falha ao salvar dados.");
+          setIsProcessing(false);
+        }
+      }
     } catch (error) {
-        console.error("Erro no fluxo do questionário:", error);
-        setIsProcessing(false);
+      console.error("Erro no fluxo do questionário:", error);
+      setIsProcessing(false);
     }
   };
 
   const handleBack = () => {
     if (isProcessing) return;
     if (step > 0) {
-        setStep(step - 1);
+      setStep(step - 1);
     }
   };
 
   const renderPicker = () => {
     const safeValue = data[current.key as keyof Omit<typeof data, 'restrictions'>] || "";
-    
+
     return (
       <View style={styles.pickerWrapper}>
         <Picker
@@ -250,8 +260,8 @@ export default function QuestionaryScreen() {
             <Text style={styles.buttonText}>Voltar</Text>
           </Pressable>
 
-          <Pressable 
-            style={[styles.button, isProcessing && { opacity: 0.7 }]} 
+          <Pressable
+            style={[styles.button, isProcessing && { opacity: 0.7 }]}
             onPress={handleNext}
             disabled={isProcessing}
           >
@@ -296,7 +306,7 @@ const styles = StyleSheet.create({
     borderColor: "#BDBDBD",
     borderRadius: 8,
     marginBottom: 30,
-    height: 55, 
+    height: 55,
     justifyContent: 'center'
   },
   picker: {

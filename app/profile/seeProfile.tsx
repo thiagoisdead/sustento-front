@@ -39,15 +39,10 @@ export default function SeeProfile() {
   });
 
   const fetchData = async () => {
-
-    const token = await getItem('token');
-    const id = await getItem('id');
-    console.log('oiwrw', token, id)
     try {
       const response = await baseUniqueGet('users');
       if (response) {
         const rawData = { ...response.data };
-        // Ensure age is string for display logic
         rawData.age = rawData.age !== null && rawData.age !== undefined ? String(rawData.age) : "";
         setUserData(rawData);
       }

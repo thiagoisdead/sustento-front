@@ -39,7 +39,7 @@ export async function baseFetch(route: string) {
       headers: { Authorization: `Bearer ${token}` }
     });
 
-    console.log('data', result?.data)
+    console.log('datass', result?.data)
     if (result.status === 200 || result.status === 201) return result;
   } catch (err: any) {
     console.log('Erro no GET:', err.message);
@@ -60,7 +60,7 @@ export async function baseUniqueGet(route: string) {
     });
     return fetchData;
   } catch (err: any) {
-    console.log("Erro no GET Unique:", err.message);
+    console.log(`Erro no GET Unique com o id ${id} e a url ${cleanUrl(`${route}/${id}`)}`, err.message);
   }
 }
 
@@ -84,8 +84,6 @@ export async function basePutUnique(route: string, data: any) {
   const id = await getItem('id');
   try {
     const url = cleanUrl(`${route}/${id}`);
-    console.log('data', data, typeof (data?.weight));
-    console.log('token, id, url', token, id, url);
     const putData = await axios.put(url, data, {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -184,8 +182,6 @@ export async function basePutById(route: string, id: number, data: any) {
   const token = await getItem('token');
   try {
     const url = cleanUrl(`${route}/${id}`);
-    console.log(`PUT By ID: ${url}`, data);
-
     const result = await axios.put(url, data, {
       headers: { Authorization: `Bearer ${token}` }
     });
