@@ -5,10 +5,10 @@ export const mealSchema = z.object({
     id: z.number(),
     name: z.string(),
     calories: z.number(),
-    // Uncomment and use these if you need macros later:
-    // protein: z.number(),
-    // carbs: z.number(),
-    // fats: z.number(),
+    category: z.string().nullable().optional(),
+    proteins: z.number().nullable().optional(),
+    carbs: z.number().nullable().optional(),
+    fats: z.number().nullable().optional(),
 });
 
 export const mealPlanSchema = z.object({

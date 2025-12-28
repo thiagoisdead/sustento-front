@@ -40,7 +40,8 @@ export const foodsSchema = z.object({
   }),
 
   nutriScore: z.string(),
-  novaGroup: z.number(),
+  novaGroup: z.number().nullable().optional(),
+  nova_group: z.number().nullable().optional(),
   dietaryInfo: z.any().optional(),
   anvisaWarnings: z.any().optional(),
 });
