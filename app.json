@@ -2,7 +2,7 @@
   "expo": {
     "name": "Sustento",
     "slug": "sustento-front",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/personalized-icon.png",
     "userInterfaceStyle": "light",
