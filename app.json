@@ -1,12 +1,11 @@
 {
   "expo": {
-    "name": "sustento-front",
+    "name": "Sustento",
     "slug": "sustento-front",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/personalized-icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "scheme": "sustento",
     "permissions": [
       "INTERNET",
@@ -15,7 +14,7 @@
       "WRITE_EXTERNAL_STORAGE"
     ],
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash-personalized.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -28,14 +27,17 @@
         "backgroundColor": "#ffffff"
       },
       "usesCleartextTraffic": true,
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.grayout.sustentofront"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "backUrl": "http://localhost:3000/api",
-      "backUrlThiago": "http://192.168.15.6:3000/api"
+      "backUrl": "https://sustento-back.onrender.com/api",
+      "eas": {
+        "projectId": "cd6b0803-2e08-4751-a3e6-b6b231af1273"
+      }
     },
     "plugins": [
       "expo-secure-store"
