@@ -1,9 +1,10 @@
 import axios from "axios";
 import { getItem, removeItem } from "./secureStore";
 import { uploadAsync, FileSystemUploadType } from 'expo-file-system/legacy';
-import { SERVER_URL } from "../constants/config";
+import Constants from 'expo-constants';
 
-const API_URL = `${SERVER_URL}/api`;
+const API_URL: string = Constants.expoConfig?.extra?.backUrl;
+
 const cleanUrl = (route: string) => `${API_URL}/${route}`.replace(/([^:]\/)\/+/g, "$1");
 
 export async function baseValidate(handlePath?: (path: string) => void) {

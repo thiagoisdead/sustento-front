@@ -80,27 +80,22 @@ export const useSeeCalendar = () => {
 
         setIsLoading(true);
         try {
-            // A. Busca as definições de refeição (Café, Almoço, Janta...) do plano
             const mealsRes = await baseFetch(`meals?plan_id=${activePlanId}`);
             let allPlanMeals = Array.isArray(mealsRes?.data) ? mealsRes?.data : [];
 
             allPlanMeals = allPlanMeals?.filter((m: any) => String(m?.plan_id) === String(activePlanId));
 
-            // B. Para cada refeição, busca os REGISTROS DE COMIDA (mealRecords) naquela data
             const mealsWithFoods = await Promise.all(allPlanMeals?.map(async (meal: any) => {
                 try {
-                    // AQUI: Mudança para endpoint mealRecords
                     const recordsRes = await baseFetch(`mealRecords?user_id=${userId}&meal_id=${meal?.meal_id}`);
                     let allRecords = Array.isArray(recordsRes?.data) ? recordsRes?.data : [];
 
-                    // Filtra: É deste usuário? É desta refeição? É DESTA DATA?
                     const dailyRecords = allRecords?.filter((rec: any) =>
                         String(rec?.user_id) === String(userId) &&
                         String(rec?.meal_id) === String(meal?.meal_id) &&
                         normalizeDate(rec?.meal_date) === selectedDate
                     );
 
-                    // C. Hidrata com detalhes do Alimento (Nome, Calorias)
                     const foodsDetails = await Promise.all(dailyRecords?.map(async (rec: any) => {
                         try {
                             const alimRes = await baseGetById('aliments', rec?.aliment_id);
@@ -112,7 +107,7 @@ export const useSeeCalendar = () => {
 
                             return {
                                 id: rec?.aliment_id,
-                                mealRecordId: rec?.record_id, // ID único do registro
+                                mealRecordId: rec?.record_id,
                                 name: alim?.name || "Carregando...",
                                 quantity: qty,
                                 unit: rec?.unit || 'g',
@@ -139,7 +134,6 @@ export const useSeeCalendar = () => {
 
             const finalGroups = mealsWithFoods?.filter(g => g !== null) as MealGroup[];
 
-            // Ordena refeições por horário
             finalGroups?.sort((a, b) => {
                 if (a?.timeRaw < b?.timeRaw) return -1;
                 if (a?.timeRaw > b?.timeRaw) return 1;
