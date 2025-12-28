@@ -1,4 +1,5 @@
 import { LocaleConfig } from "react-native-calendars";
+import { weekDays } from "../constants/days";
 
 export const setupCalendarLocale = () => {
     LocaleConfig.locales["pt-br"] = {
@@ -13,7 +14,7 @@ export const setupCalendarLocale = () => {
         dayNames: [
             "Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado",
         ],
-        dayNamesShort: ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"],
+        dayNamesShort: weekDays,
         today: "Hoje",
     };
     LocaleConfig.defaultLocale = "pt-br";

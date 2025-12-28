@@ -1,9 +1,11 @@
-import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Avatar } from 'react-native-paper';
-import HealthyPNG from "../../assets/rodrigo.jpg";
-import { SERVER_URL } from '../../constants/config';
+import Default from '../../assets/default.png';
 import { COLORS } from '../../constants/theme';
+
+import Constants from 'expo-constants';
+
+const API_URL: string = Constants.expoConfig?.extra?.backUrl;
 
 interface ProfileAvatarProps {
     name: string | null;
@@ -13,8 +15,8 @@ interface ProfileAvatarProps {
 
 export const ProfileAvatar = ({ name, age, pictureUrl }: ProfileAvatarProps) => {
     const imageSource = pictureUrl
-        ? { uri: `${SERVER_URL}${pictureUrl}` }
-        : HealthyPNG;
+        ? { uri: `${API_URL}${pictureUrl}` }
+        : Default;
     return (
         <View style={styles.container}>
             <View style={styles.iconContainer}>

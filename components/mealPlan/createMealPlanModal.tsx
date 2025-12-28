@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Alert } from "react-native";
+import { View, Text, StyleSheet, Alert, ActivityIndicator } from "react-native";
 import { Dialog, Portal, TextInput, Switch, Button, IconButton } from "react-native-paper";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useRouter } from "expo-router";
@@ -8,7 +8,6 @@ import { COLORS } from "../../constants/theme";
 import { mealPlanSchema, MealPlan } from "../../types/meal";
 import { basePost, baseUniqueGet, basePutById } from "../../services/baseCall";
 import { getItem } from "../../services/secureStore";
-import { BaseButton } from "../baseButton";
 
 interface MealPlanModalProps {
   onDismiss: () => void;
@@ -19,13 +18,12 @@ export default function MealPlanModal({ onDismiss, planToEdit }: MealPlanModalPr
   const [dialogVisible, setDialogVisible] = useState(true);
   const [conflictVisible, setConflictVisible] = useState(false);
   const [activePlanInfo, setActivePlanInfo] = useState<any>(null);
+  const [loading, setLoading] = useState(false); // Novo estado de loading
 
   const [useAI, setUseAI] = useState(false);
 
   const router = useRouter();
   const isEditing = !!planToEdit; 
-
-  console.log('planToEdit recebido no modal:', planToEdit);
 
   const [planForm, setPlanForm] = useState({
     plan_name: '',
@@ -52,6 +50,7 @@ export default function MealPlanModal({ onDismiss, planToEdit }: MealPlanModalPr
   }, [planToEdit]);
 
   const handleClose = () => {
+    if (loading) return; // Impede fechar durante o salvamento
     setDialogVisible(false);
     onDismiss();
   };
@@ -68,6 +67,7 @@ export default function MealPlanModal({ onDismiss, planToEdit }: MealPlanModalPr
   };
 
   const executeSave = async (isOverrideActive: boolean) => {
+    setLoading(true);
     try {
       const id = await getItem('id');
 
@@ -79,33 +79,26 @@ export default function MealPlanModal({ onDismiss, planToEdit }: MealPlanModalPr
         target_protein: convertToNumberOrUndefined(planForm?.target_protein),
         target_carbs: convertToNumberOrUndefined(planForm?.target_carbs),
         target_fats: convertToNumberOrUndefined(planForm?.target_fats),
-        source: planToEdit?.source || 'MANUAL', // Mantém a fonte original ou seta Manual
+        source: planToEdit?.source || 'MANUAL',
         user_id: Number(id),
       };
 
-      // Validação Zod (opcional validar ID no schema, mas o payload tá limpo)
       const validatedPlan = mealPlanSchema.parse(dataPayload);
 
-      // Desativar plano conflitante, se necessário
       if (isOverrideActive && activePlanInfo) {
         await basePutById(`mealplans`, activePlanInfo.plan_id, { active: false });
       }
 
       let req;
       if (isEditing && planToEdit?.plan_id) {
-        // --- PUT (Atualizar) ---
         req = await basePutById('mealplans', planToEdit.plan_id, validatedPlan);
       } else {
-        // --- POST (Criar) ---
         req = await basePost('mealplans', validatedPlan);
       }
 
       setConflictVisible(false);
       setDialogVisible(false);
 
-      // Se tiver mudado algo crítico, redireciona ou recarrega
-      // Se for edição, talvez só fechar a modal e dar um refresh na lista seja melhor do que pushar rota
-      // Mas para manter padrão:
       if (req?.data?.plan_id) {
         router.push({ pathname: '/foodTracker/seeFoodTracker', params: { planId: req.data.plan_id } });
       }
@@ -114,40 +107,57 @@ export default function MealPlanModal({ onDismiss, planToEdit }: MealPlanModalPr
     } catch (error) {
       console.error(error);
       Alert.alert("Erro", "Falha ao salvar o plano.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleValidationAndCheck = async () => {
     if (!planForm?.plan_name) return Alert.alert("Erro", "Insira um nome para o plano.");
 
-    // Lógica de Conflito de Ativo
-    if (planForm?.active) {
-      // Se estou editando um plano que JÁ ERA ativo, não precisa checar conflito
-      if (isEditing && planToEdit?.active) {
-        await executeSave(true);
-        return;
-      }
+    setLoading(true);
+    try {
+        if (planForm?.active) {
+          if (isEditing && planToEdit?.active) {
+            await executeSave(true);
+            return;
+          }
 
-      const reqActiveValidate = await baseUniqueGet('users/mealplans');
-      const currentActive = reqActiveValidate?.data?.find((plan: any) => plan.active === true);
+          const reqActiveValidate = await baseUniqueGet('users/mealplans');
+          const currentActive = reqActiveValidate?.data?.find((plan: any) => plan.active === true);
 
-      // Se existe um ativo E não é o mesmo que estou editando
-      if (currentActive && currentActive.plan_id !== planToEdit?.plan_id) {
-        setActivePlanInfo(currentActive);
-        setDialogVisible(false);
-        setTimeout(() => setConflictVisible(true), 150);
-        return;
-      }
+          if (currentActive && currentActive.plan_id !== planToEdit?.plan_id) {
+            setActivePlanInfo(currentActive);
+            setLoading(false); // Pausa o loading para mostrar o diálogo de conflito
+            setDialogVisible(false);
+            setTimeout(() => setConflictVisible(true), 150);
+            return;
+          }
+        }
+        await executeSave(planForm?.active);
+    } catch (error) {
+        setLoading(false);
+        Alert.alert("Erro", "Erro ao validar planos ativos.");
     }
-
-    executeSave(planForm?.active);
   };
 
   const handleSubmit = async () => {
     if (useAI && !isEditing) {
-      const userId = await getItem('id');
-      const payload = { user_id: Number(userId)}
-      const req = await basePost('mealPlans/suggestMealPlan', payload)
+      setLoading(true);
+      try {
+        const userId = await getItem('id');
+        const payload = { user_id: Number(userId)};
+        const req = await basePost('mealPlans/suggestMealPlan', payload);
+        
+        if (req?.status === 200 || req?.status === 201) {
+            setDialogVisible(false);
+            onDismiss();
+        }
+      } catch (error) {
+          Alert.alert("Erro", "A IA falhou ao gerar seu plano.");
+      } finally {
+          setLoading(false);
+      }
     } else {
       handleValidationAndCheck();
     }
@@ -158,17 +168,15 @@ export default function MealPlanModal({ onDismiss, planToEdit }: MealPlanModalPr
     setTimeout(() => setDialogVisible(true), 150);
   };
 
-  // Título e Botão Dinâmicos
   const modalTitle = isEditing ? "Editar Plano" : (useAI ? "Gerar com IA" : "Criar Plano");
   const saveButtonText = isEditing ? "Atualizar" : "Salvar";
 
   return (
     <Portal>
-      {/* DIALOG DE CONFLITO (Inalterado, reutilizado) */}
       <Dialog visible={conflictVisible} onDismiss={handleBackToForm} style={styles.conflictDialog}>
         <View style={styles.headerRow}>
           <Text style={styles.conflictTitle}>Conflito de Plano</Text>
-          <IconButton icon="close" size={20} onPress={handleBackToForm} />
+          <IconButton icon="close" size={20} onPress={handleBackToForm} disabled={loading} />
         </View>
         <Dialog.Content>
           <Text style={styles.conflictText}>
@@ -182,6 +190,7 @@ export default function MealPlanModal({ onDismiss, planToEdit }: MealPlanModalPr
             onPress={() => executeSave(false)}
             style={styles.conflictBtn}
             labelStyle={{ color: COLORS.textDark }}
+            disabled={loading}
           >
             Salvar como Inativo
           </Button>
@@ -189,13 +198,14 @@ export default function MealPlanModal({ onDismiss, planToEdit }: MealPlanModalPr
             mode="contained"
             onPress={() => executeSave(true)}
             style={[styles.conflictBtn, { backgroundColor: COLORS.greatGreen }]}
+            loading={loading}
+            disabled={loading}
           >
             Substituir e Ativar
           </Button>
         </Dialog.Actions>
       </Dialog>
 
-      {/* DIALOG PRINCIPAL */}
       <Dialog visible={dialogVisible} onDismiss={handleClose} style={styles.dialog}>
         <Dialog.Title style={styles.dialogTitle}>
           {modalTitle}
@@ -203,74 +213,89 @@ export default function MealPlanModal({ onDismiss, planToEdit }: MealPlanModalPr
 
         <Dialog.Content style={styles.dialogContent}>
           <KeyboardAwareScrollView enableOnAndroid={true} showsVerticalScrollIndicator={false}>
+            {loading && (
+                <View style={styles.loaderOverlay}>
+                    <ActivityIndicator size="large" color={COLORS.primary} />
+                    <Text style={styles.loaderText}>Processando...</Text>
+                </View>
+            )}
 
-            <View style={styles.switchRow}>
-              <Text style={styles.switchLabel}>Definir como Plano Ativo?</Text>
-              <Switch
-                value={planForm.active}
-                onValueChange={(val) => handleChange('active', val)}
-                color={COLORS.primary}
-              />
+            <View style={[styles.formContainer, loading && { opacity: 0.4 }]}>
+                <View style={styles.switchRow}>
+                  <Text style={styles.switchLabel}>Definir como Plano Ativo?</Text>
+                  <Switch
+                    value={planForm.active}
+                    onValueChange={(val) => handleChange('active', val)}
+                    color={COLORS.primary}
+                    disabled={loading}
+                  />
+                </View>
+
+                {!isEditing && (
+                  <View style={[styles.switchRow, { marginTop: 8, borderColor: useAI ? COLORS.primary : '#EEEEEE' }]}>
+                    <Text style={[styles.switchLabel, { color: useAI ? COLORS.primary : COLORS.textDark }]}>
+                      Usar Inteligência Artificial?
+                    </Text>
+                    <Switch value={useAI} onValueChange={setUseAI} color={COLORS.primary} disabled={loading} />
+                  </View>
+                )}
+
+                {(!useAI || isEditing) && (
+                  <View style={{ marginTop: 10 }}>
+                    <TextInput
+                      label="Nome do Plano"
+                      value={planForm?.plan_name}
+                      onChangeText={(text) => handleChange('plan_name', text)}
+                      mode="outlined"
+                      style={styles.input}
+                      activeOutlineColor={COLORS.primary}
+                      disabled={loading}
+                    />
+                    <View style={styles.row}>
+                      <TextInput
+                        label="Kcal (Opcional)"
+                        value={planForm?.target_calories}
+                        onChangeText={(text) => handleChange('target_calories', text)}
+                        keyboardType="numeric"
+                        mode="outlined"
+                        style={styles.flexInput}
+                        activeOutlineColor={COLORS.primary}
+                        disabled={loading}
+                      />
+                      <TextInput
+                        label="Meta Água (ml)"
+                        value={planForm?.target_water}
+                        onChangeText={(text) => handleChange('target_water', text)}
+                        keyboardType="numeric"
+                        mode="outlined"
+                        style={styles.flexInput}
+                        activeOutlineColor={COLORS.primary}
+                        disabled={loading}
+                      />
+                    </View>
+                    <Text style={styles.sectionLabel}>Macros (g) - (Opcionais)</Text>
+                    <View style={styles.row}>
+                      <TextInput label="Prot" value={planForm?.target_protein} onChangeText={t => handleChange('target_protein', t)} keyboardType="numeric" mode="outlined" style={styles.flexInput} activeOutlineColor={COLORS.primary} disabled={loading} />
+                      <TextInput label="Carb" value={planForm?.target_carbs} onChangeText={t => handleChange('target_carbs', t)} keyboardType="numeric" mode="outlined" style={styles.flexInput} activeOutlineColor={COLORS.primary} disabled={loading} />
+                      <TextInput label="Gord" value={planForm?.target_fats} onChangeText={t => handleChange('target_fats', t)} keyboardType="numeric" mode="outlined" style={styles.flexInput} activeOutlineColor={COLORS.primary} disabled={loading} />
+                    </View>
+                  </View>
+                )}
             </View>
-
-            {/* Só mostra opção de IA se NÃO estiver editando */}
-            {!isEditing && (
-              <View style={[styles.switchRow, { marginTop: 8, borderColor: useAI ? COLORS.primary : '#EEEEEE' }]}>
-                <Text style={[styles.switchLabel, { color: useAI ? COLORS.primary : COLORS.textDark }]}>
-                  Usar Inteligência Artificial?
-                </Text>
-                <Switch value={useAI} onValueChange={setUseAI} color={COLORS.primary} />
-              </View>
-            )}
-
-            {(!useAI || isEditing) && (
-              <View style={{ marginTop: 10 }}>
-                <TextInput
-                  label="Nome do Plano"
-                  value={planForm?.plan_name}
-                  onChangeText={(text) => handleChange('plan_name', text)}
-                  mode="outlined"
-                  style={styles.input}
-                  activeOutlineColor={COLORS.primary}
-                />
-                {/* Resto dos inputs iguais... */}
-                <View style={styles.row}>
-                  <TextInput
-                    label="Kcal (Opcional)"
-                    value={planForm?.target_calories}
-                    onChangeText={(text) => handleChange('target_calories', text)}
-                    keyboardType="numeric"
-                    mode="outlined"
-                    style={styles.flexInput}
-                    activeOutlineColor={COLORS.primary}
-                  />
-                  <TextInput
-                    label="Meta Água (ml)"
-                    value={planForm?.target_water}
-                    onChangeText={(text) => handleChange('target_water', text)}
-                    keyboardType="numeric"
-                    mode="outlined"
-                    style={styles.flexInput}
-                    activeOutlineColor={COLORS.primary}
-                  />
-                </View>
-                <Text style={styles.sectionLabel}>Macros (g) - (Opcionais)</Text>
-                <View style={styles.row}>
-                  <TextInput label="Prot" value={planForm?.target_protein} onChangeText={t => handleChange('target_protein', t)} keyboardType="numeric" mode="outlined" style={styles.flexInput} activeOutlineColor={COLORS.primary} />
-                  <TextInput label="Carb" value={planForm?.target_carbs} onChangeText={t => handleChange('target_carbs', t)} keyboardType="numeric" mode="outlined" style={styles.flexInput} activeOutlineColor={COLORS.primary} />
-                  <TextInput label="Gord" value={planForm?.target_fats} onChangeText={t => handleChange('target_fats', t)} keyboardType="numeric" mode="outlined" style={styles.flexInput} activeOutlineColor={COLORS.primary} />
-                </View>
-              </View>
-            )}
           </KeyboardAwareScrollView>
         </Dialog.Content>
 
         <Dialog.Actions style={styles.dialogActions}>
-          <Button onPress={handleClose} style={styles.btnCancel}>
+          <Button onPress={handleClose} style={styles.btnCancel} disabled={loading}>
             <Text style={{ color: COLORS.textDark }}>Cancelar</Text>
           </Button>
 
-          <Button onPress={handleSubmit} style={styles.btnSave}>
+          <Button 
+            onPress={handleSubmit} 
+            style={styles.btnSave} 
+            loading={loading} 
+            disabled={loading}
+          >
             <Text style={{ color: '#fff' }}>{saveButtonText}</Text>
           </Button>
         </Dialog.Actions>
@@ -283,6 +308,7 @@ const styles = StyleSheet.create({
   dialog: { backgroundColor: '#fff', borderRadius: 16, maxHeight: '85%' },
   dialogTitle: { textAlign: 'center', fontWeight: 'bold' },
   dialogContent: { paddingHorizontal: 20 },
+  formContainer: { flex: 1 },
   input: { backgroundColor: '#FAFAFA', marginBottom: 8 },
   row: { flexDirection: 'row', gap: 10, marginBottom: 5 },
   flexInput: { flex: 1, backgroundColor: '#FAFAFA' },
@@ -302,4 +328,14 @@ const styles = StyleSheet.create({
   conflictSubText: { fontSize: 13, color: '#666', marginTop: 10 },
   conflictActions: { flexDirection: 'column', gap: 10, paddingHorizontal: 20 },
   conflictBtn: { width: '100%', borderRadius: 10, marginVertical: 2, },
+  loaderOverlay: {
+    marginVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  loaderText: {
+      marginTop: 10,
+      color: COLORS.primary,
+      fontWeight: 'bold'
+  }
 });

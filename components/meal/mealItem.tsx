@@ -35,6 +35,9 @@ interface MealItemProps {
 
 export const MealItem = ({ meal, onDelete, onDeleteFood, onToggleFood, checkedFoodRecords }: MealItemProps) => {
 
+
+  console.log('meal dentro do MealItem', meal)
+
   const handleDeletePress = () => {
     Alert.alert(
       "Excluir Refeição",
