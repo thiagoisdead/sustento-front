@@ -130,15 +130,15 @@ export default function MealsHome() {
     const superPayload = {
       alimentData: { nova_group: 1, ...rest },
       ...innerPayload
-
     }
+
+    console.log('Payload para o post de mealAliments:', superPayload);
     try {
       const req = await basePost('mealAliments', superPayload)
       console.log('Sucesso no post de alimentos pra uma refeição:', req?.data);
       await addToRecents({ ...selectedMeal, quantity: null });
     } catch (error) {
-      console.log('error', error, error?.message)
-      Alert.alert("Erro", "Falha ao registrar refeição", error?.message);
+      Alert.alert("Erro", "Falha ao registrar refeição");
     }
   }
 
@@ -239,8 +239,8 @@ export default function MealsHome() {
             <TextInput
               label={`Quantidade (${selectedUnit})`}
               value={selectedMeal?.quantity?.toString() || ''}
-              onChangeText={(text) => setSelectedMeal({ ...selectedMeal, quantity: Number(text) })}
-              keyboardType="numeric"
+              onChangeText={(text) => selectedMeal && setSelectedMeal({ ...selectedMeal, quantity: Number(text) })}
+              keyboardType="numeric"  
               mode="outlined"
               style={styles.inputQuantity}
               activeOutlineColor={COLORS.primary}

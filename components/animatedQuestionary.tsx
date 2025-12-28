@@ -15,7 +15,7 @@ import { usePath } from "../hooks/usePath";
 import { ActivityLvlLabels, GenderLabels, ObjectiveLabels } from "../enum/profileEnum";
 import { restrictionOptions } from "../constants/editProfileConfig";
 import { syncUserRestrictions } from "../utils/profileHelper";
-import { removeItem } from "../services/secureStore";
+import { getItem, removeItem } from "../services/secureStore";
 
 const { width } = Dimensions.get("window");
 
@@ -136,6 +136,10 @@ export default function QuestionaryScreen() {
       Alert.alert("Ops!", "Por favor, selecione uma opção antes de continuar.");
       return;
     }
+
+    getItem('token').then(token => {
+      console.log("Token:", token);
+    });
 
     setIsProcessing(true); // Trava UI
 

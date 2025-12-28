@@ -1,26 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View, Text, Alert, Pressable } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-
-// --- Imports Locais ---
 import { usePath } from '../../hooks/usePath';
 import { basePutUnique, baseUniqueGet, basePutMultidata } from '../../services/baseCall';
 import { syncUserRestrictions } from '../../utils/profileHelper';
-
-// --- Imports de Constantes e Tipos (Ajuste os caminhos conforme seu projeto) ---
-import { SERVER_URL } from '../../constants/config';
 import { Gender, ActivityLvl, Objective, GenderLabels, ActivityLvlLabels, ObjectiveLabels } from '../../enum/profileEnum';
 import { User } from '../../types/data';
-// Assumindo que os labels estão em um arquivo de constantes:
-
-// --- Imports de Componentes ---
 import { EditableAvatar } from '../../components/editProfile/editableAvatar';
 import { EditProfileHeader } from '../../components/editProfile/editProfileHeader';
 import { FormField } from '../../components/editProfile/formField';
 import { ImagePickerModal } from '../../components/editProfile/imagePickerModal';
+import Constants from 'expo-constants';
 
+const API_URL: string = Constants.expoConfig?.extra?.backUrl;
 
-// --- Configuration & Types ---
 type Option = { label: string; value: string };
 type FieldConfig = {
     key: keyof User;
@@ -30,7 +23,6 @@ type FieldConfig = {
     large: boolean;
 };
 
-// Função auxiliar para converter Enums em array de opções para dropdown
 const enumToArray = (enumObj: any, labelsObj: any): Option[] => {
     return Object.values(enumObj).map((val: any) => ({
         label: labelsObj[val],
@@ -212,7 +204,7 @@ export default function EditProfile() {
                 <EditableAvatar
                     name={userData.name}
                     age={userData.age ? String(userData.age) : ''}
-                    imageUri={profileImage || (userData.profile_picture_url ? `${SERVER_URL}/${userData.profile_picture_url}` : null)}
+                    imageUri={profileImage || (userData.profile_picture_url ? `${API_URL}/${userData.profile_picture_url}` : null)}
                     onPress={() => setModalVisible(true)}
                 />
                 <View style={styles.formContainer}>

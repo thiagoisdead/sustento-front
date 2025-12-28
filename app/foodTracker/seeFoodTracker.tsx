@@ -28,7 +28,6 @@ interface FoodItem {
   fats?: number;
 }
 
-// Extender a interface Meal para incluir foods
 interface MealWithFoods extends Meal {
   foods?: FoodItem[];
 }
@@ -132,7 +131,7 @@ export default function SeeFoodTracker() {
     if (existing) {
       try {
         const res = await baseDeleteById(`mealRecords/${existing.recordId}`);
-        if (res?.status !== 200 && res?.status !== 201) return Alert.alert("Erro", "Não foi possível remover o registro.");
+        if (res?.status !== 204) return Alert.alert("Erro", "Não foi possível remover o registro.");
         setCheckedFoodRecords(prev =>
           prev.filter(r => r.recordId !== existing.recordId)
         );
@@ -170,6 +169,8 @@ export default function SeeFoodTracker() {
       };
 
       const req = await basePost('mealRecords', payload);
+
+      console.log('Resposta ao registrar alimento consumido:', req?.data);
 
       if (!req?.data?.record_id) {
         throw new Error("record_id não retornado");
@@ -211,6 +212,8 @@ export default function SeeFoodTracker() {
     let allRelations: any[] = [];
     try {
       const req = await baseFetch(`mealAliments`);
+
+      console.log('Relações de mealAliments recebidas:', req?.data);
       allRelations = req?.data || [];
     } catch (err) {
       console.log('Erro ao buscar relações', err);
@@ -220,23 +223,31 @@ export default function SeeFoodTracker() {
       try {
         const foodRes = await baseFetch(`meals/${meal.id}/aliments`);
         const data = foodRes?.data;
+
+        console.log('data dessa merda de foods', data);
         const rawFoods = data?.MealAliments || [];
 
         const foods: FoodItem[] = rawFoods.map((item: any) => {
           const alimentData = item.aliment || {};
+
+          // Tenta pegar o ID global
           const alimentId = alimentData.id || alimentData.aliment_id;
 
+          // Tenta achar o match, mas NÃO DEPENDE DELE para renderizar
           const match = allRelations.find((rel: any) =>
             rel.meal_id === meal.id &&
             rel.aliment_id === alimentId
           );
 
+          // Se tiver match, usa o ID da relação. Se não, tenta pegar do item. Se não, usa 0 (mas renderiza!).
           const finalMealAlimentId = match ? match.meal_aliment_id : (item.meal_aliment_id || 0);
 
-          if (!match)
+          // REMOVA QUALQUER IF QUE IMPEÇA O RETORNO AQUI
+          // if (!match) ... (apenas log, não return)
+
           return {
-            id: alimentId,
-            meal_aliment_id: finalMealAlimentId,
+            id: alimentId, // ID GLOBAL (Importante para o checkbox!)
+            meal_aliment_id: finalMealAlimentId, // ID DA RELAÇÃO (Importante para deletar do plano)
             name: alimentData.name || "Alimento sem nome",
             calories: alimentData?.calories_100g
               ? (item.quantity * alimentData.calories_100g) / 100

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Avatar, IconButton } from 'react-native-paper';
 import HealthyPNG from '../../assets/rodrigo.jpg';
+import Default from '../../assets/default.png';
 import { COLORS } from '../../constants/theme';
 
 interface EditableAvatarProps {
@@ -18,7 +19,7 @@ export const EditableAvatar = ({ name, age, imageUri, onPress }: EditableAvatarP
                 <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}>
                     <Avatar.Image
                         size={100}
-                        source={imageUri ? { uri: imageUri } : HealthyPNG}
+                        source={imageUri ? { uri: imageUri } : Default}
                     />
                     <View style={styles.badge}>
                         <IconButton icon="camera" iconColor="#fff" size={14} style={{ margin: 0 }} />
