@@ -1,19 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { baseUniqueGet } from '../../services/baseCall';
 import { usePath } from '../../hooks/usePath';
 import { useLogout } from '../../hooks/useLogout';
-
 import { User } from '../../types/data';
 import { COLORS } from '../../constants/theme';
-
-import { AnimatedButton } from '../../components/animatedButton';
 import { Header } from '../../components/profile/profileHeader';
 import { ProfileAvatar } from '../../components/profile/profileAvatar';
 import { ProfileField } from '../../components/profile/profileField';
 import { RestrictionLabels } from '../../enum/profileEnum';
-import { getItem } from '../../services/secureStore';
 import { BaseButton } from '../../components/baseButton';
 
 export default function SeeProfile() {

@@ -17,8 +17,6 @@ export default function AuthGate() {
       const token = await getItem("token");
       const id = await getItem("id");
 
-      console.log('userData no authGate', userData, token, id)
-
       if (!token || !id) {
         return router.replace("/auth");
       }

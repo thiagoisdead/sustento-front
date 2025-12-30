@@ -18,11 +18,8 @@ export const syncUserRestrictions = async (
     const toAdd = current.filter(r => !initial.includes(r));
     const toRemove = initial.filter(r => !current.includes(r));
 
-    console.log(`Syncing Restrictions for UserID: ${userId}`);
-
     const promises: Promise<any>[] = [];
 
-    // ADD
     toAdd.forEach(rKey => {
         const rId = RESTRICTION_IDS[rKey.toUpperCase()];
         if (rId && userId) {
@@ -30,7 +27,6 @@ export const syncUserRestrictions = async (
         }
     });
 
-    // REMOVE
     toRemove.forEach(rKey => {
         const rId = RESTRICTION_IDS[rKey.toUpperCase()];
         if (rId && userId) {

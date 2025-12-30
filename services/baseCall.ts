@@ -22,7 +22,6 @@ export async function baseValidate(handlePath?: (path: string) => void) {
     );
     return result.data;
   } catch (err: any) {
-    console.log("Erro ao validar token:", err.response?.data || err.message);
     if (err.response?.data?.error === "Invalid or expired token") {
       await removeItem('token');
       handlePath?.('/auth');
@@ -33,14 +32,12 @@ export async function baseValidate(handlePath?: (path: string) => void) {
 
 export async function baseFetch(route: string) {
 
-  console.log('cleanurl', cleanUrl(route))
   const token = await getItem('token');
   try {
     const result = await axios.get(cleanUrl(route), {
       headers: { Authorization: `Bearer ${token}` }
     });
 
-    console.log('datass', result?.data)
     if (result.status === 200 || result.status === 201) return result;
   } catch (err: any) {
     console.log('Erro no GET:', err.message);
@@ -55,7 +52,6 @@ export async function baseUniqueGet(route: string) {
 
   try {
     const url = cleanUrl(`${route}/${id}`);
-    console.log('token e id no baseUniqueGet', token, id, url)
     const fetchData = await axios.get(url, {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -69,7 +65,6 @@ export async function baseGetById(route: string, id: number) {
   const token = await getItem('token');
   try {
     const url = cleanUrl(`${route}/${id}`);
-    console.log(`GET By ID: ${url}`);
     const result = await axios.get(url, {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -102,8 +97,6 @@ export async function basePost(route: string, data: any) {
     });
     if (result.status === 200 || result.status === 201) return result;
   } catch (err: any) {
-
-    console.log('info do post', cleanUrl(route), data);
     console.log('ERRO NO POST:', err.response?.data || err.message);
     throw err;
   }
@@ -112,8 +105,6 @@ export async function basePost(route: string, data: any) {
 export async function baseDelete(route: string, params?: any) {
   const token = await getItem('token');
   const url = cleanUrl(route);
-
-  console.log('parametros do delete', params, typeof (params));
 
   try {
     const response = await axios.delete(url, {
@@ -133,10 +124,6 @@ export async function baseDelete(route: string, params?: any) {
 export async function baseDeleteById(route: string) {
   const token = await getItem('token');
   const url = cleanUrl(route);
-
-
-  console.log('url do delete by id', url);
-
   try {
     const response = await axios.delete(url, {
       headers: {
@@ -144,7 +131,6 @@ export async function baseDeleteById(route: string) {
       },
     });
 
-    console.log('RESPONSE DO DELETE BY ID', response)
     return response;
   } catch (err: any) {
     console.log("Erro no DELETE:", err.response?.data || err.message);
@@ -196,8 +182,6 @@ export async function basePutNormal(route: string, data: any) {
   const token = await getItem('token');
   try {
     const url = cleanUrl(`${route}`);
-    console.log(`PUT By ID: ${url}`, data);
-
     const result = await axios.put(url, data, {
       headers: { Authorization: `Bearer ${token}` }
     });

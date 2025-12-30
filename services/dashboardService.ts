@@ -29,36 +29,19 @@ const safeNum = (val: any) => {
 
 // --- Busca de Dados ---
 const fetchAndEnrichMeals = async (planId: number, userId: number, startDate: string, endDate: string) => {
-    console.log(`[DEBUG] fetchAndEnrichMeals INICIADO`);
-    console.log(`[DEBUG] Params: PlanID: ${planId}, UserID: ${userId}, Range: ${startDate} até ${endDate}`);
-
     const mealsConfigRes = await baseFetch(`meals?plan_id=${planId}`);
     let allPlanMeals = Array.isArray(mealsConfigRes?.data) ? mealsConfigRes?.data : [];
 
-    console.log(`[DEBUG] data data data data delas: ${allPlanMeals}`);
-
-
-    // Filtro de segurança
     allPlanMeals = allPlanMeals?.filter((m: any) => String(m?.plan_id) === String(planId));
-    console.log(`[DEBUG] Refeições encontradas no plano: ${allPlanMeals.length}`);
-    console.log(`[DEBUG] Refeições encontradas no plano data delas: ${allPlanMeals}`);
-
 
     return await Promise.all(allPlanMeals?.map(async (meal: any) => {
         let foodsList: any[] = [];
         try {
             const url = `mealRecords?user_id=${userId}&meal_id=${meal?.meal_id}`;
-            console.log(`[DEBUG] Buscando records: ${url}`);
 
             const recordsRes = await baseFetch(url);
 
-            console.log(`[DEBUG] data de recordRes`, recordsRes?.data);
             let records = Array.isArray(recordsRes?.data) ? recordsRes?.data : [];
-
-            if (records.length > 0) {
-                console.log(`[DEBUG] Refeição ${meal.meal_name} (ID: ${meal.meal_id}) tem ${records.length} registros RAW., ${meal}`);
-                console.log(`[DEBUG] Exemplo de data do registro: ${records[0]}`);
-            }
 
             records = records?.filter((r: any) => {
                 const rDate = normalizeDate(r?.meal_date);
@@ -178,9 +161,6 @@ const calculateDailyData = (enrichedMeals: any[], targetDate: string) => {
 // --- Função Principal Exportada com LOGS ---
 export const getDashboardData = async (chartStartDate?: string, chartEndDate?: string, targetDateStr?: string) => {
     try {
-        console.log("\n========================================");
-        console.log("🟢 [DEBUG] INÍCIO DO CARREGAMENTO");
-        console.log(`[DEBUG] Params Recebidos -> Start: ${chartStartDate}, End: ${chartEndDate}, Target: ${targetDateStr}`);
 
         const userIdStr = await getItem('id');
         if (!userIdStr) {
@@ -188,8 +168,6 @@ export const getDashboardData = async (chartStartDate?: string, chartEndDate?: s
             return null;
         }
         const userId = Number(userIdStr);
-        console.log(`[DEBUG] User ID: ${userId}`);
-
         const realTodayIso = getLocalTodayStr();
         const processingDate = targetDateStr || realTodayIso;
 
@@ -199,14 +177,8 @@ export const getDashboardData = async (chartStartDate?: string, chartEndDate?: s
         const fetchStart = startChart < processingDate ? startChart : processingDate;
         const fetchEnd = endChart > processingDate ? endChart : processingDate;
 
-        console.log(`[DEBUG] 📅 Datas Definidas:`);
-        console.log(`   - Data Foco (Hoje/Selecionada): ${processingDate}`);
-        console.log(`   - Range do Fetch (API): ${fetchStart} até ${fetchEnd}`);
-
         const plansRes = await baseFetch(`mealPlans?user_id=${userId}`);
         const userPlans = Array.isArray(plansRes?.data) ? plansRes?.data : [];
-
-        console.log(`[DEBUG] Planos encontrados na API: ${userPlans.length}`);
 
         const activePlan = userPlans?.find((p: any) => p?.active === true || p?.active === 1);
 
@@ -214,8 +186,6 @@ export const getDashboardData = async (chartStartDate?: string, chartEndDate?: s
             console.error("❌ [DEBUG] Nenhum plano ATIVO encontrado.");
             return null;
         }
-
-        console.log(`[DEBUG] ✅ Plano Ativo: "${activePlan.plan_name}" (ID: ${activePlan.plan_id})`);
 
         const targets = {
             calories: safeNum(activePlan?.target_calories) || 2000,
@@ -225,37 +195,20 @@ export const getDashboardData = async (chartStartDate?: string, chartEndDate?: s
             water: safeNum(activePlan?.target_water) || 2500,
         };
 
-        // --- PONTO CRÍTICO 1: O Enriquecimento ---
-        console.log("[DEBUG] ⏳ Iniciando fetchAndEnrichMeals...");
         const enrichedMeals = await fetchAndEnrichMeals(activePlan?.plan_id, userId, fetchStart, fetchEnd);
 
-        // Contagem de diagnósticos
         const totalRefeicoes = enrichedMeals.length;
         const totalAlimentosRecords = enrichedMeals.reduce((acc, m) => acc + (m.foods ? m.foods.length : 0), 0);
-
-        console.log(`[DEBUG] 📦 Retorno do Enrich:`);
-        console.log(`   - Refeições no plano: ${totalRefeicoes}`);
-        console.log(`   - Total de Alimentos (Records) encontrados nesse range: ${totalAlimentosRecords}`);
 
         if (totalAlimentosRecords === 0) {
             console.warn("⚠️ [DEBUG] ATENÇÃO: Nenhum registro de alimento encontrado. As calorias virão zeradas.");
             console.warn(`   - Verifique se existem 'mealRecords' entre ${fetchStart} e ${fetchEnd}`);
         } else {
-            // Se achou alimentos, vamos ver a data de um deles para garantir que o fuso horário não está zoando
             const firstFood = enrichedMeals.find(m => m.foods.length > 0)?.foods[0];
-            console.log(`   - Exemplo de registro encontrado (Data): ${firstFood?.date_normalized}`);
         }
 
         const weeklyActivity = calculateWeeklyActivity(enrichedMeals, startChart, endChart, targets?.calories);
-
-        // --- PONTO CRÍTICO 2: O Cálculo do Dia ---
-        console.log(`[DEBUG] ⏳ Calculando dados diários para a data: ${processingDate}`);
         const { dayTotalStats, todayMealsSummary } = calculateDailyData(enrichedMeals, processingDate);
-
-        console.log(`[DEBUG] 📊 RESULTADO FINAL (Stats):`);
-        console.log(`   - Calorias: ${dayTotalStats?.calories}`);
-        console.log(`   - Proteínas: ${dayTotalStats?.protein}`);
-        console.log("========================================\n");
 
         return {
             stats: {
