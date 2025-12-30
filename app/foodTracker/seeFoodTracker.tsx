@@ -170,8 +170,6 @@ export default function SeeFoodTracker() {
 
       const req = await basePost('mealRecords', payload);
 
-      console.log('Resposta ao registrar alimento consumido:', req?.data);
-
       if (!req?.data?.record_id) {
         throw new Error("record_id não retornado");
       }
@@ -213,7 +211,6 @@ export default function SeeFoodTracker() {
     try {
       const req = await baseFetch(`mealAliments`);
 
-      console.log('Relações de mealAliments recebidas:', req?.data);
       allRelations = req?.data || [];
     } catch (err) {
       console.log('Erro ao buscar relações', err);
@@ -224,7 +221,6 @@ export default function SeeFoodTracker() {
         const foodRes = await baseFetch(`meals/${meal.id}/aliments`);
         const data = foodRes?.data;
 
-        console.log('data dessa merda de foods', data);
         const rawFoods = data?.MealAliments || [];
 
         const foods: FoodItem[] = rawFoods.map((item: any) => {

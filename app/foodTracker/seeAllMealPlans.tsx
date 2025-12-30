@@ -29,7 +29,6 @@ export default function SeeAllMealPlans() {
     try {
       setIsLoading(true); // Garante que carrega ao atualizar
       const req = await baseUniqueGet('users/mealplans');
-      console.log('mealplansqweq', req?.data);
       setMealPlans(req?.data || []);
     } catch (error) {
       console.error("Erro ao buscar planos", error);
@@ -54,7 +53,6 @@ export default function SeeAllMealPlans() {
 
     try {
       const res = await baseDelete(`mealplans/${planToDelete}`);
-      console.log('Delete response', res, res.status, res.data);
       setMealPlans(prev => prev.filter(plan => plan.plan_id !== planToDelete));
 
     } catch (error) {

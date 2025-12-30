@@ -132,10 +132,8 @@ export default function MealsHome() {
       ...innerPayload
     }
 
-    console.log('Payload para o post de mealAliments:', superPayload);
     try {
       const req = await basePost('mealAliments', superPayload)
-      console.log('Sucesso no post de alimentos pra uma refeição:', req?.data);
       await addToRecents({ ...selectedMeal, quantity: null });
     } catch (error) {
       Alert.alert("Erro", "Falha ao registrar refeição");

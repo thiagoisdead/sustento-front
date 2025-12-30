@@ -3,21 +3,33 @@ import Healthy from "../../assets/svgs/breakfast.svg"
 import { useFonts, EpundaSlab_400Regular } from "@expo-google-fonts/epunda-slab";
 import { Button } from 'react-native-paper';
 import { usePath } from '../../hooks/usePath';
+import { useEffect, useRef } from 'react';
+import { Animated } from 'react-native';
 
 export default function RegisterHome() {
 
   const handlePath = usePath();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
 
   const [fontsLoaded] = useFonts({
     EpundaSlab_400Regular,
   });
 
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+  
   if (!fontsLoaded) {
     return null;
   }
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <View style={{ height: '20%', marginTop: -20 }}>
         <Text style={{ fontFamily: "EpundaSlab_400Regular", fontSize: 40 }}>Sustento</Text>
       </View>
@@ -36,7 +48,7 @@ export default function RegisterHome() {
           </Button>
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -47,7 +59,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
-    paddingVertical: 100
-
+    paddingVertical: 100,
   },
 });

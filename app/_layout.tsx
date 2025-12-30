@@ -11,7 +11,6 @@ export default function RootLayout() {
 
   const pathname = usePathname()
 
-  console.log('pathname no layout', pathname)
   const handlePath = usePath();
   const router = useRouter();
 
@@ -25,12 +24,11 @@ export default function RootLayout() {
       try {
         const verifyToken = await baseValidate(handlePath)
         if (!verifyToken.valid && !hideNavBar.includes(pathname)) {
-          console.log('token inválido, redirecionando para auth')
           return router.replace('/auth')
         }
       }
       catch (err) {
-        console.log('qual erro:', err)
+        console.error('Erro:', err)
       }
     }
     fetchData()

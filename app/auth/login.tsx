@@ -7,10 +7,16 @@ import { Login, loginSchema } from '../../types/auth';
 import { basePost } from '../../services/baseCall';
 import { usePath } from '../../hooks/usePath';
 import { setItem } from '../../services/secureStore';
+import { Vibration } from 'react-native';
+
 
 
 export default function LoginScreen() {
   const { width, height } = useWindowDimensions();
+  Vibration.vibrate(50);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+
   const vw = (value: number) => (width * value) / 100;
 
   const handlePath = usePath();
@@ -48,24 +54,31 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     try {
+      setLoading(true);
       const loginValidate = loginSchema.parse(dados);
       const responseLogin = await basePost('auth/login', loginValidate);
-      if (responseLogin && (responseLogin.status === 200 || responseLogin.status === 201)) {
-        await setItem("token", String(responseLogin?.data?.token))
-        await setItem("id", String(responseLogin?.data?.id))
+
+      if (responseLogin?.status === 200 || responseLogin?.status === 201) {
+        await setItem("token", String(responseLogin?.data?.token));
+        await setItem("id", String(responseLogin?.data?.id));
         handlePath('/home/home');
-      } else {
-        console.log('Não deu login');
       }
     } catch (err: any) {
-      console.error("Erro ao efetuar Login ou validar dados:", err.errors || err);
+      if (err?.errors) {
+        const fieldErrors: any = {};
+        err.errors.forEach((e: any) => {
+          fieldErrors[e.path[0]] = e.message;
+        });
+        setErrors(fieldErrors);
+      }
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   const handleForgotPassword = () => {
-    handlePath('/auth/recovery'); 
+    handlePath('/auth/recovery');
   }
-
 
   return (
     <KeyboardAwareScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}
@@ -95,7 +108,12 @@ export default function LoginScreen() {
               style={textInputStyle}
               theme={textInputTheme}
             />
-            
+            {errors.email && (
+              <Text style={{ color: '#dc2626', fontSize: 12 }}>
+                {errors.email}
+              </Text>
+            )}
+
             <View>
               <TextInput
                 label="Senha"
@@ -110,11 +128,13 @@ export default function LoginScreen() {
                   <TextInput.Icon forceTextInputFocus={false} icon={passwordSee ? 'eye-off' : 'eye'} onPress={() => setPasswordSee(!passwordSee)} />
                 }
               />
-              
-              {/* --- BOTÃO ESQUECI MINHA SENHA --- */}
+
               <View style={styles.forgotPasswordContainer}>
-                <Pressable onPress={handleForgotPassword} hitSlop={10}>
-                  <Text style={[styles.forgotPasswordText, { color: 'black' }]}>
+                <Pressable
+                  onPress={handleForgotPassword}
+                  android_ripple={{ color: '#e5e7eb' }}
+                >
+                  <Text style={[styles.forgotPasswordText, { color: primaryColor }]}>
                     Esqueci minha senha
                   </Text>
                 </Pressable>
@@ -124,8 +144,14 @@ export default function LoginScreen() {
           </View>
         </View>
         <View style={{ width: '100%', height: '15%', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center' }}>
-          <Button mode='contained' style={{ width: 200 }} onPress={handleLogin}>
-            Login
+          <Button
+            mode="contained"
+            style={{ width: 200 }}
+            onPress={handleLogin}
+            loading={loading}
+            disabled={loading}
+          >
+            {loading ? 'Entrando...' : 'Login'}
           </Button>
         </View>
       </View>
@@ -151,6 +177,6 @@ const styles = StyleSheet.create({
   forgotPasswordText: {
     fontSize: 14,
     fontWeight: '600',
-    textDecorationLine: 'underline', 
+    textDecorationLine: 'underline',
   }
 });
